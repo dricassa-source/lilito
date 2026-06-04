@@ -49,6 +49,11 @@
   --color-surface-elevated: var(--surface-elevated);
   --color-hairline: var(--hairline);
 
+  --color-nat-ab: var(--nat-ab);
+  --color-nat-revisita: var(--nat-revisita);
+  --color-nat-fechamento: var(--nat-fechamento);
+  --color-nat-entrega: var(--nat-entrega);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
