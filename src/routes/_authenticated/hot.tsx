@@ -37,6 +37,7 @@ function Hot() {
   const { auth } = useAuth();
   const qc = useQueryClient();
   const [dlg, setDlg] = useState<DialogState>({ kind: "none" });
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const { data: fila } = useQuery({
     queryKey: ["hot-fila"],
@@ -51,7 +52,7 @@ function Hot() {
     },
   });
 
-  const atual = fila?.[0];
+  const atual = fila?.[currentIndex];
 
   function ligar() { if (atual?.telefone) window.open(`tel:${atual.telefone}`); }
   function whatsapp() {
