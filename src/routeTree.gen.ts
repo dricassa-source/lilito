@@ -15,7 +15,12 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedRecomendacoesRouteImport } from './routes/_authenticated/recomendacoes'
 import { Route as AuthenticatedHotRouteImport } from './routes/_authenticated/hot'
+import { Route as AuthenticatedFunilRouteImport } from './routes/_authenticated/funil'
+import { Route as AuthenticatedEmDelayRouteImport } from './routes/_authenticated/em-delay'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
+import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
+import { Route as AuthenticatedAtividadesRouteImport } from './routes/_authenticated/atividades'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -47,9 +52,34 @@ const AuthenticatedHotRoute = AuthenticatedHotRouteImport.update({
   path: '/hot',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFunilRoute = AuthenticatedFunilRouteImport.update({
+  id: '/funil',
+  path: '/funil',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEmDelayRoute = AuthenticatedEmDelayRouteImport.update({
+  id: '/em-delay',
+  path: '/em-delay',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCalendarioRoute = AuthenticatedCalendarioRouteImport.update({
+  id: '/calendario',
+  path: '/calendario',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAtividadesRoute = AuthenticatedAtividadesRouteImport.update({
+  id: '/atividades',
+  path: '/atividades',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 
@@ -57,14 +87,24 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/atividades': typeof AuthenticatedAtividadesRoute
+  '/calendario': typeof AuthenticatedCalendarioRoute
+  '/clientes': typeof AuthenticatedClientesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/em-delay': typeof AuthenticatedEmDelayRoute
+  '/funil': typeof AuthenticatedFunilRoute
   '/hot': typeof AuthenticatedHotRoute
   '/recomendacoes': typeof AuthenticatedRecomendacoesRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/atividades': typeof AuthenticatedAtividadesRoute
+  '/calendario': typeof AuthenticatedCalendarioRoute
+  '/clientes': typeof AuthenticatedClientesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/em-delay': typeof AuthenticatedEmDelayRoute
+  '/funil': typeof AuthenticatedFunilRoute
   '/hot': typeof AuthenticatedHotRoute
   '/recomendacoes': typeof AuthenticatedRecomendacoesRoute
   '/': typeof AuthenticatedIndexRoute
@@ -74,7 +114,12 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/atividades': typeof AuthenticatedAtividadesRoute
+  '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
+  '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/em-delay': typeof AuthenticatedEmDelayRoute
+  '/_authenticated/funil': typeof AuthenticatedFunilRoute
   '/_authenticated/hot': typeof AuthenticatedHotRoute
   '/_authenticated/recomendacoes': typeof AuthenticatedRecomendacoesRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -85,14 +130,24 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/atividades'
+    | '/calendario'
+    | '/clientes'
     | '/dashboard'
+    | '/em-delay'
+    | '/funil'
     | '/hot'
     | '/recomendacoes'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
     | '/reset-password'
+    | '/atividades'
+    | '/calendario'
+    | '/clientes'
     | '/dashboard'
+    | '/em-delay'
+    | '/funil'
     | '/hot'
     | '/recomendacoes'
     | '/'
@@ -101,7 +156,12 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/_authenticated/atividades'
+    | '/_authenticated/calendario'
+    | '/_authenticated/clientes'
     | '/_authenticated/dashboard'
+    | '/_authenticated/em-delay'
+    | '/_authenticated/funil'
     | '/_authenticated/hot'
     | '/_authenticated/recomendacoes'
     | '/_authenticated/'
@@ -157,6 +217,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHotRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/funil': {
+      id: '/_authenticated/funil'
+      path: '/funil'
+      fullPath: '/funil'
+      preLoaderRoute: typeof AuthenticatedFunilRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/em-delay': {
+      id: '/_authenticated/em-delay'
+      path: '/em-delay'
+      fullPath: '/em-delay'
+      preLoaderRoute: typeof AuthenticatedEmDelayRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -164,18 +238,49 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/clientes': {
+      id: '/_authenticated/clientes'
+      path: '/clientes'
+      fullPath: '/clientes'
+      preLoaderRoute: typeof AuthenticatedClientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/calendario': {
+      id: '/_authenticated/calendario'
+      path: '/calendario'
+      fullPath: '/calendario'
+      preLoaderRoute: typeof AuthenticatedCalendarioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/atividades': {
+      id: '/_authenticated/atividades'
+      path: '/atividades'
+      fullPath: '/atividades'
+      preLoaderRoute: typeof AuthenticatedAtividadesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAtividadesRoute: typeof AuthenticatedAtividadesRoute
+  AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
+  AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedEmDelayRoute: typeof AuthenticatedEmDelayRoute
+  AuthenticatedFunilRoute: typeof AuthenticatedFunilRoute
   AuthenticatedHotRoute: typeof AuthenticatedHotRoute
   AuthenticatedRecomendacoesRoute: typeof AuthenticatedRecomendacoesRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAtividadesRoute: AuthenticatedAtividadesRoute,
+  AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
+  AuthenticatedClientesRoute: AuthenticatedClientesRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedEmDelayRoute: AuthenticatedEmDelayRoute,
+  AuthenticatedFunilRoute: AuthenticatedFunilRoute,
   AuthenticatedHotRoute: AuthenticatedHotRoute,
   AuthenticatedRecomendacoesRoute: AuthenticatedRecomendacoesRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
