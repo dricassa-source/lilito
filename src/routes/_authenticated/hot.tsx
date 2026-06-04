@@ -163,13 +163,24 @@ function Hot() {
                       }`}
                     >
                       <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <p className={`font-display text-lg truncate ${isAtual ? "text-gold" : "text-foreground"}`}>
-                            {p.nome}
-                          </p>
-                          <p className="text-sm text-muted-foreground mt-0.5">
-                            {p.especialidade_medica ?? "—"} · {p.telefone ?? "—"}
-                          </p>
+                        <div className="flex items-start gap-3 min-w-0">
+                          <span
+                            className={`shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full font-display text-sm ${
+                              isAtual
+                                ? "bg-gold text-background"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {idx + 1}
+                          </span>
+                          <div className="min-w-0">
+                            <p className={`font-display text-lg truncate ${isAtual ? "text-gold" : "text-foreground"}`}>
+                              {p.nome}
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                              {p.especialidade_medica ?? "—"} · {p.telefone ?? "—"}
+                            </p>
+                          </div>
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-xs text-muted-foreground">
