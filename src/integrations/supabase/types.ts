@@ -333,6 +333,36 @@ export type Database = {
           },
         ]
       }
+      hot_listas: {
+        Row: {
+          consultor_id: string
+          created_at: string
+          data_fim: string | null
+          data_inicio: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          consultor_id: string
+          created_at?: string
+          data_fim?: string | null
+          data_inicio: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          consultor_id?: string
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notificacoes: {
         Row: {
           created_at: string
