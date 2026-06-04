@@ -74,7 +74,7 @@ function Calendario() {
                   <Card key={e.id} className="p-4 bg-surface border-border flex items-center justify-between">
                     <div>
                       <p className="font-medium">{e.titulo}</p>
-                      <p className="text-xs text-muted-foreground caps-tracking">{e.tipo}</p>
+                      <p className="text-xs text-muted-foreground caps-tracking">{TIPO_LABEL[e.tipo] ?? e.tipo}</p>
                     </div>
                     <p className="font-display text-xl text-gold">{format(new Date(e.inicio), "HH:mm")}</p>
                   </Card>
