@@ -100,18 +100,28 @@ function MeuDia() {
       const { start: wStart, end: wEnd } = weekRange();
       const { start: mStart, end: mEnd } = monthRange();
 
-      const [consultoresRes, planosSemanaRes, paSemanaRes, paMesRes, todosConsultores] = await Promise.all([
-        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("ativo", true),
+      // Only users with role = 'consultor' (exclude masters)
+      const { data: consultorRolesRaw } = await supabase
+        .from("user_roles").select("user_id").eq("role", "consultor");
+      const consultorIds = Array.from(new Set((consultorRolesRaw ?? []).map((r: any) => r.user_id)));
+
+      if (consultorIds.length === 0) {
+        return { consultoresAtivos: 0, planosSemana: 0, paSemana: 0, paMes: 0, ranking: [] as { id: string; nome: string; pa: number }[] };
+      }
+
+      const [consultoresRes, planosSemanaRes, paSemanaRes, paMesRes, perfis] = await Promise.all([
+        supabase.from("profiles").select("id", { count: "exact", head: true })
+          .eq("ativo", true).in("id", consultorIds),
         supabase.from("apolices").select("id", { count: "exact", head: true })
-          .eq("status", "migrado")
+          .eq("status", "migrado").in("consultor_id", consultorIds)
           .gte("updated_at", wStart.toISOString()).lt("updated_at", wEnd.toISOString()),
         supabase.from("apolices").select("premio_atual,updated_at,status")
-          .eq("status", "migrado")
+          .eq("status", "migrado").in("consultor_id", consultorIds)
           .gte("updated_at", wStart.toISOString()).lt("updated_at", wEnd.toISOString()),
         supabase.from("apolices").select("premio_atual,consultor_id,updated_at,status")
-          .eq("status", "migrado")
+          .eq("status", "migrado").in("consultor_id", consultorIds)
           .gte("updated_at", mStart.toISOString()).lt("updated_at", mEnd.toISOString()),
-        supabase.from("profiles").select("id,nome").eq("ativo", true),
+        supabase.from("profiles").select("id,nome").eq("ativo", true).in("id", consultorIds),
       ]);
 
       const paSemana = (paSemanaRes.data ?? []).reduce((s, r: any) => s + Number(r.premio_atual ?? 0), 0);
@@ -123,7 +133,7 @@ function MeuDia() {
         byConsultor.set(r.consultor_id, (byConsultor.get(r.consultor_id) ?? 0) + Number(r.premio_atual ?? 0));
       }
       const nomes = new Map<string, string>();
-      for (const p of (todosConsultores.data ?? []) as any[]) nomes.set(p.id, p.nome);
+      for (const p of (perfis.data ?? []) as any[]) nomes.set(p.id, p.nome);
       const ranking = Array.from(byConsultor.entries())
         .map(([id, pa]) => ({ id, nome: nomes.get(id) ?? "—", pa }))
         .sort((a, b) => b.pa - a.pa)
