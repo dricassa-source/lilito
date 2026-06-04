@@ -23,8 +23,12 @@ export const Route = createFileRoute("/_authenticated/calendario")({
 
 const TIPOS = [
   { v: "ab", l: "AB" }, { v: "fechamento", l: "Fechamento" },
-  { v: "revisita", l: "Revisita" }, { v: "joint_work", l: "Joint Work" }, { v: "review", l: "Review" },
+  { v: "revisita", l: "Revisita" }, { v: "entrega_apolice", l: "Entrega de Apólice" },
+  { v: "joint_work", l: "Joint Work" }, { v: "review", l: "Review" },
 ];
+const TIPO_LABEL: Record<string, string> = Object.fromEntries(
+  [["ab","AB"],["fechamento","Fechamento"],["revisita","Revisita"],["entrega_apolice","Entrega de Apólice"],["joint_work","Joint Work"],["review","Review"]]
+);
 
 function Calendario() {
   const { auth } = useAuth();
@@ -70,7 +74,7 @@ function Calendario() {
                   <Card key={e.id} className="p-4 bg-surface border-border flex items-center justify-between">
                     <div>
                       <p className="font-medium">{e.titulo}</p>
-                      <p className="text-xs text-muted-foreground caps-tracking">{e.tipo}</p>
+                      <p className="text-xs text-muted-foreground caps-tracking">{TIPO_LABEL[e.tipo] ?? e.tipo}</p>
                     </div>
                     <p className="font-display text-xl text-gold">{format(new Date(e.inicio), "HH:mm")}</p>
                   </Card>

@@ -536,6 +536,8 @@ export type Database = {
         | "cliente"
         | "pos_venda"
         | "perdido"
+        | "revisita"
+        | "entrega_apolice"
       origem_prospect:
         | "recomendacao"
         | "prospeccao_ativa"
@@ -584,7 +586,14 @@ export type Database = {
         | "analise_apolice"
         | "review"
         | "recomendacao"
-      tipo_evento: "ab" | "fechamento" | "revisita" | "joint_work" | "review"
+        | "entrega_apolice"
+      tipo_evento:
+        | "ab"
+        | "fechamento"
+        | "revisita"
+        | "joint_work"
+        | "review"
+        | "entrega_apolice"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -723,6 +732,8 @@ export const Constants = {
         "cliente",
         "pos_venda",
         "perdido",
+        "revisita",
+        "entrega_apolice",
       ],
       origem_prospect: [
         "recomendacao",
@@ -777,8 +788,16 @@ export const Constants = {
         "analise_apolice",
         "review",
         "recomendacao",
+        "entrega_apolice",
       ],
-      tipo_evento: ["ab", "fechamento", "revisita", "joint_work", "review"],
+      tipo_evento: [
+        "ab",
+        "fechamento",
+        "revisita",
+        "joint_work",
+        "review",
+        "entrega_apolice",
+      ],
     },
   },
 } as const
