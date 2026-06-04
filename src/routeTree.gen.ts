@@ -14,13 +14,18 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedRecomendacoesRouteImport } from './routes/_authenticated/recomendacoes'
+import { Route as AuthenticatedPosVendaRouteImport } from './routes/_authenticated/pos-venda'
+import { Route as AuthenticatedPlanejamentoRouteImport } from './routes/_authenticated/planejamento'
 import { Route as AuthenticatedHotRouteImport } from './routes/_authenticated/hot'
 import { Route as AuthenticatedFunilRouteImport } from './routes/_authenticated/funil'
 import { Route as AuthenticatedEmDelayRouteImport } from './routes/_authenticated/em-delay'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
+import { Route as AuthenticatedCicloRevisaoRouteImport } from './routes/_authenticated/ciclo-revisao'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
 import { Route as AuthenticatedAtividadesRouteImport } from './routes/_authenticated/atividades'
+import { Route as AuthenticatedApolicesRouteImport } from './routes/_authenticated/apolices'
+import { Route as AuthenticatedAdministracaoRouteImport } from './routes/_authenticated/administracao'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -45,6 +50,17 @@ const AuthenticatedRecomendacoesRoute =
   AuthenticatedRecomendacoesRouteImport.update({
     id: '/recomendacoes',
     path: '/recomendacoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPosVendaRoute = AuthenticatedPosVendaRouteImport.update({
+  id: '/pos-venda',
+  path: '/pos-venda',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPlanejamentoRoute =
+  AuthenticatedPlanejamentoRouteImport.update({
+    id: '/planejamento',
+    path: '/planejamento',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedHotRoute = AuthenticatedHotRouteImport.update({
@@ -72,6 +88,12 @@ const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
   path: '/clientes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCicloRevisaoRoute =
+  AuthenticatedCicloRevisaoRouteImport.update({
+    id: '/ciclo-revisao',
+    path: '/ciclo-revisao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCalendarioRoute = AuthenticatedCalendarioRouteImport.update({
   id: '/calendario',
   path: '/calendario',
@@ -82,30 +104,51 @@ const AuthenticatedAtividadesRoute = AuthenticatedAtividadesRouteImport.update({
   path: '/atividades',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedApolicesRoute = AuthenticatedApolicesRouteImport.update({
+  id: '/apolices',
+  path: '/apolices',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdministracaoRoute =
+  AuthenticatedAdministracaoRouteImport.update({
+    id: '/administracao',
+    path: '/administracao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/administracao': typeof AuthenticatedAdministracaoRoute
+  '/apolices': typeof AuthenticatedApolicesRoute
   '/atividades': typeof AuthenticatedAtividadesRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
+  '/ciclo-revisao': typeof AuthenticatedCicloRevisaoRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/em-delay': typeof AuthenticatedEmDelayRoute
   '/funil': typeof AuthenticatedFunilRoute
   '/hot': typeof AuthenticatedHotRoute
+  '/planejamento': typeof AuthenticatedPlanejamentoRoute
+  '/pos-venda': typeof AuthenticatedPosVendaRoute
   '/recomendacoes': typeof AuthenticatedRecomendacoesRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/administracao': typeof AuthenticatedAdministracaoRoute
+  '/apolices': typeof AuthenticatedApolicesRoute
   '/atividades': typeof AuthenticatedAtividadesRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
+  '/ciclo-revisao': typeof AuthenticatedCicloRevisaoRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/em-delay': typeof AuthenticatedEmDelayRoute
   '/funil': typeof AuthenticatedFunilRoute
   '/hot': typeof AuthenticatedHotRoute
+  '/planejamento': typeof AuthenticatedPlanejamentoRoute
+  '/pos-venda': typeof AuthenticatedPosVendaRoute
   '/recomendacoes': typeof AuthenticatedRecomendacoesRoute
   '/': typeof AuthenticatedIndexRoute
 }
@@ -114,13 +157,18 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/administracao': typeof AuthenticatedAdministracaoRoute
+  '/_authenticated/apolices': typeof AuthenticatedApolicesRoute
   '/_authenticated/atividades': typeof AuthenticatedAtividadesRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
+  '/_authenticated/ciclo-revisao': typeof AuthenticatedCicloRevisaoRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/em-delay': typeof AuthenticatedEmDelayRoute
   '/_authenticated/funil': typeof AuthenticatedFunilRoute
   '/_authenticated/hot': typeof AuthenticatedHotRoute
+  '/_authenticated/planejamento': typeof AuthenticatedPlanejamentoRoute
+  '/_authenticated/pos-venda': typeof AuthenticatedPosVendaRoute
   '/_authenticated/recomendacoes': typeof AuthenticatedRecomendacoesRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
@@ -130,25 +178,35 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/administracao'
+    | '/apolices'
     | '/atividades'
     | '/calendario'
+    | '/ciclo-revisao'
     | '/clientes'
     | '/dashboard'
     | '/em-delay'
     | '/funil'
     | '/hot'
+    | '/planejamento'
+    | '/pos-venda'
     | '/recomendacoes'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
     | '/reset-password'
+    | '/administracao'
+    | '/apolices'
     | '/atividades'
     | '/calendario'
+    | '/ciclo-revisao'
     | '/clientes'
     | '/dashboard'
     | '/em-delay'
     | '/funil'
     | '/hot'
+    | '/planejamento'
+    | '/pos-venda'
     | '/recomendacoes'
     | '/'
   id:
@@ -156,13 +214,18 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/_authenticated/administracao'
+    | '/_authenticated/apolices'
     | '/_authenticated/atividades'
     | '/_authenticated/calendario'
+    | '/_authenticated/ciclo-revisao'
     | '/_authenticated/clientes'
     | '/_authenticated/dashboard'
     | '/_authenticated/em-delay'
     | '/_authenticated/funil'
     | '/_authenticated/hot'
+    | '/_authenticated/planejamento'
+    | '/_authenticated/pos-venda'
     | '/_authenticated/recomendacoes'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
@@ -210,6 +273,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRecomendacoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pos-venda': {
+      id: '/_authenticated/pos-venda'
+      path: '/pos-venda'
+      fullPath: '/pos-venda'
+      preLoaderRoute: typeof AuthenticatedPosVendaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/planejamento': {
+      id: '/_authenticated/planejamento'
+      path: '/planejamento'
+      fullPath: '/planejamento'
+      preLoaderRoute: typeof AuthenticatedPlanejamentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/hot': {
       id: '/_authenticated/hot'
       path: '/hot'
@@ -245,6 +322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ciclo-revisao': {
+      id: '/_authenticated/ciclo-revisao'
+      path: '/ciclo-revisao'
+      fullPath: '/ciclo-revisao'
+      preLoaderRoute: typeof AuthenticatedCicloRevisaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/calendario': {
       id: '/_authenticated/calendario'
       path: '/calendario'
@@ -259,29 +343,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAtividadesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/apolices': {
+      id: '/_authenticated/apolices'
+      path: '/apolices'
+      fullPath: '/apolices'
+      preLoaderRoute: typeof AuthenticatedApolicesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/administracao': {
+      id: '/_authenticated/administracao'
+      path: '/administracao'
+      fullPath: '/administracao'
+      preLoaderRoute: typeof AuthenticatedAdministracaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdministracaoRoute: typeof AuthenticatedAdministracaoRoute
+  AuthenticatedApolicesRoute: typeof AuthenticatedApolicesRoute
   AuthenticatedAtividadesRoute: typeof AuthenticatedAtividadesRoute
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
+  AuthenticatedCicloRevisaoRoute: typeof AuthenticatedCicloRevisaoRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEmDelayRoute: typeof AuthenticatedEmDelayRoute
   AuthenticatedFunilRoute: typeof AuthenticatedFunilRoute
   AuthenticatedHotRoute: typeof AuthenticatedHotRoute
+  AuthenticatedPlanejamentoRoute: typeof AuthenticatedPlanejamentoRoute
+  AuthenticatedPosVendaRoute: typeof AuthenticatedPosVendaRoute
   AuthenticatedRecomendacoesRoute: typeof AuthenticatedRecomendacoesRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdministracaoRoute: AuthenticatedAdministracaoRoute,
+  AuthenticatedApolicesRoute: AuthenticatedApolicesRoute,
   AuthenticatedAtividadesRoute: AuthenticatedAtividadesRoute,
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
+  AuthenticatedCicloRevisaoRoute: AuthenticatedCicloRevisaoRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEmDelayRoute: AuthenticatedEmDelayRoute,
   AuthenticatedFunilRoute: AuthenticatedFunilRoute,
   AuthenticatedHotRoute: AuthenticatedHotRoute,
+  AuthenticatedPlanejamentoRoute: AuthenticatedPlanejamentoRoute,
+  AuthenticatedPosVendaRoute: AuthenticatedPosVendaRoute,
   AuthenticatedRecomendacoesRoute: AuthenticatedRecomendacoesRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
