@@ -154,8 +154,16 @@ function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDat
 
 function close(setState: (s: DialogState) => void) { setState({ kind: "none" }); }
 
+const NATUREZAS = [
+  { v: "ab", label: "AB", etapa: "ab", tituloPrefix: "AB" },
+  { v: "fechamento", label: "Fechamento", etapa: "fechamento", tituloPrefix: "Fechamento" },
+  { v: "revisita", label: "Revisita", etapa: "revisita", tituloPrefix: "Revisita" },
+  { v: "entrega_apolice", label: "Entrega de Apólice", etapa: "entrega_apolice", tituloPrefix: "Entrega de Apólice" },
+] as const;
+
 function AbDialog({ state, setState, onDone }: { state: DialogState; setState: (s: DialogState) => void; onDone: () => void }) {
   const { auth } = useAuth();
+  const [natureza, setNatureza] = useState<typeof NATUREZAS[number]["v"]>("ab");
   const [data, setData] = useState("");
   const [hora, setHora] = useState("09:00");
   const [local, setLocal] = useState("");
@@ -163,42 +171,52 @@ function AbDialog({ state, setState, onDone }: { state: DialogState; setState: (
   const open = state.kind === "ab";
 
   async function save() {
-    if (!auth || state.kind !== "ab" || !data) return;
+    if (!auth || state.kind !== "ab" || !data || !natureza) return;
     setSaving(true);
+    const cfg = NATUREZAS.find((n) => n.v === natureza)!;
     const inicio = new Date(`${data}T${hora}:00`);
     const fim = new Date(inicio.getTime() + 60 * 60 * 1000);
     const p = state.prospect;
     const [a, b, c] = await Promise.all([
       supabase.from("prospects").update({
-        etapa_funil: "ab", status_hot: "agendou",
+        etapa_funil: cfg.etapa as any, status_hot: "agendou",
         entrou_etapa_em: new Date().toISOString(),
         ultima_interacao: new Date().toISOString(),
       }).eq("id", p.id),
       supabase.from("agenda_eventos").insert({
         consultor_id: auth.user.id, prospect_id: p.id,
-        tipo: "ab", titulo: `AB — ${p.nome}`,
+        tipo: cfg.v as any, titulo: `${cfg.tituloPrefix} — ${p.nome}`,
         inicio: inicio.toISOString(), fim: fim.toISOString(),
         local: local || null,
       }),
       supabase.from("atividades").insert({
         consultor_id: auth.user.id, prospect_id: p.id,
-        tipo: "ab", resultado: "ab_agendada",
-        observacao: `AB agendada para ${inicio.toLocaleString("pt-BR")}`,
+        tipo: cfg.v as any, resultado: "ab_agendada",
+        observacao: `${cfg.label} agendado para ${inicio.toLocaleString("pt-BR")}`,
         follow_up_em: inicio.toISOString(),
       }),
     ]);
     setSaving(false);
     if (a.error || b.error || c.error) return toast.error((a.error ?? b.error ?? c.error)!.message);
-    toast.success("AB agendada e evento criado.");
-    setData(""); setHora("09:00"); setLocal("");
+    toast.success(`${cfg.label} agendado e evento criado.`);
+    setNatureza("ab"); setData(""); setHora("09:00"); setLocal("");
     close(setState); onDone();
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && close(setState)}>
       <DialogContent className="bg-surface border-border">
-        <DialogHeader><DialogTitle className="font-display text-2xl">Agendar AB</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle className="font-display text-2xl">Novo agendamento</DialogTitle></DialogHeader>
         <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label>Natureza do agendamento <span className="text-destructive">*</span></Label>
+            <Select value={natureza} onValueChange={(v) => setNatureza(v as any)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {NATUREZAS.map((n) => <SelectItem key={n.v} value={n.v}>{n.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5"><Label>Data</Label>
               <Input type="date" value={data} onChange={(e) => setData(e.target.value)} /></div>
@@ -209,7 +227,7 @@ function AbDialog({ state, setState, onDone }: { state: DialogState; setState: (
             <Input value={local} onChange={(e) => setLocal(e.target.value)} placeholder="Presencial, Zoom..." /></div>
         </div>
         <DialogFooter>
-          <Button onClick={save} disabled={!data || saving} className="gold-gradient text-background">
+          <Button onClick={save} disabled={!data || !natureza || saving} className="gold-gradient text-background">
             {saving ? "Salvando..." : "Agendar"}
           </Button>
         </DialogFooter>
