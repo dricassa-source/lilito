@@ -13,7 +13,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { EmptyState } from "@/components/lilito/EmptyState";
-import { Flame, Phone, MessageCircle, Calendar, Clock, XCircle, PhoneOff, Brain } from "lucide-react";
+import { Flame, Phone, MessageCircle, Calendar, Clock, XCircle, PhoneOff, Brain, Users } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/hot")({
@@ -37,6 +37,7 @@ function Hot() {
   const { auth } = useAuth();
   const qc = useQueryClient();
   const [dlg, setDlg] = useState<DialogState>({ kind: "none" });
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const { data: fila } = useQuery({
     queryKey: ["hot-fila"],
@@ -51,7 +52,7 @@ function Hot() {
     },
   });
 
-  const atual = fila?.[0];
+  const atual = fila?.[currentIndex];
 
   function ligar() { if (atual?.telefone) window.open(`tel:${atual.telefone}`); }
   function whatsapp() {
@@ -139,6 +140,62 @@ function Hot() {
           <p className="text-center text-xs text-muted-foreground mt-4">
             {fila!.length} {fila!.length === 1 ? "prospect na fila" : "prospects na fila"}
           </p>
+
+          {/* FILA HOT */}
+          {fila && fila.length > 0 && (
+            <div className="mt-10">
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="h-4 w-4 text-gold" />
+                <h3 className="font-display text-xl text-foreground">FILA HOT</h3>
+                <div className="flex-1 hairline-gold opacity-30" />
+              </div>
+              <div className="space-y-3">
+                {fila.map((p, idx) => {
+                  const isAtual = idx === currentIndex;
+                  return (
+                    <Card
+                      key={p.id}
+                      onClick={() => setCurrentIndex(idx)}
+                      className={`p-4 cursor-pointer transition-colors ${
+                        isAtual
+                          ? "bg-gold/10 border-gold/50"
+                          : "bg-surface border-border hover:border-gold/30"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className={`font-display text-lg truncate ${isAtual ? "text-gold" : "text-foreground"}`}>
+                            {p.nome}
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-0.5">
+                            {p.especialidade_medica ?? "—"} · {p.telefone ?? "—"}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-xs text-muted-foreground">
+                            {diasDesde(p.entrou_etapa_em)}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {p.quem_recomendou ? `Indicado por ${p.quem_recomendou}` : "—"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                          {etapaLabel(p.etapa_funil)}
+                        </span>
+                        {isAtual && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-gold/20 text-gold font-medium">
+                            Atual
+                          </span>
+                        )}
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -148,6 +205,28 @@ function Hot() {
       <NaoAtendeuDialog state={dlg} setState={setDlg} onDone={() => qc.invalidateQueries({ queryKey: ["hot-fila"] })} />
     </div>
   );
+}
+
+function diasDesde(dateStr: string | null | undefined) {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+  return diff <= 0 ? "Hoje" : `${diff} dia${diff > 1 ? "s" : ""}`;
+}
+
+function etapaLabel(etapa: string | null | undefined) {
+  const labels: Record<string, string> = {
+    recomendacao: "Recomendação",
+    hot: "HOT",
+    ab: "AB",
+    revisita: "Revisita",
+    fechamento: "Fechamento",
+    entrega_apolice: "Entrega de Apólice",
+    pos_venda: "Pós-Venda",
+    perdido: "Perdido",
+  };
+  return labels[etapa ?? ""] ?? (etapa ?? "—");
 }
 
 function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
