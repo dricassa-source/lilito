@@ -151,7 +151,28 @@ function Hot() {
   );
 }
 
-function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function diasDesde(dateStr: string | null | undefined) {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+  return diff <= 0 ? "Hoje" : `${diff} dia${diff > 1 ? "s" : ""}`;
+}
+
+function etapaLabel(etapa: string | null | undefined) {
+  const labels: Record<string, string> = {
+    recomendacao: "Recomendação",
+    hot: "HOT",
+    ab: "AB",
+    revisita: "Revisita",
+    fechamento: "Fechamento",
+    entrega_apolice: "Entrega de Apólice",
+    pos_venda: "Pós-Venda",
+    perdido: "Perdido",
+  };
+  return labels[etapa ?? ""] ?? (etapa ?? "—");
+}
+
 
 function close(setState: (s: DialogState) => void) { setState({ kind: "none" }); }
 
