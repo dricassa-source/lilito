@@ -13,7 +13,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { EmptyState } from "@/components/lilito/EmptyState";
-import { Flame, Phone, MessageCircle, Calendar, Clock, XCircle, PhoneOff, Brain } from "lucide-react";
+import { Flame, Phone, MessageCircle, Calendar, Clock, XCircle, PhoneOff, Brain, Users } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/hot")({
