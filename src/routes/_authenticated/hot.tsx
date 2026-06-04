@@ -140,6 +140,62 @@ function Hot() {
           <p className="text-center text-xs text-muted-foreground mt-4">
             {fila!.length} {fila!.length === 1 ? "prospect na fila" : "prospects na fila"}
           </p>
+
+          {/* FILA HOT */}
+          {fila && fila.length > 0 && (
+            <div className="mt-10">
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="h-4 w-4 text-gold" />
+                <h3 className="font-display text-xl text-foreground">FILA HOT</h3>
+                <div className="flex-1 hairline-gold opacity-30" />
+              </div>
+              <div className="space-y-3">
+                {fila.map((p, idx) => {
+                  const isAtual = idx === currentIndex;
+                  return (
+                    <Card
+                      key={p.id}
+                      onClick={() => setCurrentIndex(idx)}
+                      className={`p-4 cursor-pointer transition-colors ${
+                        isAtual
+                          ? "bg-gold/10 border-gold/50"
+                          : "bg-surface border-border hover:border-gold/30"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className={`font-display text-lg truncate ${isAtual ? "text-gold" : "text-foreground"}`}>
+                            {p.nome}
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-0.5">
+                            {p.especialidade_medica ?? "—"} · {p.telefone ?? "—"}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-xs text-muted-foreground">
+                            {diasDesde(p.entrou_etapa_em)}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {p.quem_recomendou ? `Indicado por ${p.quem_recomendou}` : "—"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                          {etapaLabel(p.etapa_funil)}
+                        </span>
+                        {isAtual && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-gold/20 text-gold font-medium">
+                            Atual
+                          </span>
+                        )}
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -173,6 +229,7 @@ function etapaLabel(etapa: string | null | undefined) {
   return labels[etapa ?? ""] ?? (etapa ?? "—");
 }
 
+function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
 
 function close(setState: (s: DialogState) => void) { setState({ kind: "none" }); }
 
