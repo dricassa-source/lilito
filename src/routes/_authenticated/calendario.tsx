@@ -898,6 +898,9 @@ function EventoSheet({ evento, onClose, onChanged }: { evento: any | null; onClo
   const open = !!evento;
 
   if (!evento) return null;
+  if (evento.__recorrente === true) {
+    return <RecorrenteSheet evento={evento} onClose={onClose} onChanged={onChanged} />;
+  }
   const c = NATUREZA_COLOR[evento.tipo] ?? NATUREZA_COLOR.review;
   const isBloqueio = evento.tipo === "bloqueio";
   const nome = evento.prospects?.nome ?? evento.clientes?.nome ?? evento.titulo;
