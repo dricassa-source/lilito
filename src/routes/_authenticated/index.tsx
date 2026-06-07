@@ -222,15 +222,52 @@ function MeuDia() {
       <AlertasOperacionais alertas={alertas} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-        <Card className="p-5 bg-surface border-border">
-          <p className="caps-tracking text-muted-foreground flex items-center gap-2 text-[0.6rem]">
-            <Cake className="h-3.5 w-3.5" /> Aniversariantes
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">Em breve.</p>
-        </Card>
+        <Aniversariantes items={aniversariantes ?? []} />
         <FraseRotativa />
       </div>
     </div>
+  );
+}
+
+function Aniversariantes({ items }: { items: any[] }) {
+  const hoje = items.filter((p) => p.diasFaltam === 0);
+  const proximo = items.find((p) => p.diasFaltam > 0);
+  return (
+    <Card className="p-5 bg-surface border-border">
+      <p className="caps-tracking text-gold flex items-center gap-2 text-[0.6rem] mb-3">
+        <Cake className="h-3.5 w-3.5" /> Aniversariantes
+      </p>
+      {hoje.length === 0 && !proximo ? (
+        <p className="text-sm text-muted-foreground">Sem aniversários registrados.</p>
+      ) : (
+        <div className="space-y-3">
+          {hoje.length > 0 && (
+            <div>
+              <p className="caps-tracking text-emerald-500 text-[0.55rem] mb-1">Hoje</p>
+              <ul className="space-y-1">
+                {hoje.map((p) => (
+                  <li key={p.id} className="text-sm flex items-center gap-2">
+                    🎂 <span className="font-medium">{p.nome}</span>
+                    <span className="text-xs text-muted-foreground">— Hoje</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {proximo && (
+            <div>
+              <p className="caps-tracking text-muted-foreground text-[0.55rem] mb-1">Próximo</p>
+              <p className="text-sm flex items-center gap-2">
+                🎂 <span className="font-medium">{proximo.nome}</span>
+              </p>
+              <p className="text-xs text-muted-foreground ml-6">
+                {format(proximo.proximo, "dd/MM", { locale: ptBR })} · em {proximo.diasFaltam} dia{proximo.diasFaltam === 1 ? "" : "s"}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
 
