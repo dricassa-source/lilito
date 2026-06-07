@@ -34,6 +34,8 @@ export function useCalendarZoom(defaultHeight: number) {
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       startDistRef.current = Math.hypot(dx, dy);
       startHeightRef.current = slotHeight;
+      // Disable browser's native touch handling so the pinch reaches us.
+      if (containerRef.current) containerRef.current.style.touchAction = "none";
     }
   }, [slotHeight]);
 
@@ -50,7 +52,11 @@ export function useCalendarZoom(defaultHeight: number) {
   }, []);
 
   const onTouchEnd = useCallback((e: TouchEvent) => {
-    if (e.touches.length < 2) startDistRef.current = null;
+    if (e.touches.length < 2) {
+      startDistRef.current = null;
+      // Restore native pan so single-finger scroll keeps working.
+      if (containerRef.current) containerRef.current.style.touchAction = "pan-x pan-y";
+    }
   }, []);
 
   useEffect(() => {
