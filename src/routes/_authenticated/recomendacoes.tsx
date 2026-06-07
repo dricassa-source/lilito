@@ -83,6 +83,8 @@ function Recomendacoes() {
   const [fEstado, setFEstado] = useState("all");
   const [fFilhos, setFFilhos] = useState("all");
   const [fRecom, setFRecom] = useState("all");
+  const [mostrarPerdidos, setMostrarPerdidos] = useState(false);
+  const [rankingOpen, setRankingOpen] = useState(false);
 
   const { data: prospects } = useQuery({
     queryKey: ["prospects"],
@@ -108,6 +110,7 @@ function Recomendacoes() {
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     return (prospects ?? []).filter((p: any) => {
+      if (!mostrarPerdidos && p.etapa_funil === "perdido") return false;
       if (term) {
         const hay = `${p.nome ?? ""} ${p.telefone ?? ""} ${p.quem_recomendou ?? ""}`.toLowerCase();
         if (!hay.includes(term)) return false;
@@ -120,7 +123,24 @@ function Recomendacoes() {
       if (fRecom !== "all" && p.quem_recomendou !== fRecom) return false;
       return true;
     });
-  }, [prospects, q, fEtapa, fProfissao, fEstado, fFilhos, fRecom]);
+  }, [prospects, q, fEtapa, fProfissao, fEstado, fFilhos, fRecom, mostrarPerdidos]);
+
+  const rankingRecomendantes = useMemo(() => {
+    const map = new Map<string, { total: number; clientes: number; pa: number }>();
+    for (const p of (prospects ?? []) as any[]) {
+      const r = (p.quem_recomendou ?? "").trim();
+      if (!r) continue;
+      const cur = map.get(r) ?? { total: 0, clientes: 0, pa: 0 };
+      cur.total += 1;
+      if (p.etapa_funil === "cliente" || p.etapa_funil === "pos_venda") cur.clientes += 1;
+      cur.pa += Number(p.pa_estimado ?? 0);
+      map.set(r, cur);
+    }
+    return Array.from(map.entries())
+      .map(([nome, v]) => ({ nome, ...v }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 20);
+  }, [prospects]);
 
   async function enviarParaHot(p: any) {
     if (!auth) return;
