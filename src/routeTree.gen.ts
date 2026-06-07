@@ -19,6 +19,7 @@ import { Route as AuthenticatedPosVendaRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPlanejamentoRouteImport } from './routes/_authenticated/planejamento'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedLembretesRouteImport } from './routes/_authenticated/lembretes'
+import { Route as AuthenticatedJointRouteImport } from './routes/_authenticated/joint'
 import { Route as AuthenticatedHotRouteImport } from './routes/_authenticated/hot'
 import { Route as AuthenticatedFunilRouteImport } from './routes/_authenticated/funil'
 import { Route as AuthenticatedEmDelayRouteImport } from './routes/_authenticated/em-delay'
@@ -82,6 +83,11 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
 const AuthenticatedLembretesRoute = AuthenticatedLembretesRouteImport.update({
   id: '/lembretes',
   path: '/lembretes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedJointRoute = AuthenticatedJointRouteImport.update({
+  id: '/joint',
+  path: '/joint',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHotRoute = AuthenticatedHotRouteImport.update({
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/em-delay': typeof AuthenticatedEmDelayRoute
   '/funil': typeof AuthenticatedFunilRoute
   '/hot': typeof AuthenticatedHotRoute
+  '/joint': typeof AuthenticatedJointRoute
   '/lembretes': typeof AuthenticatedLembretesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/planejamento': typeof AuthenticatedPlanejamentoRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByTo {
   '/em-delay': typeof AuthenticatedEmDelayRoute
   '/funil': typeof AuthenticatedFunilRoute
   '/hot': typeof AuthenticatedHotRoute
+  '/joint': typeof AuthenticatedJointRoute
   '/lembretes': typeof AuthenticatedLembretesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/planejamento': typeof AuthenticatedPlanejamentoRoute
@@ -211,6 +219,7 @@ export interface FileRoutesById {
   '/_authenticated/em-delay': typeof AuthenticatedEmDelayRoute
   '/_authenticated/funil': typeof AuthenticatedFunilRoute
   '/_authenticated/hot': typeof AuthenticatedHotRoute
+  '/_authenticated/joint': typeof AuthenticatedJointRoute
   '/_authenticated/lembretes': typeof AuthenticatedLembretesRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/planejamento': typeof AuthenticatedPlanejamentoRoute
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | '/em-delay'
     | '/funil'
     | '/hot'
+    | '/joint'
     | '/lembretes'
     | '/onboarding'
     | '/planejamento'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/em-delay'
     | '/funil'
     | '/hot'
+    | '/joint'
     | '/lembretes'
     | '/onboarding'
     | '/planejamento'
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/_authenticated/em-delay'
     | '/_authenticated/funil'
     | '/_authenticated/hot'
+    | '/_authenticated/joint'
     | '/_authenticated/lembretes'
     | '/_authenticated/onboarding'
     | '/_authenticated/planejamento'
@@ -368,6 +380,13 @@ declare module '@tanstack/react-router' {
       path: '/lembretes'
       fullPath: '/lembretes'
       preLoaderRoute: typeof AuthenticatedLembretesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/joint': {
+      id: '/_authenticated/joint'
+      path: '/joint'
+      fullPath: '/joint'
+      preLoaderRoute: typeof AuthenticatedJointRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/hot': {
@@ -470,6 +489,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEmDelayRoute: typeof AuthenticatedEmDelayRoute
   AuthenticatedFunilRoute: typeof AuthenticatedFunilRoute
   AuthenticatedHotRoute: typeof AuthenticatedHotRoute
+  AuthenticatedJointRoute: typeof AuthenticatedJointRoute
   AuthenticatedLembretesRoute: typeof AuthenticatedLembretesRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPlanejamentoRoute: typeof AuthenticatedPlanejamentoRoute
@@ -492,6 +512,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEmDelayRoute: AuthenticatedEmDelayRoute,
   AuthenticatedFunilRoute: AuthenticatedFunilRoute,
   AuthenticatedHotRoute: AuthenticatedHotRoute,
+  AuthenticatedJointRoute: AuthenticatedJointRoute,
   AuthenticatedLembretesRoute: AuthenticatedLembretesRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPlanejamentoRoute: AuthenticatedPlanejamentoRoute,
