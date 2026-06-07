@@ -336,7 +336,10 @@ function MetricCard({ label, value, dot }: { label: string; value: number; dot: 
 }
 
 // ---------- Grids ----------
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
+// Faixa horária visível da agenda (Semana/Dia): 05:00 até 21:00.
+const START_HOUR = 5;
+const END_HOUR = 21;
+const HOURS = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => i + START_HOUR);
 
 function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight, colWidth }: { from: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; slotHeight: number; colWidth: number }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i));
