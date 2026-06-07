@@ -906,9 +906,29 @@ function EventoSheet({ evento, onClose, onChanged }: { evento: any | null; onClo
   const fim = new Date(evento.fim);
 
   async function excluir() {
+    // Limpa follow-ups e lembretes vinculados ao prospect deste evento para evitar registros órfãos.
+    if (evento.prospect_id) {
+      const ini = new Date(evento.inicio);
+      const fim = new Date(evento.fim);
+      // Janela: 1h antes do início até 24h depois do fim — cobre follow-ups gerados por este evento.
+      const winStart = new Date(ini.getTime() - 60 * 60 * 1000).toISOString();
+      const winEnd = new Date(fim.getTime() + 24 * 60 * 60 * 1000).toISOString();
+      await supabase.from("atividades")
+        .delete()
+        .eq("prospect_id", evento.prospect_id)
+        .not("follow_up_em", "is", null)
+        .gte("follow_up_em", winStart)
+        .lte("follow_up_em", winEnd);
+      const dataStr = format(ini, "yyyy-MM-dd");
+      await supabase.from("lembretes")
+        .delete()
+        .eq("prospect_id", evento.prospect_id)
+        .eq("data", dataStr)
+        .eq("concluido", false);
+    }
     const { error } = await supabase.from("agenda_eventos").delete().eq("id", evento.id);
     if (error) { toast.error(error.message); return; }
-    toast.success("Removido.");
+    toast.success("Removido. Follow-ups e lembretes vinculados também foram limpos.");
     onChanged();
   }
 
