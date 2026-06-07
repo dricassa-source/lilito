@@ -68,8 +68,10 @@ function EmDelay() {
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["em-delay"] });
+    qc.invalidateQueries({ queryKey: ["em-delay-count"] });
     qc.invalidateQueries({ queryKey: ["agenda"] });
   };
+
 
   async function destravar(d: any) {
     await supabase.from("agenda_eventos").update({ delay_resolvido: true }).eq("id", d.id);
