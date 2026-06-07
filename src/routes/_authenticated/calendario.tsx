@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useConsultorScope, applyScope } from "@/hooks/useConsultorScope";
 import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
-import { PageHeader } from "@/components/lilito/PageHeader";
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
