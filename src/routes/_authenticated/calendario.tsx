@@ -102,7 +102,21 @@ function Calendario() {
     window.addEventListener("resize", compute);
     return () => window.removeEventListener("resize", compute);
   }, [isMobile, containerRef]);
-  const colWidth = isMobile && baseCol > 0 ? Math.round(baseCol * scale) : 0;
+  // Width is decoupled from zoom: the 7 days always fit the viewport.
+  // Pinch-to-zoom continues to scale slotHeight (vertical density).
+  const colWidth = isMobile && baseCol > 0 ? baseCol : 0;
+
+  // On mobile, scroll the grid to 05:00 by default so the useful range
+  // (05:00–21:00) is visible first; users can scroll up/down for the rest.
+  const didInitialScrollRef = useRef(false);
+  useEffect(() => {
+    if (!isMobile) return;
+    if (didInitialScrollRef.current) return;
+    const el = containerRef.current;
+    if (!el) return;
+    el.scrollTop = 5 * slotHeight;
+    didInitialScrollRef.current = true;
+  }, [isMobile, slotHeight, containerRef]);
 
   const range = useMemo(() => {
     if (view === "dia") return { from: startOfDay(anchor), to: endOfDay(anchor) };
