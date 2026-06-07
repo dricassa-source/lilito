@@ -170,7 +170,7 @@ function Hot() {
             <p className="caps-tracking text-gold text-center">
               Prospect atual {currentIndex + 1} de {fila!.length}
             </p>
-            <h2 className="font-display text-5xl text-center mt-3">{atual.nome}</h2>
+            <h2 className="font-display text-5xl text-center mt-3 flex items-center justify-center gap-3">{atual.nome} <ScoreStars score={atual.score} className="text-base" /></h2>
             <p className="text-center text-muted-foreground mt-2">
               {atual.especialidade_medica ?? "—"}
             </p>
