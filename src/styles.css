@@ -117,9 +117,10 @@
 
   /* Naturezas de agendamento */
   --nat-ab: oklch(0.82 0.16 90);            /* amarelo */
-  --nat-revisita: oklch(0.65 0.16 245);     /* azul */
+  --nat-revisita: oklch(0.55 0.10 55);      /* marrom */
   --nat-fechamento: oklch(0.70 0.17 150);   /* verde */
   --nat-entrega: oklch(0.70 0.15 310);      /* lilás */
+  --nat-vinca: oklch(0.65 0.16 245);        /* azul Vinca (reuniões internas) */
 
   --chart-1: oklch(0.78 0.13 80);
   --chart-2: oklch(0.65 0.12 85);
