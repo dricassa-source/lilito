@@ -21,6 +21,10 @@ type Item = {
 
 const ETAPAS_DELAY = ["ab", "revisita", "fechamento", "entrega_apolice"];
 
+function etapaDelay(d: any) {
+  return ETAPAS_DELAY.includes(d.tipo) ? d.tipo : d.etapa_origem;
+}
+
 export function NotificacoesBell() {
   const { auth } = useAuth();
   const { scopeIds } = useConsultorScope();
@@ -61,7 +65,7 @@ export function NotificacoesBell() {
 
       const items: Item[] = [];
       (delays.data ?? []).forEach((d: any) => {
-        if (!ETAPAS_DELAY.includes(d.etapa_origem ?? d.tipo)) return;
+        if (!ETAPAS_DELAY.includes(etapaDelay(d))) return;
         if (!ativo(d.prospects)) return;
         items.push({
           id: `delay-${d.id}`, icon: "🚩", group: "Delays",

@@ -18,6 +18,10 @@ import { useEffect } from "react";
 
 const ETAPAS_DELAY = ["ab", "revisita", "fechamento", "entrega_apolice"];
 
+function etapaDelay(d: any) {
+  return ETAPAS_DELAY.includes(d.tipo) ? d.tipo : d.etapa_origem;
+}
+
 function useDelaysCount() {
   const { auth } = useAuth();
   const q = useQuery({
@@ -31,7 +35,7 @@ function useDelaysCount() {
       if (!auth?.isMaster) req = req.eq("consultor_id", auth!.user.id);
       const { data, error } = await req;
       if (error) return 0;
-      return (data ?? []).filter((d: any) => ETAPAS_DELAY.includes(d.etapa_origem ?? d.tipo)).length;
+      return (data ?? []).filter((d: any) => ETAPAS_DELAY.includes(etapaDelay(d))).length;
     },
     refetchInterval: 30_000,
   });
