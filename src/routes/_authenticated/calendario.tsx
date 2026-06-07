@@ -698,6 +698,20 @@ function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?
         </div>
         <div className="space-y-1.5"><Label>Local</Label><Input value={f.local} onChange={(e) => setF({ ...f, local: e.target.value })} /></div>
         <div className="space-y-1.5"><Label>Observações</Label><Textarea rows={2} value={f.observacao} onChange={(e) => setF({ ...f, observacao: e.target.value })} /></div>
+        <div className="border border-border rounded-md p-3 space-y-2 bg-surface-elevated">
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <Checkbox checked={f.is_joint} onCheckedChange={(v) => setF({ ...f, is_joint: !!v, joint_consultor_id: v ? f.joint_consultor_id : "" })} />
+            <span className="font-medium">É Joint Work?</span>
+          </label>
+          {f.is_joint && (
+            <div className="space-y-1.5"><Label>Consultor convidado</Label>
+              <Select value={f.joint_consultor_id} onValueChange={(v) => setF({ ...f, joint_consultor_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+                <SelectContent>{(consultores ?? []).filter((c: any) => c.id !== (f.consultor_id || auth?.user.id)).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
       </div>
       <DialogFooter><Button onClick={save} className="gold-gradient text-background">Salvar</Button></DialogFooter>
     </DialogContent>
