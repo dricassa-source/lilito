@@ -299,6 +299,7 @@ function Hot() {
                           >
                             <Phone className="h-4 w-4" />
                           </Button>
+                          <AdicionarALista prospectId={p.id} listas={listas ?? []} />
                           <Button
                             size="icon" variant="ghost"
                             onClick={(e) => { e.stopPropagation(); removerDaHot(p); }}
@@ -308,6 +309,7 @@ function Hot() {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
+
                       </div>
                     </Card>
                   );
