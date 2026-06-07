@@ -106,6 +106,7 @@ function ResultadoSemanal() {
     <div>
       <PageHeader eyebrow="Operação" title="Resultado Semanal"
         description="Métricas auditáveis — calculadas direto das atividades registradas." />
+      <ConsultorFilter />
 
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <Button variant="outline" size="icon" onClick={() => setWeekOffset((w) => w - 1)}>
@@ -118,20 +119,8 @@ function ResultadoSemanal() {
           <ChevronRight className="h-4 w-4" />
         </Button>
         <Button variant="ghost" size="sm" onClick={() => setWeekOffset(0)}>Esta semana</Button>
-
-        <div className="ml-auto">
-          <Select value={scope} onValueChange={setScope}>
-            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="me">Minha produção</SelectItem>
-              {isMaster && <SelectItem value="unidade">Toda a unidade</SelectItem>}
-              {isMaster && (consultores ?? []).map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
+
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <Stat label="AB Fone (ligações)" value={data?.ab_fone ?? "—"} />
