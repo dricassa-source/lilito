@@ -237,7 +237,7 @@ function Dashboard() {
         </div>
       </Bloco>
 
-      {isMaster && scope === "equipe" && (
+      {mostrarEquipe && (
         <Bloco titulo="Equipe — Ranking">
           <Card className="p-6 bg-surface border-border">
             <Tabs value={rankBy} onValueChange={(v) => setRankBy(v as any)} className="mb-4">
