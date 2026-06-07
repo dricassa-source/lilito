@@ -2,11 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultorScope } from "@/hooks/useConsultorScope";
+import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMemo, useState } from "react";
-import { startOfWeek, endOfWeek, addWeeks, subWeeks, format } from "date-fns";
+import { startOfWeek, endOfWeek, addWeeks, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
@@ -16,13 +17,13 @@ export const Route = createFileRoute("/_authenticated/resultado-semanal")({
   component: ResultadoSemanal,
 });
 
+
 function formatBRL(n: number) { return `R$ ${Math.round(n).toLocaleString("pt-BR")}`; }
 
 function ResultadoSemanal() {
   const { auth } = useAuth();
-  const isMaster = auth?.isMaster ?? false;
+  const { scopeIds } = useConsultorScope();
   const [weekOffset, setWeekOffset] = useState(0);
-  const [scope, setScope] = useState<string>(isMaster ? "unidade" : "me");
 
   const { start, end, nextStart, nextEnd } = useMemo(() => {
     const base = addWeeks(new Date(), weekOffset);
@@ -34,31 +35,13 @@ function ResultadoSemanal() {
     };
   }, [weekOffset]);
 
-  const { data: consultores } = useQuery({
-    queryKey: ["consultores-list"],
-    enabled: !!auth && isMaster,
-    queryFn: async () => {
-      const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "consultor");
-      const ids = (roles ?? []).map((r) => r.user_id);
-      if (!ids.length) return [];
-      const { data } = await supabase.from("profiles").select("id,nome").in("id", ids);
-      return (data ?? []) as { id: string; nome: string }[];
-    },
-  });
-
-  const consultorFilter = !auth ? []
-    : scope === "me" ? [auth.user.id]
-    : scope === "unidade" ? (consultores ?? []).map((c) => c.id).concat(auth.user.id)
-    : [scope];
-
   const { data } = useQuery({
-    queryKey: ["resultado-semanal", start.toISOString(), scope, auth?.user.id],
-    enabled: !!auth,
+    queryKey: ["resultado-semanal", start.toISOString(), scopeIds.join(",")],
+    enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
       const startISO = start.toISOString(), endISO = end.toISOString();
       const nextStartISO = nextStart.toISOString(), nextEndISO = nextEnd.toISOString();
-
-      const ids = consultorFilter.length ? consultorFilter : [auth!.user.id];
+      const ids = scopeIds;
 
       const [eventos, ativ, apolices, recs, eventosProx] = await Promise.all([
         supabase.from("agenda_eventos").select("tipo,resultado,inicio,consultor_id")
@@ -74,6 +57,7 @@ function ResultadoSemanal() {
         supabase.from("agenda_eventos").select("tipo,inicio,consultor_id")
           .in("consultor_id", ids).gte("inicio", nextStartISO).lte("inicio", nextEndISO),
       ]);
+
 
       const ev = eventos.data ?? [];
       const ab_fone = (ativ.data ?? []).filter((a) => a.tipo === "ligacao").length;
