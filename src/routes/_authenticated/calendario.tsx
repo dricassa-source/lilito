@@ -18,7 +18,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { CalendarPlus, BellPlus, Ban, ChevronLeft, ChevronRight, Repeat, Flag, Bell } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScoreStars } from "@/components/lilito/ScoreStars";
+
 import { toast } from "sonner";
 import {
   format, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks,
