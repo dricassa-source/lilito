@@ -244,9 +244,9 @@ function Calendario() {
         </div>
       </div>
 
-      {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventos ?? []} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
-      {view === "dia" && <DayGrid day={anchor} eventos={eventos ?? []} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
-      {view === "mes" && <MonthGrid anchor={anchor} eventos={eventos ?? []} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
+      {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
+      {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
+      {view === "mes" && <MonthGrid anchor={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
 
       <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
         <MetricCard label="ABs da semana" value={counts.ab} dot={NATUREZA_COLOR.ab.dot} />
@@ -268,6 +268,11 @@ function Calendario() {
       {dialog === "bloqueio" && (
         <Dialog open onOpenChange={(o) => !o && setDialog(null)}>
           <NovoBloqueio onClose={() => { setDialog(null); invalidateAll(); }} />
+        </Dialog>
+      )}
+      {dialog === "recorrente" && (
+        <Dialog open onOpenChange={(o) => !o && setDialog(null)}>
+          <NovoRecorrente onClose={() => { setDialog(null); invalidateAll(); }} />
         </Dialog>
       )}
 
