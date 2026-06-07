@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useConsultorScope, applyScope } from "@/hooks/useConsultorScope";
@@ -87,7 +87,22 @@ function Calendario() {
   const [view, setView] = useState<View>("semana");
   const [anchor, setAnchor] = useState<Date>(new Date());
   const isMobile = useIsMobile();
-  const { slotHeight, containerRef } = useCalendarZoom(isMobile ? 22 : 48);
+  const baseSlot = isMobile ? 22 : 48;
+  const { slotHeight, containerRef } = useCalendarZoom(baseSlot);
+  const scale = slotHeight / baseSlot;
+  const [baseCol, setBaseCol] = useState<number>(48);
+  useEffect(() => {
+    if (!isMobile) { setBaseCol(0); return; }
+    const compute = () => {
+      const w = containerRef.current?.clientWidth ?? window.innerWidth;
+      // 26px gutter + 7 day columns; leave 2px buffer
+      setBaseCol(Math.max(40, Math.floor((w - 28) / 7)));
+    };
+    compute();
+    window.addEventListener("resize", compute);
+    return () => window.removeEventListener("resize", compute);
+  }, [isMobile, containerRef]);
+  const colWidth = isMobile && baseCol > 0 ? Math.round(baseCol * scale) : 0;
 
   const range = useMemo(() => {
     if (view === "dia") return { from: startOfDay(anchor), to: endOfDay(anchor) };
@@ -241,7 +256,7 @@ function Calendario() {
       <p className="caps-tracking text-gold mb-2 sm:hidden">{periodoLabel}</p>
 
       <div ref={containerRef} className="overflow-auto max-h-[calc(100vh-200px)]" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}>
-        {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} slotHeight={slotHeight} />}
+        {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} slotHeight={slotHeight} colWidth={colWidth} />}
         {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} slotHeight={slotHeight} />}
         {view === "mes" && <MonthGrid anchor={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
       </div>
@@ -298,12 +313,23 @@ function MetricCard({ label, value, dot }: { label: string; value: number; dot: 
 // ---------- Grids ----------
 const HOURS = Array.from({ length: 23 }, (_, i) => i + 1);
 
-function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight }: { from: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; slotHeight: number }) {
+function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight, colWidth }: { from: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; slotHeight: number; colWidth: number }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i));
+  const useFixed = colWidth > 0;
+  const gutter = useFixed ? 26 : 0;
+  const gridStyle = useFixed
+    ? { gridTemplateColumns: `${gutter}px repeat(7, ${colWidth}px)`, width: gutter + 7 * colWidth }
+    : undefined;
+  const gridClass = useFixed
+    ? "grid border-b border-border"
+    : "grid grid-cols-[26px_repeat(7,minmax(86px,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))] border-b border-border";
+  const bodyClass = useFixed
+    ? "grid"
+    : "grid grid-cols-[26px_repeat(7,minmax(86px,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))]";
   return (
     <Card className="bg-surface border-border overflow-hidden">
-      <div className="min-w-[640px] sm:min-w-0">
-      <div className="grid grid-cols-[26px_repeat(7,minmax(86px,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))] border-b border-border">
+      <div className={useFixed ? "" : "min-w-[640px] sm:min-w-0"} style={useFixed ? { width: gutter + 7 * colWidth } : undefined}>
+      <div className={gridClass} style={gridStyle}>
         <div />
         {days.map((d) => {
           const today = isSameDay(d, new Date());
@@ -320,7 +346,7 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight }: { from: Da
           );
         })}
       </div>
-      <div className="grid grid-cols-[26px_repeat(7,minmax(86px,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))]">
+      <div className={bodyClass} style={gridStyle}>
         <div>
           {HOURS.map((h) => (
             <div key={h} className="border-b border-border text-right pr-0.5 sm:pr-1 text-[9px] sm:text-[10px] text-muted-foreground leading-none pt-0.5" style={{ height: slotHeight }}>
