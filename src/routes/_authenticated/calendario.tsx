@@ -313,12 +313,23 @@ function MetricCard({ label, value, dot }: { label: string; value: number; dot: 
 // ---------- Grids ----------
 const HOURS = Array.from({ length: 23 }, (_, i) => i + 1);
 
-function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight }: { from: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; slotHeight: number }) {
+function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight, colWidth }: { from: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; slotHeight: number; colWidth: number }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i));
+  const useFixed = colWidth > 0;
+  const gutter = useFixed ? 26 : 0;
+  const gridStyle = useFixed
+    ? { gridTemplateColumns: `${gutter}px repeat(7, ${colWidth}px)`, width: gutter + 7 * colWidth }
+    : undefined;
+  const gridClass = useFixed
+    ? "grid border-b border-border"
+    : "grid grid-cols-[26px_repeat(7,minmax(86px,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))] border-b border-border";
+  const bodyClass = useFixed
+    ? "grid"
+    : "grid grid-cols-[26px_repeat(7,minmax(86px,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))]";
   return (
     <Card className="bg-surface border-border overflow-hidden">
-      <div className="min-w-[640px] sm:min-w-0">
-      <div className="grid grid-cols-[26px_repeat(7,minmax(86px,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))] border-b border-border">
+      <div className={useFixed ? "" : "min-w-[640px] sm:min-w-0"} style={useFixed ? { width: gutter + 7 * colWidth } : undefined}>
+      <div className={gridClass} style={gridStyle}>
         <div />
         {days.map((d) => {
           const today = isSameDay(d, new Date());
@@ -335,7 +346,7 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight }: { from: Da
           );
         })}
       </div>
-      <div className="grid grid-cols-[26px_repeat(7,minmax(86px,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))]">
+      <div className={bodyClass} style={gridStyle}>
         <div>
           {HOURS.map((h) => (
             <div key={h} className="border-b border-border text-right pr-0.5 sm:pr-1 text-[9px] sm:text-[10px] text-muted-foreground leading-none pt-0.5" style={{ height: slotHeight }}>
