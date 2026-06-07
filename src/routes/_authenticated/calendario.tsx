@@ -361,7 +361,7 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
       type="button"
       onClick={() => !isRecorrente && onSelect(e)}
       className={cn(
-        "absolute left-0.5 right-0.5 rounded-md border px-1.5 py-1 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
+        "absolute left-px right-px rounded-[3px] border px-1 py-0.5 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
         c.bg, c.border,
         delayAtivo && "border-destructive",
         isRecorrente && "cursor-default",
@@ -370,11 +370,12 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
       title={`${nomeCompleto} — ${TIPO_LABEL[e.tipo] ?? e.tipo}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
     >
       {delayAtivo && (
-        <span className="absolute top-0.5 left-0.5 z-10 text-[10px] leading-none select-none" aria-label="Delay">🚩</span>
+        <span className="absolute top-0 left-0.5 z-10 text-[9px] leading-none select-none" aria-label="Delay">🚩</span>
       )}
-      <p className={cn("text-[13px] font-semibold leading-tight truncate", c.text, delayAtivo && "pl-3")}>
+      <p className={cn("text-[12px] sm:text-[13px] font-medium leading-tight truncate", c.text, delayAtivo && "pl-2.5")}>
         {primeiroNome}
       </p>
+
     </button>
   );
 }
