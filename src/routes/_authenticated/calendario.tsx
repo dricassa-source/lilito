@@ -106,25 +106,8 @@ function Calendario() {
   // Pinch-to-zoom continues to scale slotHeight (vertical density).
   const colWidth = isMobile && baseCol > 0 ? baseCol : 0;
 
-  // Default vertical scroll posiciona em 05:00 (faixa útil 05–21).
-  // Horários fora da faixa continuam acessíveis por scroll vertical.
-  const scrolledForViewRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (view !== "semana" && view !== "dia") return;
-    if (scrolledForViewRef.current === view) return;
-    const el = containerRef.current;
-    if (!el) return;
-    const apply = () => {
-      el.scrollTop = 5 * slotHeight;
-      scrolledForViewRef.current = view;
-    };
-    // Aguarda o layout estabilizar antes de aplicar o scroll inicial.
-    requestAnimationFrame(() => requestAnimationFrame(apply));
-  }, [view, slotHeight, containerRef]);
-  // Reset quando trocar de visualização para reaplicar 05:00 ao voltar.
-  useEffect(() => {
-    return () => { scrolledForViewRef.current = null; };
-  }, [view]);
+  // A grade já começa em START_HOUR (05:00), portanto nenhum scroll inicial é necessário.
+
 
   const range = useMemo(() => {
     if (view === "dia") return { from: startOfDay(anchor), to: endOfDay(anchor) };
@@ -336,7 +319,10 @@ function MetricCard({ label, value, dot }: { label: string; value: number; dot: 
 }
 
 // ---------- Grids ----------
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
+// Faixa horária visível da agenda (Semana/Dia): 05:00 até 21:00.
+const START_HOUR = 5;
+const END_HOUR = 21;
+const HOURS = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => i + START_HOUR);
 
 function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight, colWidth }: { from: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; slotHeight: number; colWidth: number }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i));
@@ -375,7 +361,7 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight, colWidth }: 
         <div>
           {HOURS.map((h) => (
             <div key={h} className="border-b border-border text-right pr-0.5 sm:pr-1 text-[9px] sm:text-[10px] text-muted-foreground leading-none pt-0.5" style={{ height: slotHeight }}>
-              {String(h).padStart(2, "0")}
+              {`${String(h).padStart(2, "0")}:00`}
             </div>
           ))}
         </div>
