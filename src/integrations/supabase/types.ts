@@ -19,14 +19,20 @@ export type Database = {
           cliente_id: string | null
           consultor_id: string
           created_at: string
+          delay_em: string | null
+          delay_motivo: string | null
+          delay_resolvido: boolean
+          etapa_origem: string | null
           fim: string
           id: string
           inicio: string
+          joint_consultor_id: string | null
           joint_master_id: string | null
           joint_status: Database["public"]["Enums"]["joint_status"]
           local: string | null
           observacao: string | null
           prospect_id: string | null
+          recorrencia_id: string | null
           resultado: string | null
           status: string
           tipo: Database["public"]["Enums"]["tipo_evento"]
@@ -37,14 +43,20 @@ export type Database = {
           cliente_id?: string | null
           consultor_id: string
           created_at?: string
+          delay_em?: string | null
+          delay_motivo?: string | null
+          delay_resolvido?: boolean
+          etapa_origem?: string | null
           fim: string
           id?: string
           inicio: string
+          joint_consultor_id?: string | null
           joint_master_id?: string | null
           joint_status?: Database["public"]["Enums"]["joint_status"]
           local?: string | null
           observacao?: string | null
           prospect_id?: string | null
+          recorrencia_id?: string | null
           resultado?: string | null
           status?: string
           tipo: Database["public"]["Enums"]["tipo_evento"]
@@ -55,14 +67,20 @@ export type Database = {
           cliente_id?: string | null
           consultor_id?: string
           created_at?: string
+          delay_em?: string | null
+          delay_motivo?: string | null
+          delay_resolvido?: boolean
+          etapa_origem?: string | null
           fim?: string
           id?: string
           inicio?: string
+          joint_consultor_id?: string | null
           joint_master_id?: string | null
           joint_status?: Database["public"]["Enums"]["joint_status"]
           local?: string | null
           observacao?: string | null
           prospect_id?: string | null
+          recorrencia_id?: string | null
           resultado?: string | null
           status?: string
           tipo?: Database["public"]["Enums"]["tipo_evento"]
@@ -75,6 +93,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_eventos_joint_consultor_id_fkey"
+            columns: ["joint_consultor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -354,6 +379,59 @@ export type Database = {
           },
         ]
       }
+      compromissos_recorrentes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          criado_por: string
+          data_inicial: string
+          frequencia: string
+          hora_fim: string
+          hora_inicio: string
+          id: string
+          participantes: string[]
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          criado_por: string
+          data_inicial: string
+          frequencia: string
+          hora_fim: string
+          hora_inicio: string
+          id?: string
+          participantes?: string[]
+          tipo: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          criado_por?: string
+          data_inicial?: string
+          frequencia?: string
+          hora_fim?: string
+          hora_inicio?: string
+          id?: string
+          participantes?: string[]
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compromissos_recorrentes_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       configuracoes: {
         Row: {
           atualizado_por: string | null
@@ -604,6 +682,7 @@ export type Database = {
           id: string
           nome: string
           telefone: string | null
+          unidade: string | null
           updated_at: string
         }
         Insert: {
@@ -614,6 +693,7 @@ export type Database = {
           id: string
           nome?: string
           telefone?: string | null
+          unidade?: string | null
           updated_at?: string
         }
         Update: {
@@ -624,6 +704,7 @@ export type Database = {
           id?: string
           nome?: string
           telefone?: string | null
+          unidade?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -650,6 +731,7 @@ export type Database = {
           patrimonio_estimado: number | null
           quem_recomendou: string | null
           renda_estimada: number | null
+          score: number | null
           score_influencia: number | null
           score_necessidade: number | null
           score_patrimonio: number | null
@@ -680,6 +762,7 @@ export type Database = {
           patrimonio_estimado?: number | null
           quem_recomendou?: string | null
           renda_estimada?: number | null
+          score?: number | null
           score_influencia?: number | null
           score_necessidade?: number | null
           score_patrimonio?: number | null
@@ -710,6 +793,7 @@ export type Database = {
           patrimonio_estimado?: number | null
           quem_recomendou?: string | null
           renda_estimada?: number | null
+          score?: number | null
           score_influencia?: number | null
           score_necessidade?: number | null
           score_patrimonio?: number | null

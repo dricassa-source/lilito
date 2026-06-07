@@ -14,7 +14,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { CalendarPlus, BellPlus, Ban, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarPlus, BellPlus, Ban, ChevronLeft, ChevronRight, Repeat, Flag, Bell } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScoreStars } from "@/components/lilito/ScoreStars";
 import { toast } from "sonner";
 import {
   format, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks,
@@ -32,10 +34,9 @@ export const Route = createFileRoute("/_authenticated/calendario")({
 // Compromissos que contam métricas e bloqueiam agenda
 const TIPOS_COMPROMISSO = [
   { v: "ab", l: "AB" },
-  { v: "fechamento", l: "Fechamento" },
   { v: "revisita", l: "Revisita" },
+  { v: "fechamento", l: "Fechamento" },
   { v: "entrega_apolice", l: "Entrega de Apólice" },
-  { v: "joint_work", l: "Joint Work" },
 ] as const;
 
 const TIPO_LABEL: Record<string, string> = {
@@ -46,7 +47,17 @@ const TIPO_LABEL: Record<string, string> = {
   joint_work: "Joint Work",
   review: "Review",
   bloqueio: "Bloqueio",
+  recorrente: "Recorrente",
 };
+
+const MOTIVOS_DELAY = [
+  "Não Compareceu",
+  "Vai Pensar",
+  "Não Atendeu",
+  "Sem Agenda",
+  "Retornar Futuramente",
+  "Outro",
+] as const;
 
 const NATUREZA_COLOR: Record<string, { bg: string; border: string; text: string; dot: string }> = {
   ab:              { bg: "bg-nat-ab/15",         border: "border-nat-ab/60",         text: "text-nat-ab",         dot: "bg-nat-ab" },
@@ -56,10 +67,11 @@ const NATUREZA_COLOR: Record<string, { bg: string; border: string; text: string;
   joint_work:      { bg: "bg-gold/10",           border: "border-gold/40",           text: "text-gold",           dot: "bg-gold" },
   review:          { bg: "bg-muted",             border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground" },
   bloqueio:        { bg: "bg-muted/60",          border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground" },
+  recorrente:      { bg: "bg-gold/5",            border: "border-gold/30 border-dashed", text: "text-gold/80",     dot: "bg-gold/70" },
 };
 
 type View = "dia" | "semana" | "mes";
-type DialogKind = null | "agendamento" | "lembrete" | "bloqueio";
+type DialogKind = null | "agendamento" | "lembrete" | "bloqueio" | "recorrente";
 
 function Calendario() {
   const { auth } = useAuth();
@@ -87,7 +99,7 @@ function Calendario() {
     enabled: !!auth,
     queryFn: async () => {
       let q = supabase.from("agenda_eventos")
-        .select("*,prospects(id,nome,etapa_funil),clientes(id,nome)")
+        .select("*,prospects(id,nome,etapa_funil,score),clientes(id,nome),joint:joint_consultor_id(id,nome)")
         .gte("inicio", range.from.toISOString())
         .lte("inicio", range.to.toISOString())
         .order("inicio");
@@ -96,6 +108,18 @@ function Calendario() {
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
+    },
+  });
+
+  const { data: recorrentes } = useQuery({
+    queryKey: ["recorrentes", auth?.user.id, consultor],
+    enabled: !!auth,
+    queryFn: async () => {
+      const { data } = await supabase.from("compromissos_recorrentes").select("*").eq("ativo", true);
+      if (!data) return [];
+      if (consultor === "all" || auth?.isMaster) return data;
+      const uid = consultor === "me" ? auth!.user.id : consultor;
+      return data.filter((r: any) => (r.participantes ?? []).includes(uid) || r.criado_por === uid);
     },
   });
 
@@ -151,10 +175,17 @@ function Calendario() {
     : view === "semana" ? `${format(weekRange.from, "dd MMM", { locale: ptBR })} — ${format(weekRange.to, "dd MMM yyyy", { locale: ptBR })}`
     : format(anchor, "MMMM yyyy", { locale: ptBR });
 
+  const eventosComRecorrentes = useMemo(() => {
+    const base = eventos ?? [];
+    const inst = expandirRecorrentes(recorrentes ?? [], range.from, range.to);
+    return [...base, ...inst];
+  }, [eventos, recorrentes, range.from, range.to]);
+
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["agenda"] });
     qc.invalidateQueries({ queryKey: ["agenda-semana"] });
     qc.invalidateQueries({ queryKey: ["lembretes-cal"] });
+    qc.invalidateQueries({ queryKey: ["recorrentes"] });
     qc.invalidateQueries({ queryKey: ["em-delay"] });
     qc.invalidateQueries({ queryKey: ["funil"] });
   };
@@ -176,6 +207,11 @@ function Calendario() {
             <Button variant="outline" onClick={() => setDialog("bloqueio")}>
               <Ban className="h-4 w-4 mr-2" />Bloquear Horário
             </Button>
+            {auth?.isMaster && (
+              <Button variant="outline" onClick={() => setDialog("recorrente")} className="border-gold/40">
+                <Repeat className="h-4 w-4 mr-2" />Compromisso Recorrente
+              </Button>
+            )}
           </div>
         }
       />
@@ -208,9 +244,9 @@ function Calendario() {
         </div>
       </div>
 
-      {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventos ?? []} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
-      {view === "dia" && <DayGrid day={anchor} eventos={eventos ?? []} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
-      {view === "mes" && <MonthGrid anchor={anchor} eventos={eventos ?? []} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
+      {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
+      {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
+      {view === "mes" && <MonthGrid anchor={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
 
       <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
         <MetricCard label="ABs da semana" value={counts.ab} dot={NATUREZA_COLOR.ab.dot} />
@@ -232,6 +268,11 @@ function Calendario() {
       {dialog === "bloqueio" && (
         <Dialog open onOpenChange={(o) => !o && setDialog(null)}>
           <NovoBloqueio onClose={() => { setDialog(null); invalidateAll(); }} />
+        </Dialog>
+      )}
+      {dialog === "recorrente" && (
+        <Dialog open onOpenChange={(o) => !o && setDialog(null)}>
+          <NovoRecorrente onClose={() => { setDialog(null); invalidateAll(); }} />
         </Dialog>
       )}
 
@@ -311,19 +352,31 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
   const height = (durMin / 60) * SLOT_HEIGHT;
   const c = NATUREZA_COLOR[e.tipo] ?? NATUREZA_COLOR.review;
   const nome = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
+  const hasDelay = !!e.delay_em;
+  const delayAtivo = hasDelay && !e.delay_resolvido;
+  const isRecorrente = e.__recorrente === true;
   return (
     <button
       type="button"
-      onClick={() => onSelect(e)}
+      onClick={() => !isRecorrente && onSelect(e)}
       className={cn(
         "absolute left-1 right-1 rounded-md border px-2 py-1 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer",
         c.bg, c.border,
+        hasDelay && "border-2 border-destructive",
+        isRecorrente && "cursor-default",
       )}
       style={{ top, height }}
-      title={`${nome} — ${TIPO_LABEL[e.tipo] ?? e.tipo}`}
+      title={`${nome} — ${TIPO_LABEL[e.tipo] ?? e.tipo}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
     >
-      <p className={cn("text-xs font-medium truncate", c.text)}>{format(start, "HH:mm")} {nome}</p>
-      <p className="text-[10px] text-muted-foreground caps-tracking truncate">{TIPO_LABEL[e.tipo] ?? e.tipo}</p>
+      {delayAtivo && <Flag className="absolute top-0.5 right-0.5 h-3 w-3 text-destructive fill-destructive" />}
+      <p className={cn("text-xs font-medium truncate flex items-center gap-1", c.text)}>
+        {format(start, "HH:mm")} {nome}
+        {e.prospects?.score ? <ScoreStars score={e.prospects.score} /> : null}
+      </p>
+      <p className="text-[10px] text-muted-foreground caps-tracking truncate">
+        {TIPO_LABEL[e.tipo] ?? e.tipo}
+        {e.joint?.nome ? ` · Joint c/ ${e.joint.nome}` : ""}
+      </p>
     </button>
   );
 }
@@ -333,8 +386,9 @@ function DayLembretes({ lembretes }: { lembretes: any[] }) {
   return (
     <div className="mt-1.5 space-y-0.5">
       {lembretes.slice(0, 2).map((l) => (
-        <div key={l.id} className="text-[10px] text-gold/80 truncate" title={l.titulo}>
-          • {l.hora ? l.hora.slice(0, 5) : ""} {l.titulo}
+        <div key={l.id} className="text-[10px] text-gold/80 truncate inline-flex items-center gap-1" title={l.titulo}>
+          <Bell className="h-2.5 w-2.5 shrink-0" />
+          <span className="truncate">{l.hora ? l.hora.slice(0, 5) + " " : ""}{l.titulo}</span>
         </div>
       ))}
       {lembretes.length > 2 && <div className="text-[10px] text-muted-foreground">+{lembretes.length - 2}</div>}
@@ -429,7 +483,137 @@ async function temConflito(consultorId: string, inicioISO: string, fimISO: strin
   return (data ?? []).length > 0;
 }
 
-// ---------- Novo Agendamento ----------
+// ---------- Expand recorrentes para instâncias no range visível ----------
+function expandirRecorrentes(recs: any[], from: Date, to: Date): any[] {
+  const out: any[] = [];
+  for (const r of recs) {
+    const inicial = new Date(r.data_inicial + "T00:00:00");
+    const step = r.frequencia === "mensal" ? 28 : r.frequencia === "quinzenal" ? 14 : 7;
+    let cursor = new Date(inicial);
+    // avança até a janela
+    while (cursor < from) cursor = new Date(cursor.getTime() + step * 86_400_000);
+    while (cursor <= to) {
+      const [h1, m1] = String(r.hora_inicio).split(":").map(Number);
+      const [h2, m2] = String(r.hora_fim).split(":").map(Number);
+      const ini = new Date(cursor); ini.setHours(h1, m1 || 0, 0, 0);
+      const fim = new Date(cursor); fim.setHours(h2, m2 || 0, 0, 0);
+      out.push({
+        id: `rec-${r.id}-${ini.toISOString()}`,
+        __recorrente: true,
+        recorrencia_id: r.id,
+        tipo: "recorrente",
+        titulo: r.titulo,
+        inicio: ini.toISOString(),
+        fim: fim.toISOString(),
+        prospects: null,
+        clientes: null,
+      });
+      cursor = new Date(cursor.getTime() + step * 86_400_000);
+    }
+  }
+  return out;
+}
+
+// ---------- Novo Compromisso Recorrente ----------
+function NovoRecorrente({ onClose }: { onClose: () => void }) {
+  const { auth } = useAuth();
+  const [f, setF] = useState({
+    titulo: "",
+    tipo: "reuniao_unidade",
+    data_inicial: "",
+    hora_inicio: "08:00",
+    hora_fim: "09:00",
+    frequencia: "semanal",
+    participantes: [] as string[],
+  });
+  const { data: consultores } = useQuery({
+    queryKey: ["consultores-ativos"], enabled: !!auth,
+    queryFn: async () => (await supabase.from("profiles").select("id,nome").eq("ativo", true).order("nome")).data ?? [],
+  });
+
+  function toggleParticipante(id: string) {
+    setF((prev) => ({
+      ...prev,
+      participantes: prev.participantes.includes(id)
+        ? prev.participantes.filter((p) => p !== id)
+        : [...prev.participantes, id],
+    }));
+  }
+
+  async function save() {
+    if (!auth) return;
+    if (!f.titulo || !f.data_inicial) { toast.error("Título e data inicial são obrigatórios."); return; }
+    const { error } = await supabase.from("compromissos_recorrentes").insert({
+      titulo: f.titulo,
+      tipo: f.tipo,
+      data_inicial: f.data_inicial,
+      hora_inicio: f.hora_inicio,
+      hora_fim: f.hora_fim,
+      frequencia: f.frequencia,
+      participantes: f.participantes,
+      criado_por: auth.user.id,
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Compromisso recorrente criado.");
+    onClose();
+  }
+
+  return (
+    <DialogContent className="bg-surface border-border max-w-lg">
+      <DialogHeader>
+        <DialogTitle className="font-display text-2xl flex items-center gap-2"><Repeat className="h-5 w-5 text-gold" />Compromisso Recorrente</DialogTitle>
+        <p className="text-xs text-muted-foreground">Aparece automaticamente nos calendários dos participantes.</p>
+      </DialogHeader>
+      <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+        <div className="space-y-1.5"><Label>Título</Label>
+          <Input value={f.titulo} onChange={(e) => setF({ ...f, titulo: e.target.value })} placeholder="Ex.: Reunião Vinca" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5"><Label>Tipo</Label>
+            <Select value={f.tipo} onValueChange={(v) => setF({ ...f, tipo: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="reuniao_unidade">Reunião Unidade</SelectItem>
+                <SelectItem value="treinamento">Treinamento</SelectItem>
+                <SelectItem value="rote">Rote</SelectItem>
+                <SelectItem value="ab_fone">AB Fone</SelectItem>
+                <SelectItem value="outro">Outro</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5"><Label>Frequência</Label>
+            <Select value={f.frequencia} onValueChange={(v) => setF({ ...f, frequencia: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="semanal">Semanal</SelectItem>
+                <SelectItem value="quinzenal">Quinzenal</SelectItem>
+                <SelectItem value="mensal">Mensal</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-1.5"><Label>Data inicial</Label><Input type="date" value={f.data_inicial} onChange={(e) => setF({ ...f, data_inicial: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>Hora início</Label><Input type="time" value={f.hora_inicio} onChange={(e) => setF({ ...f, hora_inicio: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>Hora fim</Label><Input type="time" value={f.hora_fim} onChange={(e) => setF({ ...f, hora_fim: e.target.value })} /></div>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Participantes</Label>
+          <div className="border border-border rounded-md p-2 max-h-40 overflow-y-auto space-y-1">
+            {(consultores ?? []).map((c: any) => (
+              <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-surface-elevated rounded px-2 py-1">
+                <Checkbox checked={f.participantes.includes(c.id)} onCheckedChange={() => toggleParticipante(c.id)} />
+                {c.nome}
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+      <DialogFooter><Button onClick={save} className="gold-gradient text-background">Criar Recorrente</Button></DialogFooter>
+    </DialogContent>
+  );
+}
+
 function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?: Partial<any> }) {
   const { auth } = useAuth();
   const [f, setF] = useState({
@@ -440,6 +624,8 @@ function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?
     fim: defaults?.fim ?? "",
     local: "",
     observacao: "",
+    is_joint: false,
+    joint_consultor_id: "",
   });
 
   const { data: prospects } = useQuery({
@@ -447,7 +633,7 @@ function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?
     queryFn: async () => (await supabase.from("prospects").select("id,nome").order("nome")).data ?? [],
   });
   const { data: consultores } = useQuery({
-    queryKey: ["consultores-all"], enabled: !!auth?.isMaster,
+    queryKey: ["consultores-all"], enabled: !!auth,
     queryFn: async () => (await supabase.from("profiles").select("id,nome").eq("ativo", true).order("nome")).data ?? [],
   });
 
@@ -468,10 +654,12 @@ function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?
       consultor_id: consultorId,
       prospect_id: f.prospect_id,
       tipo: f.tipo as any,
-      titulo: `${TIPO_LABEL[f.tipo]} — ${nome}`,
+      titulo: `${TIPO_LABEL[f.tipo]} — ${nome}${f.is_joint && f.joint_consultor_id ? " (Joint)" : ""}`,
       inicio, fim,
       local: f.local || null,
       observacao: f.observacao || null,
+      joint_consultor_id: f.is_joint && f.joint_consultor_id ? f.joint_consultor_id : null,
+      joint_status: f.is_joint && f.joint_consultor_id ? "pendente" as any : "nenhum" as any,
     });
     if (error) { toast.error(error.message); return; }
     toast.success("Agendamento criado.");
@@ -510,6 +698,20 @@ function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?
         </div>
         <div className="space-y-1.5"><Label>Local</Label><Input value={f.local} onChange={(e) => setF({ ...f, local: e.target.value })} /></div>
         <div className="space-y-1.5"><Label>Observações</Label><Textarea rows={2} value={f.observacao} onChange={(e) => setF({ ...f, observacao: e.target.value })} /></div>
+        <div className="border border-border rounded-md p-3 space-y-2 bg-surface-elevated">
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <Checkbox checked={f.is_joint} onCheckedChange={(v) => setF({ ...f, is_joint: !!v, joint_consultor_id: v ? f.joint_consultor_id : "" })} />
+            <span className="font-medium">É Joint Work?</span>
+          </label>
+          {f.is_joint && (
+            <div className="space-y-1.5"><Label>Consultor convidado</Label>
+              <Select value={f.joint_consultor_id} onValueChange={(v) => setF({ ...f, joint_consultor_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+                <SelectContent>{(consultores ?? []).filter((c: any) => c.id !== (f.consultor_id || auth?.user.id)).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
       </div>
       <DialogFooter><Button onClick={save} className="gold-gradient text-background">Salvar</Button></DialogFooter>
     </DialogContent>
@@ -660,6 +862,12 @@ function EventoSheet({ evento, onClose, onChanged }: { evento: any | null; onClo
             {evento.status && (
               <p><span className="caps-tracking text-muted-foreground">Status: </span>{evento.status}</p>
             )}
+            {evento.delay_motivo && (
+              <p className="text-destructive"><span className="caps-tracking">Delay: </span>{evento.delay_motivo}{evento.delay_resolvido ? " (resolvido)" : ""}</p>
+            )}
+            {evento.joint?.nome && (
+              <p><span className="caps-tracking text-muted-foreground">Joint Work: </span>{evento.joint.nome}</p>
+            )}
           </div>
 
           {!isBloqueio && !evento.resultado && (
@@ -670,8 +878,7 @@ function EventoSheet({ evento, onClose, onChanged }: { evento: any | null; onClo
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="outline" onClick={() => setMode("agendar_fechamento")}>Agendar Fechamento</Button>
                   <Button variant="outline" onClick={() => setMode("agendar_revisita")}>Agendar Revisita</Button>
-                  <Button variant="outline" onClick={() => setMode("delay")}>Marcar Delay</Button>
-                  <Button variant="outline" onClick={() => marcarResultado(evento, "no_show", { status: "no_show" }).then(onChanged)}>No Show</Button>
+                  <Button variant="outline" className="col-span-2 border-destructive/40 text-destructive hover:text-destructive" onClick={() => setMode("delay")}><Flag className="h-3 w-3 mr-1" />Marcar Delay</Button>
                   <Button variant="outline" className="col-span-2" onClick={() => marcarSemInteresse(evento).then(onChanged)}>Sem Interesse</Button>
                 </div>
               )}
@@ -680,23 +887,21 @@ function EventoSheet({ evento, onClose, onChanged }: { evento: any | null; onClo
                   <Button className="gold-gradient text-background col-span-2" onClick={() => setMode("proposta_fechada")}>Proposta Fechada</Button>
                   <Button variant="outline" onClick={() => marcarF2(evento).then(onChanged)}>F2 (Vai Pensar)</Button>
                   <Button variant="outline" onClick={() => setMode("agendar_revisita")}>Agendar Revisita</Button>
-                  <Button variant="outline" onClick={() => setMode("delay")}>Delay</Button>
-                  <Button variant="outline" onClick={() => marcarResultado(evento, "no_show", { status: "no_show" }).then(onChanged)}>No Show</Button>
+                  <Button variant="outline" className="col-span-2 border-destructive/40 text-destructive hover:text-destructive" onClick={() => setMode("delay")}><Flag className="h-3 w-3 mr-1" />Marcar Delay</Button>
                 </div>
               )}
               {evento.tipo === "entrega_apolice" && (
                 <div className="grid grid-cols-1 gap-2">
                   <Button className="gold-gradient text-background" onClick={() => marcarEntregue(evento).then(onChanged)}>Entregue</Button>
                   <Button variant="outline" onClick={() => setMode("agendar_revisita")}>Reagendar</Button>
-                  <Button variant="outline" onClick={() => marcarResultado(evento, "nao_compareceu", { status: "no_show" }).then(onChanged)}>Não Compareceu</Button>
+                  <Button variant="outline" className="border-destructive/40 text-destructive hover:text-destructive" onClick={() => setMode("delay")}><Flag className="h-3 w-3 mr-1" />Marcar Delay</Button>
                 </div>
               )}
               {(evento.tipo === "revisita" || evento.tipo === "joint_work") && (
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="outline" onClick={() => marcarResultado(evento, "realizado", { status: "realizado" }).then(onChanged)}>Realizado</Button>
                   <Button variant="outline" onClick={() => setMode("agendar_fechamento")}>Agendar Fechamento</Button>
-                  <Button variant="outline" onClick={() => setMode("delay")}>Delay</Button>
-                  <Button variant="outline" onClick={() => marcarResultado(evento, "no_show", { status: "no_show" }).then(onChanged)}>No Show</Button>
+                  <Button variant="outline" className="col-span-2 border-destructive/40 text-destructive hover:text-destructive" onClick={() => setMode("delay")}><Flag className="h-3 w-3 mr-1" />Marcar Delay</Button>
                 </div>
               )}
             </>
@@ -815,38 +1020,73 @@ async function marcarEntregue(evento: any) {
 }
 
 function DelayForm({ evento, onClose }: { evento: any; onClose: () => void }) {
-  const [motivo, setMotivo] = useState("");
+  const [motivo, setMotivo] = useState<string>(MOTIVOS_DELAY[0]);
+  const [outro, setOutro] = useState("");
   const [proxima, setProxima] = useState("");
 
   async function save() {
-    if (!motivo.trim()) { toast.error("Informe o motivo."); return; }
-    await marcarResultado(evento, "delay", { status: "realizado" });
+    const motivoFinal = motivo === "Outro" ? outro.trim() : motivo;
+    if (!motivoFinal) { toast.error("Informe o motivo do Delay."); return; }
+
+    // Buscar etapa atual do prospect para snapshot
+    let etapaOrigem: string | null = evento.prospects?.etapa_funil ?? evento.tipo ?? null;
+    if (evento.prospect_id && !etapaOrigem) {
+      const { data } = await supabase.from("prospects").select("etapa_funil").eq("id", evento.prospect_id).maybeSingle();
+      etapaOrigem = data?.etapa_funil ?? null;
+    }
+
+    // Atualiza o evento original (não some — borda vermelha + bandeira)
+    const { error: upErr } = await supabase.from("agenda_eventos").update({
+      resultado: "delay",
+      delay_motivo: motivoFinal,
+      delay_em: new Date().toISOString(),
+      delay_resolvido: false,
+      etapa_origem: etapaOrigem,
+    }).eq("id", evento.id);
+    if (upErr) { toast.error(upErr.message); return; }
+
     if (evento.prospect_id) {
       await supabase.from("atividades").insert({
         consultor_id: evento.consultor_id,
         prospect_id: evento.prospect_id,
-        tipo: (evento.tipo === "ab" ? "ab" : evento.tipo === "fechamento" ? "fechamento" : "revisita") as any,
+        tipo: (evento.tipo === "ab" ? "ab" : evento.tipo === "fechamento" ? "fechamento" : evento.tipo === "entrega_apolice" ? "entrega_apolice" : "revisita") as any,
         resultado: "delay",
-        observacao: motivo,
+        observacao: motivoFinal,
         follow_up_em: proxima ? new Date(proxima).toISOString() : null,
       });
-      // Marca como travado: backdate entrou_etapa_em para acionar Em Delay
       await supabase.from("prospects").update({
-        entrou_etapa_em: new Date(Date.now() - 30 * 86_400_000).toISOString(),
+        ultima_interacao: new Date().toISOString(),
       }).eq("id", evento.prospect_id);
     }
-    toast.success("Delay registrado.");
+    toast.success("Delay registrado. Prospect movido para Em Delay.");
     onClose();
   }
 
   return (
     <DialogContent className="bg-surface border-border max-w-md">
-      <DialogHeader><DialogTitle className="font-display text-2xl">Marcar Delay</DialogTitle></DialogHeader>
+      <DialogHeader>
+        <DialogTitle className="font-display text-2xl flex items-center gap-2"><Flag className="h-5 w-5 text-destructive" />Marcar Delay</DialogTitle>
+        <p className="text-xs text-muted-foreground">O compromisso permanece visível no calendário com borda vermelha para auditoria.</p>
+      </DialogHeader>
       <div className="space-y-3">
-        <div className="space-y-1.5"><Label>Motivo</Label><Textarea rows={3} value={motivo} onChange={(e) => setMotivo(e.target.value)} /></div>
-        <div className="space-y-1.5"><Label>Próxima ação (data)</Label><Input type="datetime-local" value={proxima} onChange={(e) => setProxima(e.target.value)} /></div>
+        <div className="space-y-1.5"><Label>Motivo do Delay <span className="text-destructive">*</span></Label>
+          <Select value={motivo} onValueChange={setMotivo}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {MOTIVOS_DELAY.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        {motivo === "Outro" && (
+          <div className="space-y-1.5"><Label>Descrever motivo</Label>
+            <Textarea rows={2} value={outro} onChange={(e) => setOutro(e.target.value)} />
+          </div>
+        )}
+        <div className="space-y-1.5"><Label>Próxima ação (data/hora) — opcional</Label>
+          <Input type="datetime-local" value={proxima} onChange={(e) => setProxima(e.target.value)} />
+        </div>
       </div>
-      <DialogFooter><Button onClick={save} className="gold-gradient text-background">Confirmar Delay</Button></DialogFooter>
+      <DialogFooter><Button onClick={save} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">Confirmar Delay</Button></DialogFooter>
     </DialogContent>
   );
 }

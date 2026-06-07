@@ -1,92 +1,114 @@
 
-# LILITO — Plataforma Oficial da VINCA (Fase 1 + preparação 1.1)
+# Correção Global 02 — Plano de Implementação
 
-CRM proprietário com backend real (Lovable Cloud), identidade visual premium (preto/grafite/dourado) e separação rigorosa entre Master (Adriana Gomes) e Consultor. A Fase 1 entrega a plataforma completa; a arquitetura do módulo de Análise de Apólices já é preparada para a IA da Fase 1.1.
+Sem reconstruir módulos. Apenas ajustes cirúrgicos preservando o layout atual.
 
-## Identidade visual
+## 1. Mudanças de Schema (migration única)
 
-- Paleta: preto #0A0A0A predominante, grafite #1A1A1F / #2A2A30, branco off #F5F5F2, dourado metálico #C8A24B com variação clara #E6C77A para hover/realce.
-- Tipografia: display serifada elegante (Cormorant ou Playfair) para títulos + sans corporativa (Inter) para corpo. Pequenos capitulares dourados em headers de módulo.
-- Componentes: cartões com borda 1px grafite, sombras profundas e suaves, divisores em hairline dourada, ícones lineares finos (lucide stroke 1.25), microinterações discretas.
-- Referência sensorial: BMW / MetLife / private banking. Densidade controlada, generoso respiro, sensação de "cockpit executivo".
+Tabela `agenda_eventos`:
+- `delay_motivo TEXT` (null)
+- `delay_em TIMESTAMPTZ` (null)
+- `delay_resolvido BOOLEAN DEFAULT false`
+- `etapa_origem TEXT` (snapshot da etapa do prospect no momento do delay)
+- `joint_consultor_id UUID REFERENCES profiles(id)` (null)
+- `recorrencia_id UUID` (null — agrupa instâncias de um recorrente)
 
-## Backend (Lovable Cloud)
+Tabela nova `compromissos_recorrentes`:
+- `id, titulo, tipo (reuniao_unidade|treinamento|rote|ab_fone|outro)`
+- `data_inicial DATE, hora_inicio TIME, hora_fim TIME`
+- `frequencia (semanal|quinzenal|mensal)`
+- `participantes UUID[]` (profiles)
+- `criado_por, created_at, updated_at`
+- RLS: master cria/edita; participantes leem.
 
-**Enum & roles**
-- `app_role`: `master` | `consultor`
-- `user_roles` + função `has_role(uuid, app_role)` SECURITY DEFINER.
+Tabela `prospects`:
+- `score SMALLINT` (1–5, calculado)
+- Função `calcular_score(profissao, renda, patrimonio, tem_recomendacoes BOOL)` retornando 1–5.
+- Trigger BEFORE INSERT/UPDATE atualiza `score` automaticamente.
 
-**Enum de etapa do funil (oficial VINCA)**
-`recomendacao` → `hot` → `ab` → `analise_apolice` → `fechamento` → `implantacao` → `cliente` → `pos_venda`
+Tabela nova (opcional) `unidades` — somente se hoje não existir referência; caso já exista campo `unidade` em profiles, reuso. **Vou verificar antes** e usar o que existir; se nada existir, adiciono `profiles.unidade TEXT`.
 
-**Tabelas (todas com RLS + GRANTs)**
-- `profiles` (id=auth.users, nome, email, telefone, ativo, criado_por) — trigger cria profile + role `consultor` no signup; Adriana é promovida a `master`.
-- `prospects` (consultor_id, nome, telefone, cidade, especialidade_medica, estado_civil, filhos, conjuge, renda_estimada, patrimonio_estimado, quem_recomendou, observacoes, origem, etapa_funil, nota_qualificacao, scores 4-eixos, status_hot, ultima_interacao, dias_em_etapa, pa_estimado, motivo_perda).
-- `clientes` (consultor_id, prospect_id?, nome, familia, pa_total, capital_segurado, ultima_revisao, proxima_revisao).
-- `atividades` (consultor_id, prospect_id?, cliente_id?, tipo, resultado, observacao).
-- `agenda_eventos` (consultor_id, prospect_id?, cliente_id?, tipo: AB/fechamento/revisita/joint_work/review, titulo, inicio, fim, local, status).
-- `apolices` — campos manuais + **campos preparados para IA (Fase 1.1)**:
-  - Manuais: cliente_id|prospect_id, seguradora enum (MetLife/Prudential/Icatu/MAG/Bradesco/SulAmérica/Porto/Azos/Outra), produto, tipo (whole_life/temporario), capital_segurado, premio_atual, prazo, resgate, coberturas jsonb, exclusoes jsonb, doencas_graves bool, invalidez bool, cirurgias bool, funeral bool, observacoes_consultor, estrategia_recomendacao, status (em_analise/apresentado/em_negociacao/migrado/nao_migrado), pdf_path.
-  - **IA (já criados na Fase 1, populados na 1.1):** `resumo_ia` text, `pontos_fortes` jsonb, `pontos_fracos` jsonb, `observacoes_ia` text, `comparativo_metlife` jsonb, `ultima_analise_ia` timestamptz, `status_analise_ia` enum (`nao_analisado` | `em_processamento` | `concluido` | `erro`).
-- `apolices_analises_historico` (apolice_id, payload jsonb, modelo, created_at) — guarda cada execução de IA para auditoria.
-- `notificacoes` (user_id, tipo, titulo, payload, lida).
+## 2. Calendário (`calendario.tsx`)
 
-**Storage**: bucket privado `apolices-pdf` com policies por consultor_id (Master via `has_role`).
+- Remover botão **No Show**. "No Show" vira motivo de Delay.
+- Botão **Marcar Delay** abre modal exigindo motivo (select com 6 opções + textarea quando "Outro").
+- Ao salvar Delay: grava `delay_motivo`, `delay_em`, `etapa_origem = prospects.etapa_funil`, registra `atividades`. Evento permanece visível.
+- Visual: evento em delay ganha `border-2 border-red-500` + 🚩 vermelha no canto. Cor da etapa preservada.
+- Quando `delay_resolvido = true`: bandeira some, borda vermelha **permanece** (histórico/auditoria).
+- Remover tipo "Joint Work". Tipos: AB, Revisita, Fechamento, Entrega de Apólice.
+- Checkbox **É Joint Work?** + select `joint_consultor_id` (consultores ativos).
+- Novo botão **🔁 Compromisso Recorrente** abrindo modal próprio (independente de Bloquear/Lembrete/Agendamento).
+- Renderizar instâncias de recorrentes calculadas em runtime a partir de `compromissos_recorrentes` para a semana visível.
+- Exibir score ⭐ N junto ao nome do prospect.
+- Lembretes: badge 🔔 discreto no topo da célula do dia (já existe; só ajustar ícone).
 
-**RLS**: `consultor` vê/edita apenas `consultor_id = auth.uid()`; `master` acesso total.
+## 3. Em Delay (`em-delay.tsx`)
 
-**Server functions**: `getMeuDia`, `getDashboard(scope)`, `listProspects`, `moverEtapaFunil`, `registrarAtividade`, `criarConsultor` (Master), `desativarConsultor`, `transferirCarteira`, `listEmDelay`, `gerarLinkWhatsapp`, `uploadApolicePdf`, `listApolices`, e stub `analisarApoliceComIA(apolice_id)` que na Fase 1 retorna `{ disponivel: false }` para a UI exibir o aviso.
+- Fila lê de `agenda_eventos` onde `delay_resolvido = false` e `etapa_origem IN (ab, revisita, fechamento, entrega_apolice)` — **exclui Onboarding**.
+- Colunas: Nome, Etapa origem, Motivo, Consultor, Dias parado, Próxima ação.
+- Ações: Reagendar (cria novo evento + marca atual como resolvido), Adiar 7 dias, Ligar (tel:), WhatsApp (wa.me), Marcar Perdido.
+- "Destravar Agora" remove da fila (resolvido=true) mas mantém evento original com borda vermelha. Reagendar cria novo `agenda_eventos`.
 
-## Rotas
+## 4. Score automático
 
-Públicas: `/auth`, `/reset-password`.
+- Trigger SQL calcula a partir de: `profissao` (lista de pesos), `renda_estimada`, `patrimonio`, flag tem recomendações (count de prospects com `recomendado_por = id`).
+- Exibir como **⭐ N** (uma estrela + número), nunca múltiplas estrelas, em: Recomendações, HOT, Calendário, Funil, Em Delay.
 
-Sob `_authenticated`: `/` Meu Dia · `/dashboard` · `/recomendacoes` · `/hot` · `/calendario` · `/funil` · `/em-delay` · `/atividades` · `/clientes` + `/clientes/$id` · `/apolices` · `/administracao` (Master).
+## 5. HOT
 
-Placeholders "Em breve — Fase 2": Pós-venda avançado, Ciclo de Revisão, Planejamento.
+- Ordenar `ORDER BY score DESC NULLS LAST, created_at DESC`.
 
-## Layout
+## 6. Visão Master — filtro global
 
-Sidebar fixa preta colapsável com logotipo LILITO dourado; header com breadcrumb, busca, sino e avatar (badge dourado se Master); cards escuros com headlines serifadas; estados vazios elegantes.
+Componente novo `<MasterScopeFilter>` no topo das páginas listadas, persistido em `localStorage` (`lilito:scope`):
+- Selects: **Unidade** + **Consultor**.
+- Hook `useMasterScope()` retorna `{ unidade, consultorId }` e expõe helper `applyScope(query)` que adiciona `.eq("consultor_id", x)` / join por unidade.
+- Aplicar em: Dashboard, Recomendações, HOT, Calendário, Funil, Em Delay, Onboarding, Clientes, Resultado Semanal, Planejamento, Auditoria.
+- Apenas visível para master (`auth.isMaster`).
 
-## Módulos — destaques de UX
+## 7. Compromissos Recorrentes
 
-- **Meu Dia**: 6 cards (Follow-ups vencidos, Reuniões do dia, HOTs pendentes, Recomendações recebidas, Aniversariantes, Meta semanal 0/3) + faixa dourada "Quem resolve a semana resolve o mês."
-- **HOT**: cartão central com 7 botões de resultado; cria atividade + follow-up automático.
-- **Funil**: kanban de 8 colunas — **Recomendação → HOT → AB → Análise de Apólice → Fechamento → Implantação → Cliente → Pós-venda**. Drag & drop via dnd-kit, registra atividade ao mover, exibe dias na etapa, PA estimado e consultor.
-- **Em Delay**: tabela com filtros + ações Destravar/Reagendar/Adiar/Solicitar ajuda/Marcar perdido (modal de motivo).
-- **Análise de Apólices**:
-  - Upload PDF drag & drop, agrupamento por seguradora, timeline de status, campos estratégia + observações.
-  - **Seção "Análise por IA"** sempre visível no detalhe da apólice, com:
-    - Botão dourado `[ ✦ Analisar com IA ]`. Na Fase 1 chama `analisarApoliceComIA` → toast/modal elegante: *"Função disponível na próxima versão."*
-    - Badge de `status_analise_ia` (Não analisado / Em processamento / Concluído / Erro).
-    - Cards prontos para exibir Resumo executivo, Pontos fortes, Pontos fracos, Observações da IA, Comparativo MetLife — em Fase 1 mostram estado vazio elegante ("Aguardando primeira análise").
-    - Timestamp `ultima_analise_ia` e link "Ver histórico de análises" (lista vazia na Fase 1).
-  - Fluxo futuro (Fase 1.1) já documentado na arquitetura: extração de seguradora/produto/tipo/capital/prazo/coberturas/exclusões/resgate/doenças graves/invalidez/cirurgias/funeral; resumo executivo; análise consultiva (pontos fortes/fracos, riscos, oportunidades de substituição); comparativo contra proposta MetLife; persistência no histórico.
-- **Dashboard**: KPIs (HOTs, ABs, Fechamentos, Clientes, PA emitido, Comissão projetada, Conversão por etapa), ranking, produção por consultor; toggle Individual/Equipe/Unidade (gated por role).
-- **Administração (Master)**: CRUD consultores + ativar/desativar + transferência de carteira.
+- Novo modal no Calendário com campos da especificação.
+- Geração das ocorrências em runtime na semana atual (sem materializar) — performático e evita duplicação.
+- Aparece em todos os calendários dos `participantes`.
 
-## WhatsApp & PDF
+## Arquivos a editar/criar
 
-- WhatsApp: `https://wa.me/<telefone>?text=<msg>` em nova aba; registra atividade `whatsapp` automaticamente.
-- PDF: bucket privado `apolices-pdf`, path `{consultor_id}/{apolice_id}/{filename}`, download via signed URL (5 min). O mesmo PDF servirá de input para a IA na Fase 1.1.
+**Editar:**
+- `src/routes/_authenticated/calendario.tsx`
+- `src/routes/_authenticated/em-delay.tsx`
+- `src/routes/_authenticated/hot.tsx`
+- `src/routes/_authenticated/dashboard.tsx`
+- `src/routes/_authenticated/recomendacoes.tsx`
+- `src/routes/_authenticated/funil.tsx`
+- `src/routes/_authenticated/onboarding.tsx`
+- `src/routes/_authenticated/clientes.tsx`
+- `src/routes/_authenticated/resultado-semanal.tsx`
+- `src/routes/_authenticated/planejamento.tsx`
+- `src/routes/_authenticated/auditoria.tsx`
 
-## Stack técnica
+**Criar:**
+- `src/components/lilito/MasterScopeFilter.tsx`
+- `src/hooks/useMasterScope.ts`
+- `src/components/lilito/ScoreStars.tsx`
+- `src/components/lilito/RecorrenteModal.tsx`
 
-TanStack Start + Query (loader → `ensureQueryData` → `useSuspenseQuery`), shadcn/ui customizado, dnd-kit, date-fns + react-day-picker, zod, framer-motion. Confirmar `attachSupabaseAuth` em `src/start.ts`.
+**Migration:** uma única, contendo todas as alterações de schema + trigger de score + RLS de `compromissos_recorrentes`.
 
-## Fora do escopo da Fase 1
+## Ordem de execução
 
-Pós-venda avançado, Ciclo de Revisão, Planejamento anual, integração Google Calendar real, automações complexas, **execução real da IA de apólices** (a arquitetura e a UI já ficam prontas; a chamada ao modelo entra na Fase 1.1 via Lovable AI Gateway com `google/gemini-3-flash-preview`).
+1. Migration (aprovação sua) → regen tipos.
+2. Componentes utilitários (ScoreStars, MasterScopeFilter, useMasterScope).
+3. Calendário (delay + joint + recorrentes + remover No Show).
+4. Em Delay (nova fonte de dados a partir de agenda_eventos).
+5. HOT (ordenação).
+6. Espalhar score + scope filter pelos demais módulos.
 
-## Sequência de implementação
+## Pontos de atenção
 
-1. Habilitar Lovable Cloud; criar enums (incl. `status_analise_ia`), tabelas (com campos de IA), `apolices_analises_historico`, RLS, GRANTs, trigger de profile, `has_role`, bucket `apolices-pdf`.
-2. Design system + shell autenticado (sidebar/header).
-3. Auth: `/auth` + `/reset-password` + layout `_authenticated`.
-4. Recomendações → HOT → Atividades → Funil (8 colunas) → Em Delay.
-5. Calendário interno + Meu Dia + Dashboard com scope por role.
-6. Clientes + Análise de Apólices (upload PDF + seção "Análise por IA" com stub e estados vazios).
-7. Administração (Master): CRUD consultores + transferência de carteira.
-8. Promover Adriana Gomes a `master` via migration após criação do usuário.
-9. Placeholders Fase 2 + polish visual final.
+- **Onboarding fora do Delay** — confirmado, não criar fila para essa etapa.
+- Recorrentes não entram em conflito de agenda (só compromissos reais bloqueiam).
+- Borda vermelha permanente em delays resolvidos é intencional (auditoria) — não é bug.
+- Score é recalculado por trigger; não cachear no front.
+
+Posso prosseguir com a migration?

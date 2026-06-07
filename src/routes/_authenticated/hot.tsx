@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { EmptyState } from "@/components/lilito/EmptyState";
 import { Flame, Phone, MessageCircle, Calendar, Clock, XCircle, PhoneOff, Brain, Users, Plus, Trash2, ListFilter } from "lucide-react";
+import { ScoreStars } from "@/components/lilito/ScoreStars";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/hot")({
@@ -71,7 +72,10 @@ function Hot() {
           q = q.lte("entrou_etapa_em", `${listaSelecionada.data_fim}T23:59:59`);
         }
       }
-      const { data, error } = await q.order("nota_qualificacao", { ascending: false });
+      const { data, error } = await q
+        .order("score", { ascending: false, nullsFirst: false })
+        .order("nota_qualificacao", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
@@ -166,7 +170,7 @@ function Hot() {
             <p className="caps-tracking text-gold text-center">
               Prospect atual {currentIndex + 1} de {fila!.length}
             </p>
-            <h2 className="font-display text-5xl text-center mt-3">{atual.nome}</h2>
+            <h2 className="font-display text-5xl text-center mt-3 flex items-center justify-center gap-3">{atual.nome} <ScoreStars score={atual.score} className="text-base" /></h2>
             <p className="text-center text-muted-foreground mt-2">
               {atual.especialidade_medica ?? "—"}
             </p>
@@ -252,8 +256,9 @@ function Hot() {
                             {idx + 1}
                           </span>
                           <div className="min-w-0">
-                            <p className={`font-display text-lg truncate ${isAtual ? "text-gold" : "text-foreground"}`}>
-                              {p.nome}
+                            <p className={`font-display text-lg truncate flex items-center gap-2 ${isAtual ? "text-gold" : "text-foreground"}`}>
+                              <span className="truncate">{p.nome}</span>
+                              <ScoreStars score={p.score} />
                             </p>
                             <p className="text-sm text-muted-foreground mt-0.5 truncate">
                               {p.especialidade_medica ?? "—"}
