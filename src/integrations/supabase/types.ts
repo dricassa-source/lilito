@@ -22,9 +22,12 @@ export type Database = {
           fim: string
           id: string
           inicio: string
+          joint_master_id: string | null
+          joint_status: Database["public"]["Enums"]["joint_status"]
           local: string | null
           observacao: string | null
           prospect_id: string | null
+          resultado: string | null
           status: string
           tipo: Database["public"]["Enums"]["tipo_evento"]
           titulo: string
@@ -37,9 +40,12 @@ export type Database = {
           fim: string
           id?: string
           inicio: string
+          joint_master_id?: string | null
+          joint_status?: Database["public"]["Enums"]["joint_status"]
           local?: string | null
           observacao?: string | null
           prospect_id?: string | null
+          resultado?: string | null
           status?: string
           tipo: Database["public"]["Enums"]["tipo_evento"]
           titulo: string
@@ -52,9 +58,12 @@ export type Database = {
           fim?: string
           id?: string
           inicio?: string
+          joint_master_id?: string | null
+          joint_status?: Database["public"]["Enums"]["joint_status"]
           local?: string | null
           observacao?: string | null
           prospect_id?: string | null
+          resultado?: string | null
           status?: string
           tipo?: Database["public"]["Enums"]["tipo_evento"]
           titulo?: string
@@ -86,6 +95,8 @@ export type Database = {
           comparativo_metlife: Json | null
           consultor_id: string
           created_at: string
+          data_emissao: string | null
+          data_fechamento: string | null
           doencas_graves: boolean | null
           estrategia_recomendacao: string | null
           exclusoes: Json | null
@@ -94,6 +105,8 @@ export type Database = {
           invalidez: boolean | null
           observacoes_consultor: string | null
           observacoes_ia: string | null
+          onboarding_observacao: string | null
+          onboarding_status: Database["public"]["Enums"]["onboarding_status"]
           pdf_path: string | null
           pontos_fortes: Json | null
           pontos_fracos: Json | null
@@ -118,6 +131,8 @@ export type Database = {
           comparativo_metlife?: Json | null
           consultor_id: string
           created_at?: string
+          data_emissao?: string | null
+          data_fechamento?: string | null
           doencas_graves?: boolean | null
           estrategia_recomendacao?: string | null
           exclusoes?: Json | null
@@ -126,6 +141,8 @@ export type Database = {
           invalidez?: boolean | null
           observacoes_consultor?: string | null
           observacoes_ia?: string | null
+          onboarding_observacao?: string | null
+          onboarding_status?: Database["public"]["Enums"]["onboarding_status"]
           pdf_path?: string | null
           pontos_fortes?: Json | null
           pontos_fracos?: Json | null
@@ -150,6 +167,8 @@ export type Database = {
           comparativo_metlife?: Json | null
           consultor_id?: string
           created_at?: string
+          data_emissao?: string | null
+          data_fechamento?: string | null
           doencas_graves?: boolean | null
           estrategia_recomendacao?: string | null
           exclusoes?: Json | null
@@ -158,6 +177,8 @@ export type Database = {
           invalidez?: boolean | null
           observacoes_consultor?: string | null
           observacoes_ia?: string | null
+          onboarding_observacao?: string | null
+          onboarding_status?: Database["public"]["Enums"]["onboarding_status"]
           pdf_path?: string | null
           pontos_fortes?: Json | null
           pontos_fracos?: Json | null
@@ -333,6 +354,57 @@ export type Database = {
           },
         ]
       }
+      configuracoes: {
+        Row: {
+          atualizado_por: string | null
+          chave: string
+          created_at: string
+          updated_at: string
+          valor: Json
+        }
+        Insert: {
+          atualizado_por?: string | null
+          chave: string
+          created_at?: string
+          updated_at?: string
+          valor?: Json
+        }
+        Update: {
+          atualizado_por?: string | null
+          chave?: string
+          created_at?: string
+          updated_at?: string
+          valor?: Json
+        }
+        Relationships: []
+      }
+      frases_cultura: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          ordem: number
+          texto: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          ordem?: number
+          texto: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          ordem?: number
+          texto?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hot_listas: {
         Row: {
           consultor_id: string
@@ -359,6 +431,136 @@ export type Database = {
           data_inicio?: string
           id?: string
           nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      joint_requests: {
+        Row: {
+          consultor_id: string
+          created_at: string
+          decided_at: string | null
+          evento_id: string
+          id: string
+          master_id: string | null
+          observacao: string | null
+          status: Database["public"]["Enums"]["joint_status"]
+          updated_at: string
+        }
+        Insert: {
+          consultor_id: string
+          created_at?: string
+          decided_at?: string | null
+          evento_id: string
+          id?: string
+          master_id?: string | null
+          observacao?: string | null
+          status?: Database["public"]["Enums"]["joint_status"]
+          updated_at?: string
+        }
+        Update: {
+          consultor_id?: string
+          created_at?: string
+          decided_at?: string | null
+          evento_id?: string
+          id?: string
+          master_id?: string | null
+          observacao?: string | null
+          status?: Database["public"]["Enums"]["joint_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "joint_requests_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "agenda_eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lembretes: {
+        Row: {
+          concluido: boolean
+          concluido_em: string | null
+          consultor_id: string
+          created_at: string
+          data: string
+          hora: string | null
+          id: string
+          observacao: string | null
+          prospect_id: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          concluido?: boolean
+          concluido_em?: string | null
+          consultor_id: string
+          created_at?: string
+          data: string
+          hora?: string | null
+          id?: string
+          observacao?: string | null
+          prospect_id?: string | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          concluido?: boolean
+          concluido_em?: string | null
+          consultor_id?: string
+          created_at?: string
+          data?: string
+          hora?: string | null
+          id?: string
+          observacao?: string | null
+          prospect_id?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lembretes_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metas: {
+        Row: {
+          ano: number
+          consultor_id: string | null
+          created_at: string
+          id: string
+          mes: number | null
+          meta_apolices: number
+          meta_pa: number
+          periodo: Database["public"]["Enums"]["meta_periodo"]
+          updated_at: string
+        }
+        Insert: {
+          ano: number
+          consultor_id?: string | null
+          created_at?: string
+          id?: string
+          mes?: number | null
+          meta_apolices?: number
+          meta_pa?: number
+          periodo?: Database["public"]["Enums"]["meta_periodo"]
+          updated_at?: string
+        }
+        Update: {
+          ano?: number
+          consultor_id?: string | null
+          created_at?: string
+          id?: string
+          mes?: number | null
+          meta_apolices?: number
+          meta_pa?: number
+          periodo?: Database["public"]["Enums"]["meta_periodo"]
           updated_at?: string
         }
         Relationships: []
@@ -568,6 +770,22 @@ export type Database = {
         | "perdido"
         | "revisita"
         | "entrega_apolice"
+      joint_status:
+        | "nenhum"
+        | "pendente"
+        | "aprovado"
+        | "rejeitado"
+        | "confirmado"
+      meta_periodo: "mensal" | "trimestral" | "anual"
+      onboarding_status:
+        | "nao_aplicavel"
+        | "documentacao_pendente"
+        | "exames_pendentes"
+        | "entrevista_pendente"
+        | "pagamento_pendente"
+        | "em_underwriting"
+        | "outras_pendencias"
+        | "emitida"
       origem_prospect:
         | "recomendacao"
         | "prospeccao_ativa"
@@ -624,6 +842,11 @@ export type Database = {
         | "joint_work"
         | "review"
         | "entrega_apolice"
+        | "pessoal"
+        | "treinamento"
+        | "reuniao_agencia"
+        | "bloqueio"
+        | "lembrete"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -765,6 +988,24 @@ export const Constants = {
         "revisita",
         "entrega_apolice",
       ],
+      joint_status: [
+        "nenhum",
+        "pendente",
+        "aprovado",
+        "rejeitado",
+        "confirmado",
+      ],
+      meta_periodo: ["mensal", "trimestral", "anual"],
+      onboarding_status: [
+        "nao_aplicavel",
+        "documentacao_pendente",
+        "exames_pendentes",
+        "entrevista_pendente",
+        "pagamento_pendente",
+        "em_underwriting",
+        "outras_pendencias",
+        "emitida",
+      ],
       origem_prospect: [
         "recomendacao",
         "prospeccao_ativa",
@@ -827,6 +1068,11 @@ export const Constants = {
         "joint_work",
         "review",
         "entrega_apolice",
+        "pessoal",
+        "treinamento",
+        "reuniao_agencia",
+        "bloqueio",
+        "lembrete",
       ],
     },
   },

@@ -13,16 +13,22 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedResultadoSemanalRouteImport } from './routes/_authenticated/resultado-semanal'
 import { Route as AuthenticatedRecomendacoesRouteImport } from './routes/_authenticated/recomendacoes'
 import { Route as AuthenticatedPosVendaRouteImport } from './routes/_authenticated/pos-venda'
 import { Route as AuthenticatedPlanejamentoRouteImport } from './routes/_authenticated/planejamento'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedLembretesRouteImport } from './routes/_authenticated/lembretes'
+import { Route as AuthenticatedJointRouteImport } from './routes/_authenticated/joint'
 import { Route as AuthenticatedHotRouteImport } from './routes/_authenticated/hot'
 import { Route as AuthenticatedFunilRouteImport } from './routes/_authenticated/funil'
 import { Route as AuthenticatedEmDelayRouteImport } from './routes/_authenticated/em-delay'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedCicloRevisaoRouteImport } from './routes/_authenticated/ciclo-revisao'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
+import { Route as AuthenticatedAuditoriaRouteImport } from './routes/_authenticated/auditoria'
 import { Route as AuthenticatedAtividadesRouteImport } from './routes/_authenticated/atividades'
 import { Route as AuthenticatedApolicesRouteImport } from './routes/_authenticated/apolices'
 import { Route as AuthenticatedAdministracaoRouteImport } from './routes/_authenticated/administracao'
@@ -46,6 +52,12 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedResultadoSemanalRoute =
+  AuthenticatedResultadoSemanalRouteImport.update({
+    id: '/resultado-semanal',
+    path: '/resultado-semanal',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRecomendacoesRoute =
   AuthenticatedRecomendacoesRouteImport.update({
     id: '/recomendacoes',
@@ -63,6 +75,21 @@ const AuthenticatedPlanejamentoRoute =
     path: '/planejamento',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLembretesRoute = AuthenticatedLembretesRouteImport.update({
+  id: '/lembretes',
+  path: '/lembretes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedJointRoute = AuthenticatedJointRouteImport.update({
+  id: '/joint',
+  path: '/joint',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedHotRoute = AuthenticatedHotRouteImport.update({
   id: '/hot',
   path: '/hot',
@@ -83,6 +110,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedConfiguracoesRoute =
+  AuthenticatedConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -97,6 +130,11 @@ const AuthenticatedCicloRevisaoRoute =
 const AuthenticatedCalendarioRoute = AuthenticatedCalendarioRouteImport.update({
   id: '/calendario',
   path: '/calendario',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAuditoriaRoute = AuthenticatedAuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAtividadesRoute = AuthenticatedAtividadesRouteImport.update({
@@ -123,16 +161,22 @@ export interface FileRoutesByFullPath {
   '/administracao': typeof AuthenticatedAdministracaoRoute
   '/apolices': typeof AuthenticatedApolicesRoute
   '/atividades': typeof AuthenticatedAtividadesRoute
+  '/auditoria': typeof AuthenticatedAuditoriaRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/ciclo-revisao': typeof AuthenticatedCicloRevisaoRoute
   '/clientes': typeof AuthenticatedClientesRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/em-delay': typeof AuthenticatedEmDelayRoute
   '/funil': typeof AuthenticatedFunilRoute
   '/hot': typeof AuthenticatedHotRoute
+  '/joint': typeof AuthenticatedJointRoute
+  '/lembretes': typeof AuthenticatedLembretesRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/pos-venda': typeof AuthenticatedPosVendaRoute
   '/recomendacoes': typeof AuthenticatedRecomendacoesRoute
+  '/resultado-semanal': typeof AuthenticatedResultadoSemanalRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -140,16 +184,22 @@ export interface FileRoutesByTo {
   '/administracao': typeof AuthenticatedAdministracaoRoute
   '/apolices': typeof AuthenticatedApolicesRoute
   '/atividades': typeof AuthenticatedAtividadesRoute
+  '/auditoria': typeof AuthenticatedAuditoriaRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/ciclo-revisao': typeof AuthenticatedCicloRevisaoRoute
   '/clientes': typeof AuthenticatedClientesRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/em-delay': typeof AuthenticatedEmDelayRoute
   '/funil': typeof AuthenticatedFunilRoute
   '/hot': typeof AuthenticatedHotRoute
+  '/joint': typeof AuthenticatedJointRoute
+  '/lembretes': typeof AuthenticatedLembretesRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/pos-venda': typeof AuthenticatedPosVendaRoute
   '/recomendacoes': typeof AuthenticatedRecomendacoesRoute
+  '/resultado-semanal': typeof AuthenticatedResultadoSemanalRoute
   '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
@@ -160,16 +210,22 @@ export interface FileRoutesById {
   '/_authenticated/administracao': typeof AuthenticatedAdministracaoRoute
   '/_authenticated/apolices': typeof AuthenticatedApolicesRoute
   '/_authenticated/atividades': typeof AuthenticatedAtividadesRoute
+  '/_authenticated/auditoria': typeof AuthenticatedAuditoriaRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/ciclo-revisao': typeof AuthenticatedCicloRevisaoRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
+  '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/em-delay': typeof AuthenticatedEmDelayRoute
   '/_authenticated/funil': typeof AuthenticatedFunilRoute
   '/_authenticated/hot': typeof AuthenticatedHotRoute
+  '/_authenticated/joint': typeof AuthenticatedJointRoute
+  '/_authenticated/lembretes': typeof AuthenticatedLembretesRoute
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/_authenticated/pos-venda': typeof AuthenticatedPosVendaRoute
   '/_authenticated/recomendacoes': typeof AuthenticatedRecomendacoesRoute
+  '/_authenticated/resultado-semanal': typeof AuthenticatedResultadoSemanalRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
@@ -181,16 +237,22 @@ export interface FileRouteTypes {
     | '/administracao'
     | '/apolices'
     | '/atividades'
+    | '/auditoria'
     | '/calendario'
     | '/ciclo-revisao'
     | '/clientes'
+    | '/configuracoes'
     | '/dashboard'
     | '/em-delay'
     | '/funil'
     | '/hot'
+    | '/joint'
+    | '/lembretes'
+    | '/onboarding'
     | '/planejamento'
     | '/pos-venda'
     | '/recomendacoes'
+    | '/resultado-semanal'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -198,16 +260,22 @@ export interface FileRouteTypes {
     | '/administracao'
     | '/apolices'
     | '/atividades'
+    | '/auditoria'
     | '/calendario'
     | '/ciclo-revisao'
     | '/clientes'
+    | '/configuracoes'
     | '/dashboard'
     | '/em-delay'
     | '/funil'
     | '/hot'
+    | '/joint'
+    | '/lembretes'
+    | '/onboarding'
     | '/planejamento'
     | '/pos-venda'
     | '/recomendacoes'
+    | '/resultado-semanal'
     | '/'
   id:
     | '__root__'
@@ -217,16 +285,22 @@ export interface FileRouteTypes {
     | '/_authenticated/administracao'
     | '/_authenticated/apolices'
     | '/_authenticated/atividades'
+    | '/_authenticated/auditoria'
     | '/_authenticated/calendario'
     | '/_authenticated/ciclo-revisao'
     | '/_authenticated/clientes'
+    | '/_authenticated/configuracoes'
     | '/_authenticated/dashboard'
     | '/_authenticated/em-delay'
     | '/_authenticated/funil'
     | '/_authenticated/hot'
+    | '/_authenticated/joint'
+    | '/_authenticated/lembretes'
+    | '/_authenticated/onboarding'
     | '/_authenticated/planejamento'
     | '/_authenticated/pos-venda'
     | '/_authenticated/recomendacoes'
+    | '/_authenticated/resultado-semanal'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
@@ -266,6 +340,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/resultado-semanal': {
+      id: '/_authenticated/resultado-semanal'
+      path: '/resultado-semanal'
+      fullPath: '/resultado-semanal'
+      preLoaderRoute: typeof AuthenticatedResultadoSemanalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/recomendacoes': {
       id: '/_authenticated/recomendacoes'
       path: '/recomendacoes'
@@ -285,6 +366,27 @@ declare module '@tanstack/react-router' {
       path: '/planejamento'
       fullPath: '/planejamento'
       preLoaderRoute: typeof AuthenticatedPlanejamentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/lembretes': {
+      id: '/_authenticated/lembretes'
+      path: '/lembretes'
+      fullPath: '/lembretes'
+      preLoaderRoute: typeof AuthenticatedLembretesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/joint': {
+      id: '/_authenticated/joint'
+      path: '/joint'
+      fullPath: '/joint'
+      preLoaderRoute: typeof AuthenticatedJointRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/hot': {
@@ -315,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/configuracoes': {
+      id: '/_authenticated/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/clientes': {
       id: '/_authenticated/clientes'
       path: '/clientes'
@@ -334,6 +443,13 @@ declare module '@tanstack/react-router' {
       path: '/calendario'
       fullPath: '/calendario'
       preLoaderRoute: typeof AuthenticatedCalendarioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/auditoria': {
+      id: '/_authenticated/auditoria'
+      path: '/auditoria'
+      fullPath: '/auditoria'
+      preLoaderRoute: typeof AuthenticatedAuditoriaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/atividades': {
@@ -364,16 +480,22 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdministracaoRoute: typeof AuthenticatedAdministracaoRoute
   AuthenticatedApolicesRoute: typeof AuthenticatedApolicesRoute
   AuthenticatedAtividadesRoute: typeof AuthenticatedAtividadesRoute
+  AuthenticatedAuditoriaRoute: typeof AuthenticatedAuditoriaRoute
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
   AuthenticatedCicloRevisaoRoute: typeof AuthenticatedCicloRevisaoRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
+  AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEmDelayRoute: typeof AuthenticatedEmDelayRoute
   AuthenticatedFunilRoute: typeof AuthenticatedFunilRoute
   AuthenticatedHotRoute: typeof AuthenticatedHotRoute
+  AuthenticatedJointRoute: typeof AuthenticatedJointRoute
+  AuthenticatedLembretesRoute: typeof AuthenticatedLembretesRoute
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPlanejamentoRoute: typeof AuthenticatedPlanejamentoRoute
   AuthenticatedPosVendaRoute: typeof AuthenticatedPosVendaRoute
   AuthenticatedRecomendacoesRoute: typeof AuthenticatedRecomendacoesRoute
+  AuthenticatedResultadoSemanalRoute: typeof AuthenticatedResultadoSemanalRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
@@ -381,16 +503,22 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdministracaoRoute: AuthenticatedAdministracaoRoute,
   AuthenticatedApolicesRoute: AuthenticatedApolicesRoute,
   AuthenticatedAtividadesRoute: AuthenticatedAtividadesRoute,
+  AuthenticatedAuditoriaRoute: AuthenticatedAuditoriaRoute,
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
   AuthenticatedCicloRevisaoRoute: AuthenticatedCicloRevisaoRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
+  AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEmDelayRoute: AuthenticatedEmDelayRoute,
   AuthenticatedFunilRoute: AuthenticatedFunilRoute,
   AuthenticatedHotRoute: AuthenticatedHotRoute,
+  AuthenticatedJointRoute: AuthenticatedJointRoute,
+  AuthenticatedLembretesRoute: AuthenticatedLembretesRoute,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPlanejamentoRoute: AuthenticatedPlanejamentoRoute,
   AuthenticatedPosVendaRoute: AuthenticatedPosVendaRoute,
   AuthenticatedRecomendacoesRoute: AuthenticatedRecomendacoesRoute,
+  AuthenticatedResultadoSemanalRoute: AuthenticatedResultadoSemanalRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
@@ -405,13 +533,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/lilito/PageHeader";
+import { NovoLembrete } from "./lembretes";
 import {
   Flame,
   CalendarDays,
@@ -16,7 +18,13 @@ import {
   TrendingUp,
   Wallet,
   Crown,
+  Bell,
+  Check,
 } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Meu Dia — LILITO" }] }),
@@ -157,13 +165,10 @@ function MeuDia() {
         description={isMaster ? "Visão executiva da operação VINCA." : "Sua plataforma de relacionamento e gestão comercial."}
       />
 
-      <div className="relative overflow-hidden rounded-md border border-gold/30 bg-gradient-to-r from-surface to-surface-elevated p-6 mb-8">
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gold/10 blur-3xl" />
-        <p className="caps-tracking text-gold">Mantra da semana</p>
-        <p className="font-display text-3xl text-foreground mt-2 italic">
-          "Quem resolve a semana resolve o mês."
-        </p>
-      </div>
+      <FraseRotativa />
+
+      <LembretesHoje />
+
 
       {isMaster && (
         <div className="mb-6">
@@ -219,5 +224,74 @@ function MeuDia() {
         )}
       </div>
     </div>
+  );
+}
+
+function FraseRotativa() {
+  const { data } = useQuery({
+    queryKey: ["frases-ativas"],
+    queryFn: async () => {
+      const { data } = await supabase.from("frases_cultura").select("texto").eq("ativo", true).order("ordem");
+      return (data ?? []).map((f) => f.texto);
+    },
+  });
+  const list = data && data.length > 0 ? data : ["Quem resolve a semana resolve o mês."];
+  const idx = Math.floor(Date.now() / (1000 * 60 * 60 * 6)) % list.length; // muda a cada 6h
+  return (
+    <div className="relative overflow-hidden rounded-md border border-gold/30 bg-gradient-to-r from-surface to-surface-elevated p-6 mb-6">
+      <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gold/10 blur-3xl" />
+      <p className="caps-tracking text-gold">Cultura VINCA</p>
+      <p className="font-display text-3xl text-foreground mt-2 italic">"{list[idx]}"</p>
+    </div>
+  );
+}
+
+function LembretesHoje() {
+  const { auth } = useAuth();
+  const qc = useQueryClient();
+  const hoje = format(new Date(), "yyyy-MM-dd");
+  const { data } = useQuery({
+    queryKey: ["lembretes-meu-dia", auth?.user.id, hoje],
+    enabled: !!auth,
+    queryFn: async () => {
+      const { data } = await supabase.from("lembretes")
+        .select("id,titulo,hora,observacao")
+        .eq("concluido", false).lte("data", hoje).order("data").order("hora").limit(10);
+      return data ?? [];
+    },
+  });
+  const toggle = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("lembretes").update({ concluido: true, concluido_em: new Date().toISOString() }).eq("id", id);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["lembretes-meu-dia"] }),
+  });
+
+  return (
+    <Card className="p-5 bg-surface border-border mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <p className="caps-tracking text-gold flex items-center gap-2">
+          <Bell className="h-3.5 w-3.5" /> Lembretes ({data?.length ?? 0})
+        </p>
+        <NovoLembrete onSaved={() => qc.invalidateQueries({ queryKey: ["lembretes-meu-dia"] })} />
+      </div>
+      {!data || data.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Sem lembretes pendentes. {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}.</p>
+      ) : (
+        <ul className="divide-y divide-border">
+          {data.map((l) => (
+            <li key={l.id} className="py-2 flex items-center gap-2">
+              <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => toggle.mutate(l.id)}>
+                <Check className="h-3.5 w-3.5" />
+              </Button>
+              <div className="flex-1">
+                <p className="text-sm">{l.titulo}{l.hora ? <span className="text-muted-foreground ml-2 text-xs">{l.hora.slice(0,5)}</span> : null}</p>
+                {l.observacao && <p className="text-xs text-muted-foreground">{l.observacao}</p>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
   );
 }
