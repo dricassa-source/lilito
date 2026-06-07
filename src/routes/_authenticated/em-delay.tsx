@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/em-delay")({
   component: EmDelay,
 });
 
-// Etapas que entram na fila de Em Delay (Onboarding NÃO entra)
+// Todo evento marcado como Delay no calendário entra nesta fila.
 const ETAPAS_ELEGIVEIS = ["ab", "revisita", "fechamento", "entrega_apolice"];
 
 const ETAPA_LABEL: Record<string, string> = {
@@ -32,6 +32,10 @@ const ETAPA_LABEL: Record<string, string> = {
   fechamento: "Fechamento",
   entrega_apolice: "Entrega de Apólice",
 };
+
+function etapaDelay(d: any) {
+  return ETAPAS_ELEGIVEIS.includes(d.tipo) ? d.tipo : d.etapa_origem;
+}
 
 function EmDelay() {
   const { auth } = useAuth();
@@ -54,10 +58,7 @@ function EmDelay() {
       ).order("delay_em", { ascending: false });
       const { data, error } = await q;
       if (error) throw error;
-      const rows = (data ?? []).filter((d: any) => {
-        const etapa = d.etapa_origem ?? d.tipo;
-        return ETAPAS_ELEGIVEIS.includes(etapa);
-      });
+      const rows = data ?? [];
       const ids = Array.from(new Set(rows.map((r: any) => r.consultor_id).filter(Boolean)));
       let profiles: Record<string, { id: string; nome: string }> = {};
       if (ids.length) {
@@ -138,7 +139,7 @@ function EmDelay() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {delays.map((d: any) => {
-            const etapa = d.etapa_origem ?? d.tipo;
+            const etapa = etapaDelay(d);
             const nome = d.prospects?.nome ?? d.titulo ?? "—";
             const tel = d.prospects?.telefone;
             const dias = diasParado(d.delay_em);
