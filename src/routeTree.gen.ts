@@ -25,6 +25,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedCicloRevisaoRouteImport } from './routes/_authenticated/ciclo-revisao'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
+import { Route as AuthenticatedAuditoriaRouteImport } from './routes/_authenticated/auditoria'
 import { Route as AuthenticatedAtividadesRouteImport } from './routes/_authenticated/atividades'
 import { Route as AuthenticatedApolicesRouteImport } from './routes/_authenticated/apolices'
 import { Route as AuthenticatedAdministracaoRouteImport } from './routes/_authenticated/administracao'
@@ -112,6 +113,11 @@ const AuthenticatedCalendarioRoute = AuthenticatedCalendarioRouteImport.update({
   path: '/calendario',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAuditoriaRoute = AuthenticatedAuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAtividadesRoute = AuthenticatedAtividadesRouteImport.update({
   id: '/atividades',
   path: '/atividades',
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/administracao': typeof AuthenticatedAdministracaoRoute
   '/apolices': typeof AuthenticatedApolicesRoute
   '/atividades': typeof AuthenticatedAtividadesRoute
+  '/auditoria': typeof AuthenticatedAuditoriaRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/ciclo-revisao': typeof AuthenticatedCicloRevisaoRoute
   '/clientes': typeof AuthenticatedClientesRoute
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/administracao': typeof AuthenticatedAdministracaoRoute
   '/apolices': typeof AuthenticatedApolicesRoute
   '/atividades': typeof AuthenticatedAtividadesRoute
+  '/auditoria': typeof AuthenticatedAuditoriaRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/ciclo-revisao': typeof AuthenticatedCicloRevisaoRoute
   '/clientes': typeof AuthenticatedClientesRoute
@@ -177,6 +185,7 @@ export interface FileRoutesById {
   '/_authenticated/administracao': typeof AuthenticatedAdministracaoRoute
   '/_authenticated/apolices': typeof AuthenticatedApolicesRoute
   '/_authenticated/atividades': typeof AuthenticatedAtividadesRoute
+  '/_authenticated/auditoria': typeof AuthenticatedAuditoriaRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/ciclo-revisao': typeof AuthenticatedCicloRevisaoRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
@@ -200,6 +209,7 @@ export interface FileRouteTypes {
     | '/administracao'
     | '/apolices'
     | '/atividades'
+    | '/auditoria'
     | '/calendario'
     | '/ciclo-revisao'
     | '/clientes'
@@ -219,6 +229,7 @@ export interface FileRouteTypes {
     | '/administracao'
     | '/apolices'
     | '/atividades'
+    | '/auditoria'
     | '/calendario'
     | '/ciclo-revisao'
     | '/clientes'
@@ -240,6 +251,7 @@ export interface FileRouteTypes {
     | '/_authenticated/administracao'
     | '/_authenticated/apolices'
     | '/_authenticated/atividades'
+    | '/_authenticated/auditoria'
     | '/_authenticated/calendario'
     | '/_authenticated/ciclo-revisao'
     | '/_authenticated/clientes'
@@ -375,6 +387,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCalendarioRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/auditoria': {
+      id: '/_authenticated/auditoria'
+      path: '/auditoria'
+      fullPath: '/auditoria'
+      preLoaderRoute: typeof AuthenticatedAuditoriaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/atividades': {
       id: '/_authenticated/atividades'
       path: '/atividades'
@@ -403,6 +422,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdministracaoRoute: typeof AuthenticatedAdministracaoRoute
   AuthenticatedApolicesRoute: typeof AuthenticatedApolicesRoute
   AuthenticatedAtividadesRoute: typeof AuthenticatedAtividadesRoute
+  AuthenticatedAuditoriaRoute: typeof AuthenticatedAuditoriaRoute
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
   AuthenticatedCicloRevisaoRoute: typeof AuthenticatedCicloRevisaoRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
@@ -422,6 +442,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdministracaoRoute: AuthenticatedAdministracaoRoute,
   AuthenticatedApolicesRoute: AuthenticatedApolicesRoute,
   AuthenticatedAtividadesRoute: AuthenticatedAtividadesRoute,
+  AuthenticatedAuditoriaRoute: AuthenticatedAuditoriaRoute,
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
   AuthenticatedCicloRevisaoRoute: AuthenticatedCicloRevisaoRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
