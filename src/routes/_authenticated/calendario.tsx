@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useConsultorScope, applyScope } from "@/hooks/useConsultorScope";
 import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
-import { PageHeader } from "@/components/lilito/PageHeader";
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { CalendarPlus, BellPlus, Ban, ChevronLeft, ChevronRight, Repeat, Flag, Bell } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScoreStars } from "@/components/lilito/ScoreStars";
+
 import { toast } from "sonner";
 import {
   format, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks,
@@ -66,7 +66,7 @@ const NATUREZA_COLOR: Record<string, { bg: string; border: string; text: string;
   ab:              { bg: "bg-nat-ab/15",         border: "border-nat-ab/60",         text: "text-nat-ab",         dot: "bg-nat-ab" },
   revisita:        { bg: "bg-nat-revisita/15",   border: "border-nat-revisita/60",   text: "text-nat-revisita",   dot: "bg-nat-revisita" },
   fechamento:      { bg: "bg-nat-fechamento/15", border: "border-nat-fechamento/60", text: "text-nat-fechamento", dot: "bg-nat-fechamento" },
-  entrega_apolice: { bg: "bg-nat-entrega/15",    border: "border-nat-entrega/60",    text: "text-nat-entrega",    dot: "bg-nat-entrega" },
+  entrega_apolice: { bg: "bg-emerald-300/15",    border: "border-emerald-300/60",    text: "text-emerald-300",    dot: "bg-emerald-300" },
   joint_work:      { bg: "bg-gold/10",           border: "border-gold/40",           text: "text-gold",           dot: "bg-gold" },
   review:          { bg: "bg-muted",             border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground" },
   bloqueio:        { bg: "bg-muted/60",          border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground" },
@@ -196,49 +196,45 @@ function Calendario() {
 
   return (
     <div>
-      <PageHeader
-        eyebrow="Centro Operacional"
-        title="Calendário"
-        description="Toda movimentação do funil acontece aqui. O resultado do compromisso move o prospect."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={() => setDialog("agendamento")} className="gold-gradient text-background">
-              <CalendarPlus className="h-4 w-4 mr-2" />Novo Agendamento
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h1 className="font-display text-2xl text-foreground">Calendário</h1>
+        <div className="flex flex-wrap gap-1.5">
+          <Button size="sm" onClick={() => setDialog("agendamento")} className="gold-gradient text-background h-8 px-3">
+            <CalendarPlus className="h-3.5 w-3.5 mr-1" />Agendar
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setDialog("lembrete")} className="h-8 px-3">
+            <BellPlus className="h-3.5 w-3.5 mr-1" />Lembrete
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setDialog("bloqueio")} className="h-8 px-3">
+            <Ban className="h-3.5 w-3.5 mr-1" />Bloquear
+          </Button>
+          {auth?.isMaster && (
+            <Button size="sm" variant="outline" onClick={() => setDialog("recorrente")} className="h-8 px-3 border-gold/40">
+              <Repeat className="h-3.5 w-3.5 mr-1" />Recorrente
             </Button>
-            <Button variant="outline" onClick={() => setDialog("lembrete")}>
-              <BellPlus className="h-4 w-4 mr-2" />Novo Lembrete
-            </Button>
-            <Button variant="outline" onClick={() => setDialog("bloqueio")}>
-              <Ban className="h-4 w-4 mr-2" />Bloquear Horário
-            </Button>
-            {auth?.isMaster && (
-              <Button variant="outline" onClick={() => setDialog("recorrente")} className="border-gold/40">
-                <Repeat className="h-4 w-4 mr-2" />Compromisso Recorrente
-              </Button>
-            )}
-          </div>
-        }
-      />
+          )}
+        </div>
+      </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => shift(-1)}><ChevronLeft className="h-4 w-4" /></Button>
-          <Button variant="outline" onClick={() => setAnchor(new Date())}>Hoje</Button>
-          <Button variant="outline" size="icon" onClick={() => shift(1)}><ChevronRight className="h-4 w-4" /></Button>
-          <p className="caps-tracking text-gold ml-2">{periodoLabel}</p>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-1.5">
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => shift(-1)}><ChevronLeft className="h-4 w-4" /></Button>
+          <Button variant="outline" size="sm" className="h-8" onClick={() => setAnchor(new Date())}>Hoje</Button>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => shift(1)}><ChevronRight className="h-4 w-4" /></Button>
+          <p className="caps-tracking text-gold ml-2 hidden sm:block">{periodoLabel}</p>
         </div>
         <div className="flex items-center gap-2">
           <ConsultorFilter className="flex items-center gap-2" />
-
           <Tabs value={view} onValueChange={(v) => setView(v as View)}>
-            <TabsList>
-              <TabsTrigger value="dia">Dia</TabsTrigger>
-              <TabsTrigger value="semana">Semana</TabsTrigger>
-              <TabsTrigger value="mes">Mês</TabsTrigger>
+            <TabsList className="h-8">
+              <TabsTrigger value="dia" className="h-6 text-xs">Dia</TabsTrigger>
+              <TabsTrigger value="semana" className="h-6 text-xs">Semana</TabsTrigger>
+              <TabsTrigger value="mes" className="h-6 text-xs">Mês</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
       </div>
+      <p className="caps-tracking text-gold mb-2 sm:hidden">{periodoLabel}</p>
 
       {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
       {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
@@ -347,7 +343,8 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
   const top = (offsetMin / 60) * SLOT_HEIGHT;
   const height = (durMin / 60) * SLOT_HEIGHT;
   const c = NATUREZA_COLOR[e.tipo] ?? NATUREZA_COLOR.review;
-  const nome = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
+  const nomeCompleto = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
+  const primeiroNome = String(nomeCompleto).trim().split(/\s+/)[0];
   const hasDelay = !!e.delay_em;
   const delayAtivo = hasDelay && !e.delay_resolvido;
   const isRecorrente = e.__recorrente === true;
@@ -356,28 +353,20 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
       type="button"
       onClick={() => !isRecorrente && onSelect(e)}
       className={cn(
-        "absolute left-1 right-1 rounded-md border px-2 py-1 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer",
+        "absolute left-0.5 right-0.5 rounded-md border px-1.5 py-1 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
         c.bg, c.border,
         delayAtivo && "border-destructive",
         isRecorrente && "cursor-default",
       )}
       style={{ top, height }}
-      title={`${nome} — ${TIPO_LABEL[e.tipo] ?? e.tipo}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
+      title={`${nomeCompleto} — ${TIPO_LABEL[e.tipo] ?? e.tipo}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
     >
       {delayAtivo && (
         <span className="absolute top-0.5 left-0.5 z-10 text-[10px] leading-none select-none" aria-label="Delay">🚩</span>
       )}
-      <p className={cn("text-xs font-semibold truncate flex items-center gap-1", c.text, delayAtivo && "pl-3.5")}>
-        {nome}
-        {e.prospects?.score ? <ScoreStars score={e.prospects.score} /> : null}
+      <p className={cn("text-[13px] font-semibold leading-tight truncate", c.text, delayAtivo && "pl-3")}>
+        {primeiroNome}
       </p>
-      <p className="text-[10px] text-muted-foreground truncate">
-        <span className="font-mono">{format(start, "HH:mm")}</span>
-        <span className="mx-1 opacity-50">·</span>
-        <span className="caps-tracking">{TIPO_LABEL[e.tipo] ?? e.tipo}</span>
-        {e.joint?.nome ? ` · Joint c/ ${e.joint.nome}` : ""}
-      </p>
-
     </button>
   );
 }
@@ -450,13 +439,18 @@ function MonthGrid({ anchor, eventos, lembretes, onSelect }: { anchor: Date; eve
               <div className="space-y-1">
                 {dayEvts.slice(0, 3).map((e) => {
                   const c = NATUREZA_COLOR[e.tipo] ?? NATUREZA_COLOR.review;
-                  const nome = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
+                  const nomeCompleto = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
+                  const primeiroNome = String(nomeCompleto).trim().split(/\s+/)[0];
+                  const delayAtivo = !!e.delay_em && !e.delay_resolvido;
                   return (
                     <button
                       key={e.id} type="button" onClick={() => onSelect(e)}
-                      className={cn("w-full text-left text-[10px] px-1.5 py-0.5 rounded border truncate hover:ring-1 hover:ring-gold/40", c.bg, c.border, c.text)}
+                      className={cn("w-full text-left text-[11px] font-sans px-1.5 py-0.5 rounded border truncate hover:ring-1 hover:ring-gold/40", c.bg, c.border, c.text, delayAtivo && "border-destructive")}
+                      title={nomeCompleto}
                     >
-                      {format(new Date(e.inicio), "HH:mm")} {nome}
+                      {delayAtivo && <span className="mr-0.5">🚩</span>}
+                      <span className="font-mono opacity-70 mr-1">{format(new Date(e.inicio), "HH:mm")}</span>
+                      {primeiroNome}
                     </button>
                   );
                 })}
