@@ -378,7 +378,7 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
       {delayAtivo && (
         <span className="absolute top-0 left-0.5 z-10 text-[9px] leading-none select-none" aria-label="Delay">🚩</span>
       )}
-      <p className={cn("text-[12px] sm:text-[13px] font-medium leading-tight break-words line-clamp-3", c.text, delayAtivo && "pl-2.5")}>
+      <p className={cn("text-[11px] sm:text-[13px] font-medium leading-tight whitespace-normal [overflow-wrap:normal] [word-break:normal] line-clamp-3", c.text, delayAtivo && "pl-2.5")}>
         {nomeCompleto}
       </p>
 
