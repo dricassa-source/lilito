@@ -1268,6 +1268,8 @@ function PropostaFechadaForm({ evento, onClose }: { evento: any; onClose: () => 
 
 // ---------- Sheet para evento recorrente (instância virtual) ----------
 function RecorrenteSheet({ evento, onClose, onChanged }: { evento: any; onClose: () => void; onChanged: () => void }) {
+  const { auth } = useAuth();
+  const isMaster = auth?.isMaster ?? false;
   const inicio = new Date(evento.inicio);
   const fim = new Date(evento.fim);
   const recorrenciaId: string = evento.recorrencia_id;
