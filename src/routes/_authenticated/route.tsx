@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/lilito/AppSidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
+import { NotificacoesBell } from "@/components/lilito/NotificacoesBell";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
