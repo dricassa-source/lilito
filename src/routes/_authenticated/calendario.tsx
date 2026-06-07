@@ -27,6 +27,8 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useCalendarZoom } from "@/hooks/useCalendarZoom";
 
 
 export const Route = createFileRoute("/_authenticated/calendario")({
