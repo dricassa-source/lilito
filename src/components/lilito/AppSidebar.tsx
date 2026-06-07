@@ -3,6 +3,7 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu,
   SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sun, LayoutDashboard, Users2, Flame, CalendarDays, Target, AlertTriangle,
   ListChecks, Users, FileText, Heart, RefreshCcw, Trophy, Settings, LogOut,
