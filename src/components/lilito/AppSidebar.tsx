@@ -62,7 +62,6 @@ const items: NavItem[] = [
   { title: "Funil", url: "/funil", icon: Target },
   { title: "Em Delay", url: "/em-delay", icon: AlertTriangle, badge: "delays" },
   { title: "Resultado Semanal", url: "/resultado-semanal", icon: TrendingUp },
-  { title: "Lembretes", url: "/lembretes", icon: Bell },
   { title: "Onboarding", url: "/onboarding", icon: CircleDot },
   { title: "Atividades", url: "/atividades", icon: ListChecks },
   { title: "Clientes", url: "/clientes", icon: Users },
@@ -76,10 +75,6 @@ const masterItems = [
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
-const fase2 = [
-  { title: "Pós-venda", url: "/pos-venda", icon: Heart },
-  { title: "Ciclo de Revisão", url: "/ciclo-revisao", icon: RefreshCcw },
-];
 
 export function AppSidebar({ isMaster }: { isMaster: boolean }) {
   const { state } = useSidebar();
