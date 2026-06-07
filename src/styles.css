@@ -80,15 +80,15 @@
 :root {
   --radius: 0.5rem;
 
-  /* Premium dark — preto/grafite/dourado */
-  --background: oklch(0.13 0.005 60);
+  /* Premium graphite — substitui o preto absoluto. ~#18181B */
+  --background: oklch(0.18 0.004 286);
   --foreground: oklch(0.96 0.01 80);
-  --surface: oklch(0.16 0.006 60);
-  --surface-elevated: oklch(0.19 0.007 60);
+  --surface: oklch(0.215 0.005 286);
+  --surface-elevated: oklch(0.245 0.005 286);
 
-  --card: oklch(0.16 0.006 60);
+  --card: oklch(0.215 0.005 286);
   --card-foreground: oklch(0.96 0.01 80);
-  --popover: oklch(0.18 0.006 60);
+  --popover: oklch(0.235 0.005 286);
   --popover-foreground: oklch(0.96 0.01 80);
 
   --primary: oklch(0.78 0.13 80);            /* dourado #C8A24B */
