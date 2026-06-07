@@ -424,7 +424,7 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
       className={cn(
         "absolute inset-x-0 rounded-[3px] border px-1 py-0.5 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
         c.bg, c.border,
-        delayAtivo && "border-destructive",
+        hasDelay && "border-destructive",
       )}
       style={{ top, height }}
       title={`${nomeCompleto} — ${TIPO_LABEL[e.tipo] ?? e.tipo} · ${horario}${e.local ? ` · ${e.local}` : ""}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
