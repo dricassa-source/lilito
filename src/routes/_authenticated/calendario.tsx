@@ -439,13 +439,18 @@ function MonthGrid({ anchor, eventos, lembretes, onSelect }: { anchor: Date; eve
               <div className="space-y-1">
                 {dayEvts.slice(0, 3).map((e) => {
                   const c = NATUREZA_COLOR[e.tipo] ?? NATUREZA_COLOR.review;
-                  const nome = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
+                  const nomeCompleto = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
+                  const primeiroNome = String(nomeCompleto).trim().split(/\s+/)[0];
+                  const delayAtivo = !!e.delay_em && !e.delay_resolvido;
                   return (
                     <button
                       key={e.id} type="button" onClick={() => onSelect(e)}
-                      className={cn("w-full text-left text-[10px] px-1.5 py-0.5 rounded border truncate hover:ring-1 hover:ring-gold/40", c.bg, c.border, c.text)}
+                      className={cn("w-full text-left text-[11px] font-sans px-1.5 py-0.5 rounded border truncate hover:ring-1 hover:ring-gold/40", c.bg, c.border, c.text, delayAtivo && "border-destructive")}
+                      title={nomeCompleto}
                     >
-                      {format(new Date(e.inicio), "HH:mm")} {nome}
+                      {delayAtivo && <span className="mr-0.5">🚩</span>}
+                      <span className="font-mono opacity-70 mr-1">{format(new Date(e.inicio), "HH:mm")}</span>
+                      {primeiroNome}
                     </button>
                   );
                 })}
