@@ -101,13 +101,14 @@ function MeuDia() {
     queryKey: ["meu-dia-agenda-semana", scopeKey],
     enabled: !!uid && scopeIds.length > 0,
     queryFn: async () => {
-      const end = addDays(today, 7).toISOString();
+      const weekStart = startOfDay(today);
+      const end = endOfDay(addDays(weekStart, 6)).toISOString();
       const { data } = await applyScope(
         supabase.from("agenda_eventos")
-          .select("id,titulo,tipo,inicio")
-          .gte("inicio", dayStart).lte("inicio", end),
+          .select("id,titulo,tipo,inicio,prospect_id,delay_em,delay_resolvido")
+          .gte("inicio", weekStart.toISOString()).lte("inicio", end),
         scopeIds,
-      ).order("inicio", { ascending: true }).limit(10);
+      ).order("inicio", { ascending: true });
       return data ?? [];
     },
   });
@@ -122,8 +123,38 @@ function MeuDia() {
           .lte("follow_up_em", new Date().toISOString())
           .not("follow_up_em", "is", null),
         scopeIds,
-      ).order("follow_up_em", { ascending: true }).limit(8);
-      return data ?? [];
+      ).order("follow_up_em", { ascending: true }).limit(50);
+      // Dedupe por prospect_id (mantém o mais antigo = mais atrasado)
+      const seen = new Set<string>();
+      const dedup: any[] = [];
+      for (const a of data ?? []) {
+        const key = a.prospect_id ?? a.id;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        dedup.push(a);
+      }
+      return dedup.slice(0, 8);
+    },
+  });
+
+  const { data: aniversariantes } = useQuery({
+    queryKey: ["meu-dia-aniversariantes", scopeKey],
+    enabled: !!uid && scopeIds.length > 0,
+    queryFn: async () => {
+      const { data } = await applyScope(
+        supabase.from("prospects")
+          .select("id,nome,data_nascimento,telefone,etapa_funil")
+          .not("data_nascimento", "is", null),
+        scopeIds,
+      );
+      const now = new Date();
+      const list = (data ?? []).map((p: any) => {
+        const dn = new Date(p.data_nascimento);
+        const proximo = new Date(now.getFullYear(), dn.getMonth(), dn.getDate());
+        if (proximo < startOfDay(now)) proximo.setFullYear(now.getFullYear() + 1);
+        return { ...p, proximo, diasFaltam: differenceInDays(startOfDay(proximo), startOfDay(now)) };
+      }).sort((a, b) => a.diasFaltam - b.diasFaltam);
+      return list;
     },
   });
 
@@ -191,15 +222,52 @@ function MeuDia() {
       <AlertasOperacionais alertas={alertas} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-        <Card className="p-5 bg-surface border-border">
-          <p className="caps-tracking text-muted-foreground flex items-center gap-2 text-[0.6rem]">
-            <Cake className="h-3.5 w-3.5" /> Aniversariantes
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">Em breve.</p>
-        </Card>
+        <Aniversariantes items={aniversariantes ?? []} />
         <FraseRotativa />
       </div>
     </div>
+  );
+}
+
+function Aniversariantes({ items }: { items: any[] }) {
+  const hoje = items.filter((p) => p.diasFaltam === 0);
+  const proximo = items.find((p) => p.diasFaltam > 0);
+  return (
+    <Card className="p-5 bg-surface border-border">
+      <p className="caps-tracking text-gold flex items-center gap-2 text-[0.6rem] mb-3">
+        <Cake className="h-3.5 w-3.5" /> Aniversariantes
+      </p>
+      {hoje.length === 0 && !proximo ? (
+        <p className="text-sm text-muted-foreground">Sem aniversários registrados.</p>
+      ) : (
+        <div className="space-y-3">
+          {hoje.length > 0 && (
+            <div>
+              <p className="caps-tracking text-emerald-500 text-[0.55rem] mb-1">Hoje</p>
+              <ul className="space-y-1">
+                {hoje.map((p) => (
+                  <li key={p.id} className="text-sm flex items-center gap-2">
+                    🎂 <span className="font-medium">{p.nome}</span>
+                    <span className="text-xs text-muted-foreground">— Hoje</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {proximo && (
+            <div>
+              <p className="caps-tracking text-muted-foreground text-[0.55rem] mb-1">Próximo</p>
+              <p className="text-sm flex items-center gap-2">
+                🎂 <span className="font-medium">{proximo.nome}</span>
+              </p>
+              <p className="text-xs text-muted-foreground ml-6">
+                {format(proximo.proximo, "dd/MM", { locale: ptBR })} · em {proximo.diasFaltam} dia{proximo.diasFaltam === 1 ? "" : "s"}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -354,33 +422,69 @@ function DesafiosDoDia({ uid }: { uid: string }) {
 }
 
 function MinhaAgenda({ items }: { items: any[] }) {
+  const today = startOfDay(new Date());
+  const days = Array.from({ length: 7 }, (_, i) => addDays(today, i));
+  const byDay = days.map((d) => ({
+    date: d,
+    items: items.filter((e) => isSameDayLocal(new Date(e.inicio), d)),
+  }));
   return (
     <Card className="p-4 bg-surface border-border">
       <div className="flex items-center justify-between mb-3">
         <p className="caps-tracking text-gold flex items-center gap-2 text-[0.6rem]">
-          <CalIcon className="h-3.5 w-3.5" /> Minha agenda — próximos 7 dias
+          <CalIcon className="h-3.5 w-3.5" /> Mini agenda semanal
         </p>
-        <Link to="/calendario" className="text-xs text-muted-foreground hover:text-gold">Abrir calendário →</Link>
+        <Link to="/calendario" className="text-xs text-muted-foreground hover:text-gold">Abrir calendário completo →</Link>
       </div>
-      {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Sem compromissos nos próximos 7 dias.</p>
-      ) : (
-        <ul className="divide-y divide-border max-h-56 overflow-y-auto">
-          {items.map((e) => (
-            <li key={e.id} className="py-2 flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-sm truncate">{e.titulo}</p>
-                <p className="text-xs text-muted-foreground">
-                  {format(new Date(e.inicio), "EEE dd/MM HH:mm", { locale: ptBR })} · {e.tipo}
+      <div className="grid grid-cols-7 gap-1.5">
+        {byDay.map(({ date, items: dayItems }) => {
+          const isToday = isSameDayLocal(date, today);
+          return (
+            <div key={date.toISOString()} className={`rounded-md border ${isToday ? "border-gold/60 bg-gold/5" : "border-border bg-background/40"} p-1.5 min-h-[120px] flex flex-col`}>
+              <div className="text-center mb-1.5">
+                <p className="caps-tracking text-muted-foreground text-[0.55rem] leading-none">
+                  {format(date, "EEE", { locale: ptBR }).slice(0, 3).toUpperCase()}
                 </p>
+                <p className={`font-display text-base leading-none mt-0.5 ${isToday ? "text-gold" : "text-foreground"}`}>{format(date, "d")}</p>
               </div>
-            </li>
-          ))}
-        </ul>
-      )}
+              <div className="space-y-1 overflow-hidden">
+                {dayItems.slice(0, 3).map((e) => {
+                  const c = ETAPA_DOT[e.tipo] ?? "bg-muted text-muted-foreground";
+                  return (
+                    <Link to="/calendario" key={e.id}>
+                      <div className={`${c} rounded px-1 py-0.5 text-[9px] truncate cursor-pointer hover:opacity-80`} title={`${format(new Date(e.inicio), "HH:mm")} · ${e.titulo}`}>
+                        {format(new Date(e.inicio), "HH:mm")} {e.titulo}
+                      </div>
+                    </Link>
+                  );
+                })}
+                {dayItems.length > 3 && (
+                  <p className="text-[9px] text-muted-foreground text-center">+{dayItems.length - 3}</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </Card>
   );
 }
+
+function isSameDayLocal(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+const ETAPA_DOT: Record<string, string> = {
+  hot: "bg-orange-500/30 text-orange-200",
+  ab: "bg-yellow-500/30 text-yellow-200",
+  revisita: "bg-blue-500/30 text-blue-200",
+  fechamento: "bg-emerald-600/30 text-emerald-200",
+  entrega_apolice: "bg-emerald-300/30 text-emerald-100",
+  onboarding: "bg-emerald-300/30 text-emerald-100",
+  joint_work: "bg-gold/30 text-gold",
+  recorrente: "bg-gold/20 text-gold",
+  bloqueio: "bg-muted text-muted-foreground",
+};
 
 function FollowupsBloco({ items }: { items: any[] }) {
   return (

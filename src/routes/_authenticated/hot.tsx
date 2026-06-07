@@ -136,6 +136,9 @@ function Hot() {
       <PageHeader eyebrow="Fila diária" title="HOT" description="Ligações priorizadas por qualificação." />
       <ConsultorFilter />
 
+      <HotGestao />
+
+
 
 
       {/* Listas HOT */}
@@ -626,5 +629,167 @@ function NovaListaDialog({ state, setState, onDone }: { state: DialogState; setS
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ============= HOT Gestão (Sessão da Semana + Ranking + Funil) =============
+
+function HotGestao() {
+  const { auth } = useAuth();
+  const { scopeIds, isMaster, consultorId } = useConsultorScope();
+  const scopeKey = scopeIds.join(",");
+
+  const { data } = useQuery({
+    queryKey: ["hot-gestao", scopeKey],
+    enabled: !!auth && scopeIds.length > 0,
+    queryFn: async () => {
+      const monday = new Date();
+      const day = monday.getDay();
+      const diff = (day + 6) % 7;
+      monday.setDate(monday.getDate() - diff);
+      monday.setHours(0, 0, 0, 0);
+      const inicio = monday.toISOString();
+
+      const [ativs, evs, prospects, roles] = await Promise.all([
+        applyScope(supabase.from("atividades").select("tipo,resultado,consultor_id,created_at").gte("created_at", inicio), scopeIds),
+        applyScope(supabase.from("agenda_eventos").select("tipo,inicio,consultor_id").gte("inicio", inicio), scopeIds),
+        applyScope(supabase.from("prospects").select("id,etapa_funil,consultor_id,entrou_etapa_em,origem"), scopeIds),
+        supabase.from("user_roles").select("user_id").eq("role", "consultor"),
+      ]);
+
+      const ligacoes = (ativs.data ?? []).filter((a: any) => a.tipo === "ligacao").length;
+      const absGeradas = (evs.data ?? []).filter((e: any) => e.tipo === "ab").length;
+      const conv = ligacoes > 0 ? Math.round((absGeradas / ligacoes) * 100) : 0;
+      const retornos = (ativs.data ?? []).filter((a: any) => a.resultado === "retornar").length;
+      const naoAtendeu = (ativs.data ?? []).filter((a: any) => a.resultado === "nao_atendeu").length;
+      const semInteresse = (ativs.data ?? []).filter((a: any) => a.resultado === "sem_interesse").length;
+
+      // Ranking por consultor
+      const consultorIds = (roles.data ?? []).map((r) => r.user_id);
+      const { data: perfis } = consultorIds.length
+        ? await supabase.from("profiles").select("id,nome").in("id", consultorIds)
+        : { data: [] as any[] };
+      const nomes = new Map((perfis ?? []).map((p: any) => [p.id, p.nome]));
+
+      const ranking = new Map<string, { id: string; nome: string; lig: number; abs: number; tempoTotal: number; tempoCount: number }>();
+      for (const a of (ativs.data ?? []) as any[]) {
+        if (a.tipo !== "ligacao") continue;
+        const cur = ranking.get(a.consultor_id) ?? { id: a.consultor_id, nome: nomes.get(a.consultor_id) ?? "—", lig: 0, abs: 0, tempoTotal: 0, tempoCount: 0 };
+        cur.lig++; ranking.set(a.consultor_id, cur);
+      }
+      for (const e of (evs.data ?? []) as any[]) {
+        if (e.tipo !== "ab") continue;
+        const cur = ranking.get(e.consultor_id) ?? { id: e.consultor_id, nome: nomes.get(e.consultor_id) ?? "—", lig: 0, abs: 0, tempoTotal: 0, tempoCount: 0 };
+        cur.abs++; ranking.set(e.consultor_id, cur);
+      }
+      for (const p of (prospects.data ?? []) as any[]) {
+        if (p.etapa_funil !== "hot" || !p.entrou_etapa_em) continue;
+        const dias = Math.floor((Date.now() - new Date(p.entrou_etapa_em).getTime()) / 86_400_000);
+        const cur = ranking.get(p.consultor_id) ?? { id: p.consultor_id, nome: nomes.get(p.consultor_id) ?? "—", lig: 0, abs: 0, tempoTotal: 0, tempoCount: 0 };
+        cur.tempoTotal += dias; cur.tempoCount++;
+        ranking.set(p.consultor_id, cur);
+      }
+      const rankingArr = Array.from(ranking.values())
+        .map((r) => ({ ...r, conv: r.lig > 0 ? Math.round((r.abs / r.lig) * 100) : 0, tempoMedio: r.tempoCount > 0 ? Math.round(r.tempoTotal / r.tempoCount) : 0 }))
+        .sort((a, b) => b.abs - a.abs);
+
+      // Funil HOT → Cliente
+      const funil = {
+        recomendacao: (prospects.data ?? []).filter((p: any) => p.etapa_funil === "recomendacao").length,
+        hot: (prospects.data ?? []).filter((p: any) => p.etapa_funil === "hot").length,
+        ab: (prospects.data ?? []).filter((p: any) => p.etapa_funil === "ab").length,
+        fechamento: (prospects.data ?? []).filter((p: any) => p.etapa_funil === "fechamento").length,
+        onboarding: (prospects.data ?? []).filter((p: any) => p.etapa_funil === "implantacao").length,
+        cliente: (prospects.data ?? []).filter((p: any) => ["cliente", "pos_venda"].includes(p.etapa_funil)).length,
+      };
+
+      return { sessao: { ligacoes, absGeradas, conv, retornos, naoAtendeu, semInteresse }, ranking: rankingArr, funil };
+    },
+  });
+
+  if (!data) return null;
+  const mostrarRanking = isMaster && !consultorId;
+
+  return (
+    <div className="space-y-4 mb-6">
+      <Card className="bg-surface border-border p-5">
+        <p className="caps-tracking text-gold text-[0.65rem] mb-3">🔥 Sessão HOT da semana</p>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-center">
+          <HotStat icon="☎" label="Ligações" value={data.sessao.ligacoes} />
+          <HotStat icon="📅" label="ABs geradas" value={data.sessao.absGeradas} />
+          <HotStat icon="🔥" label="HOT → AB" value={`${data.sessao.conv}%`} />
+          <HotStat icon="🔄" label="Retornos" value={data.sessao.retornos} />
+          <HotStat icon="⏰" label="Não atendeu" value={data.sessao.naoAtendeu} />
+          <HotStat icon="❌" label="Sem interesse" value={data.sessao.semInteresse} />
+        </div>
+      </Card>
+
+      {mostrarRanking && data.ranking.length > 0 && (
+        <Card className="bg-surface border-border p-5">
+          <p className="caps-tracking text-gold text-[0.65rem] mb-3">🏆 Ranking HOT</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[10px] text-muted-foreground uppercase tracking-wider">
+                  <th className="py-1 pr-2">#</th>
+                  <th className="py-1 pr-2">Consultor</th>
+                  <th className="py-1 pr-2 text-right">Ligações</th>
+                  <th className="py-1 pr-2 text-right">ABs</th>
+                  <th className="py-1 pr-2 text-right">Conv.</th>
+                  <th className="py-1 pl-2">Tempo médio</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {data.ranking.map((r, idx) => {
+                  const tempoCor = r.tempoMedio <= 3 ? "text-emerald-500" : r.tempoMedio <= 7 ? "text-yellow-500" : "text-destructive";
+                  const tempoDot = r.tempoMedio <= 3 ? "🟢" : r.tempoMedio <= 7 ? "🟡" : "🔴";
+                  return (
+                    <tr key={r.id}>
+                      <td className="py-2 pr-2 text-muted-foreground">{idx + 1}</td>
+                      <td className="py-2 pr-2 truncate max-w-[160px]">{r.nome}</td>
+                      <td className="py-2 pr-2 text-right">{r.lig}</td>
+                      <td className="py-2 pr-2 text-right">{r.abs}</td>
+                      <td className="py-2 pr-2 text-right text-gold">{r.conv}%</td>
+                      <td className={`py-2 pl-2 ${tempoCor}`}>{tempoDot} {r.tempoMedio}d</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      <Card className="bg-surface border-border p-5">
+        <p className="caps-tracking text-gold text-[0.65rem] mb-3">🔻 Funil HOT → Cliente</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          <FunilStep label="Recomendação" qtd={data.funil.recomendacao} color="bg-muted text-muted-foreground" />
+          <FunilStep label="HOT" qtd={data.funil.hot} color="bg-orange-500/20 text-orange-500" />
+          <FunilStep label="AB" qtd={data.funil.ab} color="bg-yellow-500/20 text-yellow-500" />
+          <FunilStep label="Fechamento" qtd={data.funil.fechamento} color="bg-emerald-600/20 text-emerald-500" />
+          <FunilStep label="Onboarding" qtd={data.funil.onboarding} color="bg-emerald-300/20 text-emerald-300" />
+          <FunilStep label="Cliente" qtd={data.funil.cliente} color="bg-gold/20 text-gold" />
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function HotStat({ icon, label, value }: { icon: string; label: string; value: any }) {
+  return (
+    <div>
+      <p className="text-2xl leading-none">{icon}</p>
+      <p className="font-display text-2xl mt-1">{value}</p>
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">{label}</p>
+    </div>
+  );
+}
+
+function FunilStep({ label, qtd, color }: { label: string; qtd: number; color: string }) {
+  return (
+    <div className={`${color} rounded-md p-2.5 text-center`}>
+      <p className="caps-tracking text-[0.55rem] opacity-80">{label}</p>
+      <p className="font-display text-2xl mt-1">{qtd}</p>
+    </div>
   );
 }

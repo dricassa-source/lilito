@@ -27,8 +27,8 @@ import { toast } from "sonner";
 
 
 function tempoEtapaDot(dias: number) {
-  if (dias <= 7) return { cor: "bg-emerald-500", label: "Recente" };
-  if (dias <= 14) return { cor: "bg-yellow-500", label: "Atenção" };
+  if (dias <= 3) return { cor: "bg-emerald-500", label: "Recente" };
+  if (dias <= 7) return { cor: "bg-yellow-500", label: "Atenção" };
   return { cor: "bg-red-500", label: "Crítico" };
 }
 
@@ -316,7 +316,7 @@ function Recomendacoes() {
             <TableBody>
               {filtered.map((p: any) => {
                 const score = orneScore(p);
-                const dias = diasDesde(p.entrou_etapa_em ?? p.created_at);
+                const dias = diasDesde(p.entrou_etapa_em);
                 const dot = tempoEtapaDot(dias);
                 return (
                   <TableRow key={p.id}>

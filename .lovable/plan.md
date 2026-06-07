@@ -1,60 +1,47 @@
-# CORREÇÃO GLOBAL 01 — Plano
+# CORREÇÃO GLOBAL 02 — UX e Gestão
 
-Implementar um **filtro unificado de consultor** que rege todos os módulos, eliminando a necessidade de cada tela ter seu próprio toggle.
+Apenas mudanças de UX/layout/apresentação. Sem migrations, sem mudar regras de negócio, permissões, cálculos ou integrações.
 
-## 1. Núcleo compartilhado (novos arquivos)
+## 1. Meu Dia (`src/routes/_authenticated/index.tsx`)
+- **Mini Agenda Semanal**: substitui a lista "Próximos 7 Dias" por grade SEG–DOM com chips coloridos por etapa (paleta oficial). Click no chip abre o compromisso; botão "Abrir Calendário Completo" navega para `/calendario`.
+- **Aniversariantes**: remover "Em breve". Se houver hoje → `🎂 Nome — Hoje`. Senão → próximo aniversariante (nome, data, dias restantes). Usa dados de `clientes`/`prospects` já carregados.
+- **Follow-ups**: deduplicar por prospect_id, recalcular atraso usando `vencimento`. Adicionar indicadores estratégicos: Onboardings Pendentes, Fechamentos Agendados, Prospects Parados (>7d na etapa) — reaproveitando queries existentes.
 
-**`src/hooks/useConsultorScope.ts`**
-- Retorna `{ isMaster, consultores, consultorId, setConsultorId, scopeIds }`.
-- `consultorId`:
-  - Consultor → forçado ao próprio `auth.user.id` (não editável).
-  - Master → `null` = Unidade Consolidada, ou um `consultor_id` selecionado.
-- Persistência em `localStorage` (`lilito.scope.consultorId`) → seleção do master segue entre módulos.
-- `scopeIds`: array de IDs a aplicar nos `.in("consultor_id", …)` (Unidade = todos os consultores ativos; um consultor = `[id]`).
+## 2. Dashboard (`src/routes/_authenticated/dashboard.tsx`)
+- **Hero cards** maiores e em destaque: PA Fechado, Capital Segurado, Clientes Emitidos, Comissão Projetada.
+- **Pipeline** vira o bloco visual principal: Originação → HOT → AB → Fechamento → Onboarding → Cliente, com qtd + PA por etapa, cores da paleta oficial.
+- **Conversão**, **Qualidade**, **Auditoria** colapsadas em `<Collapsible>` (recolhidas por padrão).
+- **Paleta oficial** aplicada via tokens existentes:
+  - HOT = laranja, AB = amarelo, Revisita = azul, Fechamento = verde, Onboarding = verde claro, Cliente = dourado, Delay = vermelho.
 
-**`src/components/lilito/ConsultorFilter.tsx`**
-- Renderiza um `<Select>` no topo da página.
-- Master: opções `Unidade (Consolidado)` + lista de consultores ativos.
-- Consultor: não renderiza nada (visão fixa).
-- Usado em **todos** os módulos abaixo, sempre no mesmo lugar (logo abaixo do `PageHeader`).
+## 3. Resultado Semanal (`src/routes/_authenticated/resultado-semanal.tsx`)
+- Reorganizar Stats em dois blocos: **Produção da Semana** e **Próxima Semana** com os ícones/labels solicitados.
+- Remover destaque a Revisitas.
+- Manter alertas atuais (já cobrem as 4 regras). Filtro Unidade/Consultor já vem do `ConsultorFilter`.
 
-## 2. Módulos a atualizar
+## 4. Em Delay (`src/routes/_authenticated/em-delay.tsx`)
+- Trocar `<Table>` por grid de cards mobile-first. Cada card: Nome + ScoreStars, Etapa (chip colorido), Motivo, Consultor, Dias parado. Botões grandes: Reagendar, Adiar 7d, Ligar, WhatsApp, Destravar, Perdido. Mantém handlers existentes.
 
-Para cada um: trocar a lógica atual de filtragem por `useConsultorScope` + montar query com `.in("consultor_id", scopeIds)` (ou `.eq` quando individual). O `queryKey` inclui `consultorId` para invalidar ao trocar.
+## 5. Calendário (`src/routes/_authenticated/calendario.tsx`)
+- Remover círculo vermelho grande e badge vermelho dos eventos delayed.
+- Manter borda vermelha fina + 🚩 pequena no canto superior esquerdo.
+- Ao `delay_resolvido=true`, esconder a bandeira (já é o comportamento; só limpar UI duplicada).
 
-| Módulo | Arquivo |
-|---|---|
-| Meu Dia | `index.tsx` |
-| Dashboard | `dashboard.tsx` (substitui toggle atual) |
-| Recomendações | `recomendacoes.tsx` |
-| HOT | `hot.tsx` |
-| Funil | `funil.tsx` |
-| Calendário | `calendario.tsx` |
-| Em Delay | `em-delay.tsx` |
-| Onboarding | `onboarding.tsx` |
-| Clientes | `clientes.tsx` |
-| Apólices | `apolices.tsx` |
-| Resultado Semanal | `resultado-semanal.tsx` (substitui toggle atual) |
-| Planejamento | `planejamento.tsx` |
-| Auditoria | `auditoria.tsx` |
-| Atividades | `atividades.tsx` |
-| Lembretes | `lembretes.tsx` |
-| Pós-Venda | `pos-venda.tsx` |
-| Joint | `joint.tsx` (mantém lógica de requests; filtra por escopo) |
+## 6. HOT (`src/routes/_authenticated/hot.tsx`)
+- Adicionar topo de página com 3 blocos novos (apenas leitura — agregando dados já consultados):
+  1. **Sessão HOT da Semana**: Ligações, ABs geradas, Conversão HOT→AB, Retornos, Não Atendeu, Sem Interesse.
+  2. **Ranking HOT por consultor** (Master): Ligações, ABs, Conversão, Tempo Médio com semáforo 🟢/🟡/🔴.
+  3. **Funil HOT → Cliente**: Recomendação → HOT → AB → Fechamento → Onboarding → Cliente.
+- Lista operacional atual permanece abaixo.
 
-## 3. Regras
+## 7. Tempo na Etapa (`src/components/lilito/ScoreStars.tsx` adjacente — helper)
+- Auditar usos de `tempoEtapaDot`/cálculo de dias na etapa em `recomendacoes.tsx`, `funil.tsx`, `em-delay.tsx`, `hot.tsx`. Trocar referências de `created_at` por `entrou_etapa_em` (já existe no schema). Semáforo: 🟢 0–3d / 🟡 4–7d / 🔴 8+d.
+- Centralizar helper `diasNaEtapa(prospect)` + `etapaDot(dias)` em `src/lib/utils.ts` ou novo `src/lib/tempo-etapa.ts` para reuso.
 
-- **Consultor**: filtro oculto; queries sempre `eq("consultor_id", auth.user.id)`.
-- **Master**: filtro visível; padrão = Unidade (consolidado). Ao escolher consultor X, todas queries reagem.
-- **Sem duplicação de telas**: mesmo componente serve para os dois perfis.
-- **Sem novos módulos**: só patch nos existentes.
-- **Visual**: mantém padrão LILITO (Select já existente no design system).
+## Fora de escopo
+- Migrations, novos campos de banco, mudanças de RLS.
+- Renomear rotas ou criar novos módulos.
+- Mexer em sidebar, auth, ou lógica de scope (já implementada na CG-01).
 
-## 4. Fora de escopo
-
-- Schema/migrations — nenhuma alteração no banco.
-- Identidade visual.
-- Sidebar.
-- Lógica interna de cada módulo (apenas a fonte do filtro).
-
-Aprovação para executar?
+## Validação
+Após implementar, abrir preview em mobile (375px) e desktop para verificar a mini-agenda, os cards de Em Delay e o pipeline do Dashboard.

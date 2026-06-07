@@ -8,6 +8,8 @@ import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScoreStars } from "@/components/lilito/ScoreStars";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -35,6 +37,52 @@ function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode
       <p className="caps-tracking text-gold mb-3 text-[0.65rem]">{titulo}</p>
       {children}
     </section>
+  );
+}
+
+function BlocoColapsavel({ titulo, children, defaultOpen = false }: { titulo: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <section className="mb-6">
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <CollapsibleTrigger className="w-full flex items-center justify-between py-2 group">
+          <p className="caps-tracking text-muted-foreground group-hover:text-gold text-[0.65rem] transition-colors">{titulo}</p>
+          <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-3">
+          {children}
+        </CollapsibleContent>
+      </Collapsible>
+    </section>
+  );
+}
+
+function HeroKPI({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent?: "gold" | "blue" | "emerald" }) {
+  const tone =
+    accent === "gold" ? "border-gold/40 from-gold/10" :
+    accent === "blue" ? "border-blue-500/40 from-blue-500/10" :
+    accent === "emerald" ? "border-emerald-500/40 from-emerald-500/10" :
+    "border-border";
+  const text =
+    accent === "gold" ? "text-gold" :
+    accent === "blue" ? "text-blue-400" :
+    accent === "emerald" ? "text-emerald-400" : "text-foreground";
+  return (
+    <Card className={`p-6 bg-gradient-to-br to-surface bg-surface ${tone}`}>
+      <p className="caps-tracking text-muted-foreground text-[0.65rem]">{label}</p>
+      <p className={`font-display text-4xl md:text-5xl mt-3 ${text}`}>{value}</p>
+      {sub && <p className="text-xs text-muted-foreground mt-2">{sub}</p>}
+    </Card>
+  );
+}
+
+function PipelineStep({ label, qtd, pa, color, fg }: { label: string; qtd: number; pa: number; color: string; fg: string }) {
+  return (
+    <div className={`${color} rounded-md p-3 border border-white/5`}>
+      <p className={`caps-tracking text-[0.55rem] ${fg}`}>{label}</p>
+      <p className={`font-display text-3xl mt-1 ${fg}`}>{qtd}</p>
+      {pa > 0 && <p className="text-[10px] text-muted-foreground mt-1">PA: R$ {Math.round(pa).toLocaleString("pt-BR")}</p>}
+    </div>
   );
 }
 
@@ -175,34 +223,28 @@ function Dashboard() {
 
       <ConsultorFilter />
 
-
-      <Bloco titulo="Produção">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KPI label="PA Fechado" value={data ? brl(data.paFechado) : "—"} />
-          <KPI label="PA Emitido" value={data ? brl(data.paEmitido) : "—"} accent />
-          <KPI label="Capital Segurado" value={data ? brl(data.capitalSegurado) : "—"} />
-          <KPI label="Comissão Projetada" value={data ? brl(data.comissao) : "—"} sub="60% do PA emitido" />
+      {/* HERO — Cards principais em destaque */}
+      <section className="mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <HeroKPI label="PA Fechado" value={data ? brl(data.paFechado) : "—"} accent="gold" />
+          <HeroKPI label="Capital Segurado" value={data ? brl(data.capitalSegurado) : "—"} accent="blue" />
+          <HeroKPI label="Clientes Emitidos" value={data?.funil.cliente ?? "—"} accent="emerald" />
+          <HeroKPI label="Comissão Projetada" value={data ? brl(data.comissao) : "—"} sub="60% do PA emitido" accent="gold" />
         </div>
-      </Bloco>
+      </section>
 
-      <Bloco titulo="Funil">
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-          <KPI label="Recomendações" value={data?.funil.recomendacao ?? "—"} />
-          <KPI label="HOT" value={data?.funil.hot ?? "—"} />
-          <KPI label="AB" value={data?.funil.ab ?? "—"} />
-          <KPI label="Fechamento" value={data?.funil.fechamento ?? "—"} />
-          <KPI label="Onboarding" value={data?.funil.onboarding ?? "—"} />
-          <KPI label="Clientes" value={data?.funil.cliente ?? "—"} accent />
-        </div>
-      </Bloco>
-
-      <Bloco titulo="Conversão">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KPI label="HOT → AB" value={data ? `${data.conv.hotAb}%` : "—"} />
-          <KPI label="AB → Fechamento" value={data ? `${data.conv.abFech}%` : "—"} />
-          <KPI label="Fech. → Onboarding" value={data ? `${data.conv.fechOnb}%` : "—"} />
-          <KPI label="Onboarding → Cliente" value={data ? `${data.conv.onbCli}%` : "—"} />
-        </div>
+      {/* PIPELINE — Bloco visual principal */}
+      <Bloco titulo="Pipeline">
+        <Card className="bg-surface border-border p-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <PipelineStep label="Originação" qtd={data?.funil.recomendacao ?? 0} pa={0} color="bg-muted" fg="text-muted-foreground" />
+            <PipelineStep label="HOT" qtd={data?.funil.hot ?? 0} pa={0} color="bg-orange-500/20" fg="text-orange-500" />
+            <PipelineStep label="AB" qtd={data?.funil.ab ?? 0} pa={0} color="bg-yellow-500/20" fg="text-yellow-500" />
+            <PipelineStep label="Fechamento" qtd={data?.funil.fechamento ?? 0} pa={data?.paFechado ?? 0} color="bg-emerald-600/20" fg="text-emerald-500" />
+            <PipelineStep label="Onboarding" qtd={data?.funil.onboarding ?? 0} pa={data?.onb.pa ?? 0} color="bg-emerald-300/20" fg="text-emerald-300" />
+            <PipelineStep label="Cliente" qtd={data?.funil.cliente ?? 0} pa={data?.paEmitido ?? 0} color="bg-gold/20" fg="text-gold" />
+          </div>
+        </Card>
       </Bloco>
 
       <Bloco titulo="Onboarding">
@@ -222,7 +264,16 @@ function Dashboard() {
         </div>
       </Bloco>
 
-      <Bloco titulo="Qualidade">
+      <BlocoColapsavel titulo="Conversão">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KPI label="HOT → AB" value={data ? `${data.conv.hotAb}%` : "—"} />
+          <KPI label="AB → Fechamento" value={data ? `${data.conv.abFech}%` : "—"} />
+          <KPI label="Fech. → Onboarding" value={data ? `${data.conv.fechOnb}%` : "—"} />
+          <KPI label="Onboarding → Cliente" value={data ? `${data.conv.onbCli}%` : "—"} />
+        </div>
+      </BlocoColapsavel>
+
+      <BlocoColapsavel titulo="Qualidade">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <KPI label="Eventos sem resultado" value={data?.qualidade.semResultado ?? "—"} />
           <KPI label="Delays abandonados (>30d)" value={data?.qualidade.delaysAbandonados ?? "—"} />
@@ -235,7 +286,15 @@ function Dashboard() {
             </div>
           </Card>
         </div>
-      </Bloco>
+      </BlocoColapsavel>
+
+      <BlocoColapsavel titulo="Auditoria">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <KPI label="Eventos sem resultado" value={data?.qualidade.semResultado ?? "—"} />
+          <KPI label="Delays abandonados" value={data?.qualidade.delaysAbandonados ?? "—"} />
+          <KPI label="PA Emitido" value={data ? brl(data.paEmitido) : "—"} />
+        </div>
+      </BlocoColapsavel>
 
       {mostrarEquipe && (
         <Bloco titulo="Equipe — Ranking">
