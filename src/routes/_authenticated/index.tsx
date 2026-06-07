@@ -461,6 +461,3 @@ function AlertasOperacionais({ alertas }: { alertas: { parados: number; delays: 
     </Card>
   );
 }
-
-// Mantemos Users2 import unused-safe
-void Users2;
