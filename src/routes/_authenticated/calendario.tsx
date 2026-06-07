@@ -386,8 +386,9 @@ function DayLembretes({ lembretes }: { lembretes: any[] }) {
   return (
     <div className="mt-1.5 space-y-0.5">
       {lembretes.slice(0, 2).map((l) => (
-        <div key={l.id} className="text-[10px] text-gold/80 truncate" title={l.titulo}>
-          • {l.hora ? l.hora.slice(0, 5) : ""} {l.titulo}
+        <div key={l.id} className="text-[10px] text-gold/80 truncate inline-flex items-center gap-1" title={l.titulo}>
+          <Bell className="h-2.5 w-2.5 shrink-0" />
+          <span className="truncate">{l.hora ? l.hora.slice(0, 5) + " " : ""}{l.titulo}</span>
         </div>
       ))}
       {lembretes.length > 2 && <div className="text-[10px] text-muted-foreground">+{lembretes.length - 2}</div>}
