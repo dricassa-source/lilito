@@ -415,7 +415,10 @@ function PerfilDialog({ prospect, onEdit, onClose }: { prospect: any; onEdit: ()
         <Field label="Renda estimada" value={brl(p.renda_estimada)} />
         <Field label="Patrimônio estimado" value={brl(p.patrimonio_estimado)} />
         <Field label="PA estimado" value={brl(p.pa_estimado)} />
-        <Field label="ORN-E (pontuação)" value={score > 0 ? String(score) : "—"} />
+        <div>
+          <div className="caps-tracking text-[0.65rem] text-muted-foreground mb-1">Score automático</div>
+          <ScoreStars score={score} className="text-sm" />
+        </div>
         <Field label="Recomendante" value={p.quem_recomendou} />
         <Field label="Origem" value={p.origem} />
         <Field label="Data de nascimento" value={p.data_nascimento} />
