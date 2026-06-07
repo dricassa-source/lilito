@@ -99,7 +99,7 @@ function Calendario() {
     enabled: !!auth,
     queryFn: async () => {
       let q = supabase.from("agenda_eventos")
-        .select("*,prospects(id,nome,etapa_funil),clientes(id,nome)")
+        .select("*,prospects(id,nome,etapa_funil,score),clientes(id,nome),joint:joint_consultor_id(id,nome)")
         .gte("inicio", range.from.toISOString())
         .lte("inicio", range.to.toISOString())
         .order("inicio");
@@ -108,6 +108,18 @@ function Calendario() {
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
+    },
+  });
+
+  const { data: recorrentes } = useQuery({
+    queryKey: ["recorrentes", auth?.user.id, consultor],
+    enabled: !!auth,
+    queryFn: async () => {
+      const { data } = await supabase.from("compromissos_recorrentes").select("*").eq("ativo", true);
+      if (!data) return [];
+      if (consultor === "all" || auth?.isMaster) return data;
+      const uid = consultor === "me" ? auth!.user.id : consultor;
+      return data.filter((r: any) => (r.participantes ?? []).includes(uid) || r.criado_por === uid);
     },
   });
 
