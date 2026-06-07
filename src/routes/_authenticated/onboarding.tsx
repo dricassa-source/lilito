@@ -122,6 +122,28 @@ function Onboarding() {
           })
           .eq("id", row.prospect_id);
 
+        // Encerra pendências de etapas anteriores (HOT/AB/Revisita/Fechamento)
+        // ao converter o prospect em Cliente — evita alertas inconsistentes.
+        const nowIso = new Date().toISOString();
+        await Promise.all([
+          // Follow-ups vencidos viram concluídos (limpa o campo de vencimento).
+          supabase.from("atividades")
+            .update({ follow_up_em: null })
+            .eq("prospect_id", row.prospect_id)
+            .not("follow_up_em", "is", null),
+          // Lembretes pendentes do prospect são marcados como concluídos.
+          supabase.from("lembretes")
+            .update({ concluido: true, concluido_em: nowIso })
+            .eq("prospect_id", row.prospect_id)
+            .eq("concluido", false),
+          // Delays não resolvidos do funil anterior são encerrados.
+          supabase.from("agenda_eventos")
+            .update({ delay_resolvido: true })
+            .eq("prospect_id", row.prospect_id)
+            .eq("delay_resolvido", false)
+            .not("delay_em", "is", null),
+        ]);
+
         await supabase.from("atividades").insert({
           consultor_id: row.consultor_id,
           prospect_id: row.prospect_id,
@@ -133,6 +155,10 @@ function Onboarding() {
     },
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["onboarding"] });
+      qc.invalidateQueries({ queryKey: ["notificacoes-bell"] });
+      qc.invalidateQueries({ queryKey: ["meu-dia"] });
+      qc.invalidateQueries({ queryKey: ["lembretes"] });
+      qc.invalidateQueries({ queryKey: ["atividades"] });
       qc.invalidateQueries({ queryKey: ["clientes"] });
       qc.invalidateQueries({ queryKey: ["funil"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
