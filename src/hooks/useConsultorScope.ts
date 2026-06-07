@@ -48,12 +48,29 @@ export function useConsultorScope() {
     }
   }, [auth, isMaster, meuId, consultorId]);
 
+  // Sincroniza o escopo entre todas as instâncias do hook (todas as páginas
+  // montadas) via evento custom + evento de storage (outras abas).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sync = () => {
+      const v = window.localStorage.getItem(LS_KEY);
+      setConsultorIdState(v);
+    };
+    window.addEventListener("lilito:scope-change", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("lilito:scope-change", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
   const setConsultorId = (id: string | null) => {
     if (!isMaster) return;
     setConsultorIdState(id);
     if (typeof window !== "undefined") {
       if (id) window.localStorage.setItem(LS_KEY, id);
       else window.localStorage.removeItem(LS_KEY);
+      window.dispatchEvent(new CustomEvent("lilito:scope-change"));
     }
   };
 
