@@ -108,15 +108,23 @@ function Calendario() {
 
   // Default vertical scroll posiciona em 05:00 (faixa útil 05–21).
   // Horários fora da faixa continuam acessíveis por scroll vertical.
-  const didInitialScrollRef = useRef(false);
+  const scrolledForViewRef = useRef<string | null>(null);
   useEffect(() => {
-    if (didInitialScrollRef.current) return;
     if (view !== "semana" && view !== "dia") return;
+    if (scrolledForViewRef.current === view) return;
     const el = containerRef.current;
     if (!el) return;
-    el.scrollTop = 5 * slotHeight;
-    didInitialScrollRef.current = true;
+    const apply = () => {
+      el.scrollTop = 5 * slotHeight;
+      scrolledForViewRef.current = view;
+    };
+    // Aguarda o layout estabilizar antes de aplicar o scroll inicial.
+    requestAnimationFrame(() => requestAnimationFrame(apply));
   }, [view, slotHeight, containerRef]);
+  // Reset quando trocar de visualização para reaplicar 05:00 ao voltar.
+  useEffect(() => {
+    return () => { scrolledForViewRef.current = null; };
+  }, [view]);
 
   const range = useMemo(() => {
     if (view === "dia") return { from: startOfDay(anchor), to: endOfDay(anchor) };
