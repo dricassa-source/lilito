@@ -1,114 +1,90 @@
+# CORREÇÃO GLOBAL 08 — Plano de execução
 
-# Correção Global 02 — Plano de Implementação
+Vou implementar em **3 frentes coordenadas**, mantendo identidade visual atual da LILITO e usando exclusivamente componentes já existentes (`ScoreStars`, `PageHeader`, `Card`, etc.).
 
-Sem reconstruir módulos. Apenas ajustes cirúrgicos preservando o layout atual.
+---
 
-## 1. Mudanças de Schema (migration única)
+## 1. MÓDULO RECOMENDAÇÕES (`src/routes/_authenticated/recomendacoes.tsx`)
 
-Tabela `agenda_eventos`:
-- `delay_motivo TEXT` (null)
-- `delay_em TIMESTAMPTZ` (null)
-- `delay_resolvido BOOLEAN DEFAULT false`
-- `etapa_origem TEXT` (snapshot da etapa do prospect no momento do delay)
-- `joint_consultor_id UUID REFERENCES profiles(id)` (null)
-- `recorrencia_id UUID` (null — agrupa instâncias de um recorrente)
+### Score / ORN-E
+- **Migration**: ajustar trigger `prospects_calc_score()` para garantir score mínimo = 1 (nunca null), e dar peso correto à **profissão médica + renda alta**. Adicionar BEFORE INSERT trigger (hoje só roda em UPDATE provavelmente).
+- **Backfill**: rodar UPDATE em todos prospects sem score para recalcular.
+- Remover badges numéricos "20/29/15" → substituir por `<ScoreStars score={...} />`.
 
-Tabela nova `compromissos_recorrentes`:
-- `id, titulo, tipo (reuniao_unidade|treinamento|rote|ab_fone|outro)`
-- `data_inicial DATE, hora_inicio TIME, hora_fim TIME`
-- `frequencia (semanal|quinzenal|mensal)`
-- `participantes UUID[]` (profiles)
-- `criado_por, created_at, updated_at`
-- RLS: master cria/edita; participantes leem.
+### Tempo na etapa
+- Helper `tempoEtapaCor(dias)` → 🟢 (≤7), 🟡 (8-14), 🔴 (>14).
+- Aplicar como bolinha colorida ao lado do "X dias".
 
-Tabela `prospects`:
-- `score SMALLINT` (1–5, calculado)
-- Função `calcular_score(profissao, renda, patrimonio, tem_recomendacoes BOOL)` retornando 1–5.
-- Trigger BEFORE INSERT/UPDATE atualiza `score` automaticamente.
+### Cabeçalho
+- Trocar descrição do `PageHeader` para "Prospects da unidade" (mais curto).
 
-Tabela nova (opcional) `unidades` — somente se hoje não existir referência; caso já exista campo `unidade` em profiles, reuso. **Vou verificar antes** e usar o que existir; se nada existir, adiciono `profiles.unidade TEXT`.
+### Recursos adicionais
+- Botão "Ranking de Recomendantes" → modal/sheet listando top recomendantes (agregado de `prospects` por `recomendado_por`).
+- Toggle "Mostrar perdidos" → filtro extra que inclui `etapa_funil = 'perdido'`.
 
-## 2. Calendário (`calendario.tsx`)
+---
 
-- Remover botão **No Show**. "No Show" vira motivo de Delay.
-- Botão **Marcar Delay** abre modal exigindo motivo (select com 6 opções + textarea quando "Outro").
-- Ao salvar Delay: grava `delay_motivo`, `delay_em`, `etapa_origem = prospects.etapa_funil`, registra `atividades`. Evento permanece visível.
-- Visual: evento em delay ganha `border-2 border-red-500` + 🚩 vermelha no canto. Cor da etapa preservada.
-- Quando `delay_resolvido = true`: bandeira some, borda vermelha **permanece** (histórico/auditoria).
-- Remover tipo "Joint Work". Tipos: AB, Revisita, Fechamento, Entrega de Apólice.
-- Checkbox **É Joint Work?** + select `joint_consultor_id` (consultores ativos).
-- Novo botão **🔁 Compromisso Recorrente** abrindo modal próprio (independente de Bloquear/Lembrete/Agendamento).
-- Renderizar instâncias de recorrentes calculadas em runtime a partir de `compromissos_recorrentes` para a semana visível.
-- Exibir score ⭐ N junto ao nome do prospect.
-- Lembretes: badge 🔔 discreto no topo da célula do dia (já existe; só ajustar ícone).
+## 2. MÓDULO MEU DIA (`src/routes/_authenticated/index.tsx`)
 
-## 3. Em Delay (`em-delay.tsx`)
+### Remover da área nobre
+- Bloco "Gestão da Unidade" inteiro (Consultores Ativos / Planos Semana / PA Semana / PA Mês / Ranking) — esses indicadores migram para Dashboard.
+- Cultura VINCA → rodapé.
+- Aniversariantes → rodapé.
 
-- Fila lê de `agenda_eventos` onde `delay_resolvido = false` e `etapa_origem IN (ab, revisita, fechamento, entrega_apolice)` — **exclui Onboarding**.
-- Colunas: Nome, Etapa origem, Motivo, Consultor, Dias parado, Próxima ação.
-- Ações: Reagendar (cria novo evento + marca atual como resolvido), Adiar 7 dias, Ligar (tel:), WhatsApp (wa.me), Marcar Perdido.
-- "Destravar Agora" remove da fila (resolvido=true) mas mantém evento original com borda vermelha. Reagendar cria novo `agenda_eventos`.
+### Adicionar (em ordem, área nobre)
+1. **Resumo Rápido** (4 cards clicáveis): Follow-ups vencidos, Reuniões hoje, HOTs pendentes, Em Delay.
+2. **Botão "Iniciar Ligações"** → link `/hot`.
+3. **Desafios do Dia** — bloco simples com checklist em `localStorage` por usuário/dia (sem schema novo). Botão "+" para adicionar.
+4. **Minha Agenda** — mini lista da semana (próximos 7 dias) de `agenda_eventos` do usuário + botão "Abrir Calendário Completo".
+5. **Follow-ups Vencidos** — lista com nome, telefone, dias de atraso, botões WhatsApp + Calendário.
+6. **Reuniões do Dia** — lista de eventos do dia por tipo (AB, Revisita, Fechamento, Entrega, Joint).
+7. **Alertas Operacionais** — prospects parados >7d, delays ativos, eventos sem resultado.
 
-## 4. Score automático
+### Rodapé
+- Aniversariantes + Cultura VINCA.
 
-- Trigger SQL calcula a partir de: `profissao` (lista de pesos), `renda_estimada`, `patrimonio`, flag tem recomendações (count de prospects com `recomendado_por = id`).
-- Exibir como **⭐ N** (uma estrela + número), nunca múltiplas estrelas, em: Recomendações, HOT, Calendário, Funil, Em Delay.
+---
 
-## 5. HOT
+## 3. MÓDULO DASHBOARD (`src/routes/_authenticated/dashboard.tsx`)
 
-- Ordenar `ORDER BY score DESC NULLS LAST, created_at DESC`.
+Reescrever em **blocos gerenciais**, com toggle Master (Individual/Equipe + filtro consultor):
 
-## 6. Visão Master — filtro global
+1. **Produção**: PA Fechado, PA Emitido, Capital Segurado, Comissão Projetada (60% PA emitido).
+2. **Funil** (contagem por etapa): Recomendação, HOT, AB, Fechamento, Onboarding, Clientes.
+3. **Conversão**: taxas HOT→AB, AB→Fechamento, Fechamento→Onboarding, Onboarding→Cliente.
+4. **Equipe** (só Master): ranking por PA, Capital Segurado, Recomendações, Reuniões realizadas — com tabs.
+5. **Onboarding**: Propostas em onboarding, PA pendente, Capital pendente.
+6. **Delays**: AB, Revisita, Fechamento, Entrega de Apólice (contagem).
+7. **Qualidade**: Eventos sem resultado, Delays abandonados (>30d), Recomendações incompletas, Score médio.
 
-Componente novo `<MasterScopeFilter>` no topo das páginas listadas, persistido em `localStorage` (`lilito:scope`):
-- Selects: **Unidade** + **Consultor**.
-- Hook `useMasterScope()` retorna `{ unidade, consultorId }` e expõe helper `applyScope(query)` que adiciona `.eq("consultor_id", x)` / join por unidade.
-- Aplicar em: Dashboard, Recomendações, HOT, Calendário, Funil, Em Delay, Onboarding, Clientes, Resultado Semanal, Planejamento, Auditoria.
-- Apenas visível para master (`auth.isMaster`).
+---
 
-## 7. Compromissos Recorrentes
+## 4. ScoreStars aplicado globalmente
 
-- Novo modal no Calendário com campos da especificação.
-- Geração das ocorrências em runtime na semana atual (sem materializar) — performático e evita duplicação.
-- Aparece em todos os calendários dos `participantes`.
+Inserir/garantir `<ScoreStars>` em:
+- HOT ✅ (já existe)
+- Calendário ✅ (já existe)
+- Em Delay ✅ (já existe)
+- Recomendações 🔧 (substituir números ORN-E)
+- Meu Dia 🔧 (em Follow-ups e Reuniões)
+- Dashboard 🔧 (no ranking)
+- Funil 🔧 (nos cards de prospect)
+- Cadastro do Prospect 🔧 (header da modal de detalhe)
 
-## Arquivos a editar/criar
+---
 
-**Editar:**
-- `src/routes/_authenticated/calendario.tsx`
-- `src/routes/_authenticated/em-delay.tsx`
-- `src/routes/_authenticated/hot.tsx`
-- `src/routes/_authenticated/dashboard.tsx`
-- `src/routes/_authenticated/recomendacoes.tsx`
-- `src/routes/_authenticated/funil.tsx`
-- `src/routes/_authenticated/onboarding.tsx`
-- `src/routes/_authenticated/clientes.tsx`
-- `src/routes/_authenticated/resultado-semanal.tsx`
-- `src/routes/_authenticated/planejamento.tsx`
-- `src/routes/_authenticated/auditoria.tsx`
+## Arquivos a editar
+1. `supabase/migrations/XXXX_score_fix.sql` — fix trigger + BEFORE INSERT + backfill
+2. `src/routes/_authenticated/recomendacoes.tsx`
+3. `src/routes/_authenticated/index.tsx` (Meu Dia)
+4. `src/routes/_authenticated/dashboard.tsx`
+5. `src/routes/_authenticated/funil.tsx` — adicionar ScoreStars nos cards
+6. `src/components/lilito/ScoreStars.tsx` — pequeno helper `<TempoEtapa>` se útil
 
-**Criar:**
-- `src/components/lilito/MasterScopeFilter.tsx`
-- `src/hooks/useMasterScope.ts`
-- `src/components/lilito/ScoreStars.tsx`
-- `src/components/lilito/RecorrenteModal.tsx`
+## Fora de escopo (manter como está)
+- Sidebar
+- Auth
+- Schema de outras tabelas
+- Identidade visual / tokens de cor
 
-**Migration:** uma única, contendo todas as alterações de schema + trigger de score + RLS de `compromissos_recorrentes`.
-
-## Ordem de execução
-
-1. Migration (aprovação sua) → regen tipos.
-2. Componentes utilitários (ScoreStars, MasterScopeFilter, useMasterScope).
-3. Calendário (delay + joint + recorrentes + remover No Show).
-4. Em Delay (nova fonte de dados a partir de agenda_eventos).
-5. HOT (ordenação).
-6. Espalhar score + scope filter pelos demais módulos.
-
-## Pontos de atenção
-
-- **Onboarding fora do Delay** — confirmado, não criar fila para essa etapa.
-- Recorrentes não entram em conflito de agenda (só compromissos reais bloqueiam).
-- Borda vermelha permanente em delays resolvidos é intencional (auditoria) — não é bug.
-- Score é recalculado por trigger; não cachear no front.
-
-Posso prosseguir com a migration?
+Após sua aprovação, executo migration → atualizo os 3 módulos principais → propago ScoreStars nos demais.
