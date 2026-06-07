@@ -68,11 +68,11 @@ const NATUREZA_COLOR: Record<string, { bg: string; border: string; text: string;
   ab:              { bg: "bg-nat-ab/15",         border: "border-nat-ab/60",         text: "text-nat-ab",         dot: "bg-nat-ab" },
   revisita:        { bg: "bg-nat-revisita/15",   border: "border-nat-revisita/60",   text: "text-nat-revisita",   dot: "bg-nat-revisita" },
   fechamento:      { bg: "bg-nat-fechamento/15", border: "border-nat-fechamento/60", text: "text-nat-fechamento", dot: "bg-nat-fechamento" },
-  entrega_apolice: { bg: "bg-emerald-300/15",    border: "border-emerald-300/60",    text: "text-emerald-300",    dot: "bg-emerald-300" },
+  entrega_apolice: { bg: "bg-nat-entrega/15",    border: "border-nat-entrega/60",    text: "text-nat-entrega",    dot: "bg-nat-entrega" },
   joint_work:      { bg: "bg-gold/10",           border: "border-gold/40",           text: "text-gold",           dot: "bg-gold" },
   review:          { bg: "bg-muted",             border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground" },
   bloqueio:        { bg: "bg-muted/60",          border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground" },
-  recorrente:      { bg: "bg-gold/5",            border: "border-gold/30 border-dashed", text: "text-gold/80",     dot: "bg-gold/70" },
+  recorrente:      { bg: "bg-nat-vinca/15",      border: "border-nat-vinca/60 border-dashed", text: "text-nat-vinca",   dot: "bg-nat-vinca" },
 };
 
 type View = "dia" | "semana" | "mes";
