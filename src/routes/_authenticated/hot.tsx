@@ -320,6 +320,21 @@ function Hot() {
         </div>
       )}
 
+      <AbDialog state={dlg} setState={setDlg} onDone={() => qc.invalidateQueries({ queryKey: ["hot-fila"] })} />
+      <PensarDialog state={dlg} setState={setDlg} onDone={() => qc.invalidateQueries({ queryKey: ["hot-fila"] })} />
+      <RetornarDialog state={dlg} setState={setDlg} onDone={() => qc.invalidateQueries({ queryKey: ["hot-fila"] })} />
+      <NaoAtendeuDialog state={dlg} setState={setDlg} onDone={() => qc.invalidateQueries({ queryKey: ["hot-fila"] })} />
+      <NovaListaDialog
+        state={dlg} setState={setDlg}
+        onDone={(id) => {
+          qc.invalidateQueries({ queryKey: ["hot-listas"] });
+          if (id) setListaId(id);
+        }}
+      />
+    </div>
+  );
+}
+
 function AdicionarALista({ prospectId, listas }: { prospectId: string; listas: any[] }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -372,21 +387,6 @@ function AdicionarALista({ prospectId, listas }: { prospectId: string; listas: a
   );
 }
 
-
-      <AbDialog state={dlg} setState={setDlg} onDone={() => qc.invalidateQueries({ queryKey: ["hot-fila"] })} />
-      <PensarDialog state={dlg} setState={setDlg} onDone={() => qc.invalidateQueries({ queryKey: ["hot-fila"] })} />
-      <RetornarDialog state={dlg} setState={setDlg} onDone={() => qc.invalidateQueries({ queryKey: ["hot-fila"] })} />
-      <NaoAtendeuDialog state={dlg} setState={setDlg} onDone={() => qc.invalidateQueries({ queryKey: ["hot-fila"] })} />
-      <NovaListaDialog
-        state={dlg} setState={setDlg}
-        onDone={(id) => {
-          qc.invalidateQueries({ queryKey: ["hot-listas"] });
-          if (id) setListaId(id);
-        }}
-      />
-    </div>
-  );
-}
 
 
 function diasDesde(dateStr: string | null | undefined) {
