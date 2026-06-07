@@ -862,6 +862,12 @@ function EventoSheet({ evento, onClose, onChanged }: { evento: any | null; onClo
             {evento.status && (
               <p><span className="caps-tracking text-muted-foreground">Status: </span>{evento.status}</p>
             )}
+            {evento.delay_motivo && (
+              <p className="text-destructive"><span className="caps-tracking">Delay: </span>{evento.delay_motivo}{evento.delay_resolvido ? " (resolvido)" : ""}</p>
+            )}
+            {evento.joint?.nome && (
+              <p><span className="caps-tracking text-muted-foreground">Joint Work: </span>{evento.joint.nome}</p>
+            )}
           </div>
 
           {!isBloqueio && !evento.resultado && (
