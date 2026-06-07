@@ -27,6 +27,8 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useCalendarZoom } from "@/hooks/useCalendarZoom";
 
 
 export const Route = createFileRoute("/_authenticated/calendario")({
@@ -84,6 +86,8 @@ function Calendario() {
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [view, setView] = useState<View>("semana");
   const [anchor, setAnchor] = useState<Date>(new Date());
+  const isMobile = useIsMobile();
+  const { slotHeight, containerRef } = useCalendarZoom(isMobile ? 36 : 48);
 
   const range = useMemo(() => {
     if (view === "dia") return { from: startOfDay(anchor), to: endOfDay(anchor) };
@@ -236,9 +240,11 @@ function Calendario() {
       </div>
       <p className="caps-tracking text-gold mb-2 sm:hidden">{periodoLabel}</p>
 
-      {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
-      {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
-      {view === "mes" && <MonthGrid anchor={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
+      <div ref={containerRef} className="overflow-auto max-h-[calc(100vh-200px)] touch-pan-x touch-pan-y" style={{ WebkitOverflowScrolling: "touch" }}>
+        {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} slotHeight={slotHeight} />}
+        {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} slotHeight={slotHeight} />}
+        {view === "mes" && <MonthGrid anchor={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
+      </div>
 
       <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
         <MetricCard label="ABs da semana" value={counts.ab} dot={NATUREZA_COLOR.ab.dot} />
@@ -291,9 +297,8 @@ function MetricCard({ label, value, dot }: { label: string; value: number; dot: 
 
 // ---------- Grids ----------
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7);
-const SLOT_HEIGHT = 48;
 
-function WeekGrid({ from, eventos, lembretes, onSelect }: { from: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void }) {
+function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight }: { from: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; slotHeight: number }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i));
   return (
     <Card className="bg-surface border-border overflow-hidden">
@@ -317,13 +322,13 @@ function WeekGrid({ from, eventos, lembretes, onSelect }: { from: Date; eventos:
       <div className="grid grid-cols-[26px_repeat(7,minmax(0,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))]">
         <div>
           {HOURS.map((h) => (
-            <div key={h} className="border-b border-border text-right pr-0.5 sm:pr-1 text-[9px] sm:text-[10px] text-muted-foreground leading-none pt-0.5" style={{ height: SLOT_HEIGHT }}>
+            <div key={h} className="border-b border-border text-right pr-0.5 sm:pr-1 text-[9px] sm:text-[10px] text-muted-foreground leading-none pt-0.5" style={{ height: slotHeight }}>
               {String(h).padStart(2, "0")}
             </div>
           ))}
         </div>
         {days.map((d) => (
-          <DayColumn key={d.toISOString()} day={d} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), d))} onSelect={onSelect} />
+          <DayColumn key={d.toISOString()} day={d} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), d))} onSelect={onSelect} slotHeight={slotHeight} />
         ))}
       </div>
     </Card>
@@ -331,25 +336,25 @@ function WeekGrid({ from, eventos, lembretes, onSelect }: { from: Date; eventos:
 }
 
 
-function DayColumn({ day, eventos, onSelect }: { day: Date; eventos: any[]; onSelect: (e: any) => void }) {
+function DayColumn({ day, eventos, onSelect, slotHeight }: { day: Date; eventos: any[]; onSelect: (e: any) => void; slotHeight: number }) {
   return (
-    <div className="relative border-l border-border" style={{ height: HOURS.length * SLOT_HEIGHT }}>
+    <div className="relative border-l border-border" style={{ height: HOURS.length * slotHeight }}>
       {HOURS.map((h) => (
-        <div key={h} className="border-b border-border" style={{ height: SLOT_HEIGHT }} />
+        <div key={h} className="border-b border-border" style={{ height: slotHeight }} />
       ))}
-      {eventos.map((e) => <EventBlock key={e.id} e={e} day={day} onSelect={onSelect} />)}
+      {eventos.map((e) => <EventBlock key={e.id} e={e} day={day} onSelect={onSelect} slotHeight={slotHeight} />)}
     </div>
   );
 }
 
-function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any) => void }) {
+function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSelect: (e: any) => void; slotHeight: number }) {
   const start = new Date(e.inicio);
   const end = new Date(e.fim);
   const dayStart = new Date(day); dayStart.setHours(HOURS[0], 0, 0, 0);
   const offsetMin = differenceInMinutes(start, dayStart);
   const durMin = Math.max(30, differenceInMinutes(end, start));
-  const top = (offsetMin / 60) * SLOT_HEIGHT;
-  const height = (durMin / 60) * SLOT_HEIGHT;
+  const top = (offsetMin / 60) * slotHeight;
+  const height = (durMin / 60) * slotHeight;
   const c = NATUREZA_COLOR[e.tipo] ?? NATUREZA_COLOR.review;
   const nomeCompleto = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
   const hasDelay = !!e.delay_em;
@@ -371,7 +376,7 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
       {delayAtivo && (
         <span className="absolute top-0 left-0.5 z-10 text-[9px] leading-none select-none" aria-label="Delay">🚩</span>
       )}
-      <p className={cn("text-[12px] sm:text-[13px] font-medium leading-tight truncate", c.text, delayAtivo && "pl-2.5")}>
+      <p className={cn("text-[12px] sm:text-[13px] font-medium leading-tight break-words line-clamp-3", c.text, delayAtivo && "pl-2.5")}>
         {nomeCompleto}
       </p>
 
@@ -394,7 +399,7 @@ function DayLembretes({ lembretes }: { lembretes: any[] }) {
   );
 }
 
-function DayGrid({ day, eventos, lembretes, onSelect }: { day: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void }) {
+function DayGrid({ day, eventos, lembretes, onSelect, slotHeight }: { day: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; slotHeight: number }) {
   const dayLembretes = lembretes.filter((l) => isSameDay(new Date(l.data + "T00:00"), day));
   return (
     <Card className="bg-surface border-border overflow-hidden">
@@ -413,12 +418,12 @@ function DayGrid({ day, eventos, lembretes, onSelect }: { day: Date; eventos: an
       <div className="grid grid-cols-[36px_minmax(0,1fr)] sm:grid-cols-[60px_minmax(0,1fr)]">
         <div>
           {HOURS.map((h) => (
-            <div key={h} className="border-b border-border text-right pr-1 sm:pr-2 text-[10px] sm:text-xs text-muted-foreground" style={{ height: SLOT_HEIGHT }}>
+            <div key={h} className="border-b border-border text-right pr-1 sm:pr-2 text-[10px] sm:text-xs text-muted-foreground" style={{ height: slotHeight }}>
               {String(h).padStart(2, "0")}:00
             </div>
           ))}
         </div>
-        <DayColumn day={day} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), day))} onSelect={onSelect} />
+        <DayColumn day={day} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), day))} onSelect={onSelect} slotHeight={slotHeight} />
       </div>
 
     </Card>
