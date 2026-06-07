@@ -6,8 +6,8 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sun, LayoutDashboard, Users2, Flame, CalendarDays, Target, AlertTriangle,
-  ListChecks, Users, FileText, Heart, RefreshCcw, Trophy, Settings, LogOut,
-  TrendingUp, CircleDot, Bell, ShieldCheck, Handshake,
+  ListChecks, Users, FileText, Trophy, Settings, LogOut,
+  TrendingUp, CircleDot, ShieldCheck, Handshake,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { supabase } from "@/integrations/supabase/client";
