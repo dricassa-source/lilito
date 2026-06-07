@@ -16,8 +16,8 @@ import { ptBR } from "date-fns/locale";
 
 
 function tempoEtapaDot(dias: number) {
-  if (dias <= 7) return "bg-emerald-500";
-  if (dias <= 14) return "bg-yellow-500";
+  if (dias <= 3) return "bg-emerald-500";
+  if (dias <= 7) return "bg-yellow-500";
   return "bg-red-500";
 }
 
