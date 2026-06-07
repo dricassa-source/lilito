@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultorScope, applyScope } from "@/hooks/useConsultorScope";
+import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +13,7 @@ import { Users2, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_authenticated/joint")({
   head: () => ({ meta: [{ title: "Joint Work — LILITO" }] }),
@@ -27,15 +30,18 @@ const STATUS_BADGE: Record<string, string> = {
 function JointPage() {
   const { auth } = useAuth();
   const isMaster = auth?.isMaster ?? false;
+  const { scopeIds } = useConsultorScope();
   const qc = useQueryClient();
 
   const { data } = useQuery({
-    queryKey: ["joint-requests", auth?.user.id, isMaster],
-    enabled: !!auth,
+    queryKey: ["joint-requests", scopeIds.join(",")],
+    enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase.from("joint_requests")
-        .select("*, agenda_eventos(titulo,inicio,tipo,consultor_id)")
-        .order("created_at", { ascending: false });
+      const { data, error } = await applyScope(
+        supabase.from("joint_requests")
+          .select("*, agenda_eventos(titulo,inicio,tipo,consultor_id)"),
+        scopeIds,
+      ).order("created_at", { ascending: false });
       if (error) throw error;
       const ids = Array.from(new Set((data ?? []).map((r: any) => r.consultor_id)));
       const nomes: Record<string, string> = {};
@@ -46,6 +52,7 @@ function JointPage() {
       return (data ?? []).map((r: any) => ({ ...r, consultor_nome: nomes[r.consultor_id] ?? "—" }));
     },
   });
+
 
   const decide = useMutation({
     mutationFn: async ({ id, status, eventoId }: { id: string; status: "aprovado" | "rejeitado"; eventoId: string }) => {
@@ -73,6 +80,9 @@ function JointPage() {
     <div>
       <PageHeader eyebrow="Acompanhamento Master" title="Joint Work"
         description={isMaster ? "Aprove ou rejeite solicitações de Joint da equipe." : "Acompanhe suas solicitações de Joint enviadas ao Master."} />
+      <ConsultorFilter />
+
+
 
       {isMaster && (
         <>
