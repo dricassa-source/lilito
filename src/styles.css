@@ -81,47 +81,51 @@
 :root {
   --radius: 0.5rem;
 
-  /* Premium graphite — substitui o preto absoluto. ~#18181B */
-  --background: oklch(0.18 0.004 286);
-  --foreground: oklch(0.96 0.01 80);
-  --surface: oklch(0.215 0.005 286);
-  --surface-elevated: oklch(0.245 0.005 286);
+  /* Black Piano — moldura externa (sidebar, header) */
+  --background: oklch(0.13 0.003 286);          /* ~#0E0E11 */
+  --foreground: oklch(0.985 0.005 80);          /* branco quase puro */
+
+  /* Grafite suave — fundos internos (área de conteúdo, cards) */
+  --surface: oklch(0.215 0.005 286);            /* ~#2A2A2E */
+  --surface-elevated: oklch(0.255 0.005 286);   /* ~#333339 */
 
   --card: oklch(0.215 0.005 286);
-  --card-foreground: oklch(0.96 0.01 80);
+  --card-foreground: oklch(0.985 0.005 80);
   --popover: oklch(0.235 0.005 286);
-  --popover-foreground: oklch(0.96 0.01 80);
+  --popover-foreground: oklch(0.985 0.005 80);
 
-  --primary: oklch(0.78 0.13 80);            /* dourado #C8A24B */
+  --primary: oklch(0.78 0.13 80);               /* dourado VINCA */
   --primary-foreground: oklch(0.13 0.005 60);
-  --secondary: oklch(0.22 0.008 60);
-  --secondary-foreground: oklch(0.96 0.01 80);
+  --secondary: oklch(0.26 0.008 60);
+  --secondary-foreground: oklch(0.985 0.005 80);
 
-  --muted: oklch(0.22 0.008 60);
-  --muted-foreground: oklch(0.68 0.015 80);
+  --muted: oklch(0.26 0.008 60);
+  --muted-foreground: oklch(0.78 0.012 80);     /* cinza claro p/ texto secundário */
   --accent: oklch(0.78 0.13 80);
   --accent-foreground: oklch(0.13 0.005 60);
 
-  --destructive: oklch(0.55 0.22 27);
+  --destructive: oklch(0.6 0.22 27);
   --destructive-foreground: oklch(0.98 0.005 80);
 
-  --border: oklch(0.26 0.008 60);
-  --input: oklch(0.22 0.008 60);
+  /* Bordas internas: cinza grafite claro, mais visível sobre surface */
+  --border: oklch(0.36 0.008 60);
+  /* Campos de input: cinza claro destacado do card */
+  --input: oklch(0.32 0.008 60);
   --ring: oklch(0.78 0.13 80);
 
-  --gold: oklch(0.78 0.13 80);               /* #C8A24B metálico */
-  --gold-soft: oklch(0.86 0.11 85);          /* #E6C77A claro */
+  --gold: oklch(0.78 0.13 80);
+  --gold-soft: oklch(0.86 0.11 85);
   --gold-foreground: oklch(0.13 0.005 60);
-  --graphite: oklch(0.22 0.008 60);          /* #2A2A30 */
+  --graphite: oklch(0.22 0.008 60);
   --graphite-soft: oklch(0.28 0.008 60);
   --hairline: oklch(0.78 0.13 80 / 0.2);
 
   /* Naturezas de agendamento */
-  --nat-ab: oklch(0.82 0.16 90);            /* amarelo */
-  --nat-revisita: oklch(0.55 0.10 55);      /* marrom */
-  --nat-fechamento: oklch(0.70 0.17 150);   /* verde */
-  --nat-entrega: oklch(0.70 0.15 310);      /* lilás */
-  --nat-vinca: oklch(0.65 0.16 245);        /* azul Vinca (reuniões internas) */
+  --nat-ab: oklch(0.82 0.16 90);
+  --nat-revisita: oklch(0.55 0.10 55);
+  --nat-fechamento: oklch(0.70 0.17 150);
+  --nat-entrega: oklch(0.70 0.15 310);
+  --nat-vinca: oklch(0.65 0.16 245);
 
   --chart-1: oklch(0.78 0.13 80);
   --chart-2: oklch(0.65 0.12 85);
@@ -129,19 +133,20 @@
   --chart-4: oklch(0.45 0.08 95);
   --chart-5: oklch(0.86 0.11 85);
 
-  --sidebar: oklch(0.155 0.004 286);
-  --sidebar-foreground: oklch(0.86 0.012 80);
+  /* Sidebar = Black Piano */
+  --sidebar: oklch(0.115 0.003 286);            /* ~#0B0B0E */
+  --sidebar-foreground: oklch(0.88 0.012 80);
   --sidebar-primary: oklch(0.78 0.13 80);
-  --sidebar-primary-foreground: oklch(0.155 0.004 286);
-  --sidebar-accent: oklch(0.22 0.005 286);
-  --sidebar-accent-foreground: oklch(0.96 0.01 80);
-  --sidebar-border: oklch(0.26 0.005 286);
+  --sidebar-primary-foreground: oklch(0.115 0.003 286);
+  --sidebar-accent: oklch(0.20 0.005 286);
+  --sidebar-accent-foreground: oklch(0.985 0.005 80);
+  --sidebar-border: oklch(0.22 0.005 286);
   --sidebar-ring: oklch(0.78 0.13 80);
 }
 
 .dark {
-  --background: oklch(0.18 0.004 286);
-  --foreground: oklch(0.96 0.01 80);
+  --background: oklch(0.13 0.003 286);
+  --foreground: oklch(0.985 0.005 80);
 }
 
 @layer base {

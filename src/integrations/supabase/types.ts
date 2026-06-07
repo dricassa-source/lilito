@@ -384,7 +384,9 @@ export type Database = {
           ativo: boolean
           created_at: string
           criado_por: string
+          data_final: string | null
           data_inicial: string
+          excecoes: string[]
           frequencia: string
           hora_fim: string
           hora_inicio: string
@@ -398,7 +400,9 @@ export type Database = {
           ativo?: boolean
           created_at?: string
           criado_por: string
+          data_final?: string | null
           data_inicial: string
+          excecoes?: string[]
           frequencia: string
           hora_fim: string
           hora_inicio: string
@@ -412,7 +416,9 @@ export type Database = {
           ativo?: boolean
           created_at?: string
           criado_por?: string
+          data_final?: string | null
           data_inicial?: string
+          excecoes?: string[]
           frequencia?: string
           hora_fim?: string
           hora_inicio?: string
