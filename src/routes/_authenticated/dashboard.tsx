@@ -117,9 +117,9 @@ function Dashboard() {
         ? (prospects as any[]).reduce((s, p) => s + (p.score ?? 1), 0) / prospects.length
         : 0;
 
-      // Equipe (só faz sentido em scope=equipe sem filtro)
+      // Equipe (só faz sentido em visão Unidade consolidada)
       let equipe: { id: string; nome: string; pa: number; capital: number; recos: number; reunioes: number }[] = [];
-      if (scope === "equipe") {
+      if (mostrarEquipe) {
         const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "consultor");
         const ids = (roles ?? []).map((r) => r.user_id);
         if (ids.length) {
@@ -152,6 +152,7 @@ function Dashboard() {
         }
       }
       void atividades;
+
 
       return {
         funil, paFechado, paEmitido, capitalSegurado, comissao, conv,
