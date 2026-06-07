@@ -39,13 +39,13 @@ export function NotificacoesBell() {
 
       const [delays, lembs, fups, onb] = await Promise.all([
         applyScope(supabase.from("agenda_eventos")
-          .select("id,titulo,prospect_id,etapa_origem,tipo,delay_em,prospects(nome)")
+          .select("id,titulo,prospect_id,etapa_origem,tipo,delay_em,prospects(nome,etapa_funil)")
           .not("delay_em", "is", null).eq("delay_resolvido", false), scopeIds),
         applyScope(supabase.from("lembretes")
-          .select("id,titulo,data,hora,prospect_id,prospects(nome)")
+          .select("id,titulo,data,hora,prospect_id,prospects(nome,etapa_funil)")
           .lte("data", hojeStr).eq("concluido", false), scopeIds),
         applyScope(supabase.from("atividades")
-          .select("id,prospect_id,observacao,follow_up_em,prospects(nome)")
+          .select("id,prospect_id,observacao,follow_up_em,prospects(nome,etapa_funil)")
           .not("follow_up_em", "is", null)
           .lte("follow_up_em", hojeISO), scopeIds),
 
@@ -54,9 +54,15 @@ export function NotificacoesBell() {
           .in("etapa_funil", ["implantacao", "entrega_apolice"]), scopeIds),
       ]);
 
+      // Regra: alertas de etapas anteriores não devem aparecer para
+      // prospects já encerrados (convertidos em Cliente ou marcados como Perdido).
+      const ETAPAS_ENCERRADAS = new Set(["cliente", "perdido"]);
+      const ativo = (p: any) => !p || !ETAPAS_ENCERRADAS.has(p.etapa_funil);
+
       const items: Item[] = [];
       (delays.data ?? []).forEach((d: any) => {
         if (!ETAPAS_DELAY.includes(d.etapa_origem ?? d.tipo)) return;
+        if (!ativo(d.prospects)) return;
         items.push({
           id: `delay-${d.id}`, icon: "🚩", group: "Delays",
           title: d.prospects?.nome ?? d.titulo ?? "Evento em delay",
@@ -64,18 +70,24 @@ export function NotificacoesBell() {
           to: "/em-delay",
         });
       });
-      (fups.data ?? []).forEach((f: any) => items.push({
-        id: `fup-${f.id}`, icon: "⏰", group: "Follow-ups vencidos",
-        title: f.prospects?.nome ?? "Follow-up",
-        subtitle: f.observacao ?? undefined,
-        to: "/",
-      }));
-      (lembs.data ?? []).forEach((l: any) => items.push({
-        id: `lemb-${l.id}`, icon: "🔔", group: "Lembretes",
-        title: l.titulo,
-        subtitle: l.prospects?.nome ?? l.data,
-        to: "/calendario",
-      }));
+      (fups.data ?? []).forEach((f: any) => {
+        if (!ativo(f.prospects)) return;
+        items.push({
+          id: `fup-${f.id}`, icon: "⏰", group: "Follow-ups vencidos",
+          title: f.prospects?.nome ?? "Follow-up",
+          subtitle: f.observacao ?? undefined,
+          to: "/",
+        });
+      });
+      (lembs.data ?? []).forEach((l: any) => {
+        if (!ativo(l.prospects)) return;
+        items.push({
+          id: `lemb-${l.id}`, icon: "🔔", group: "Lembretes",
+          title: l.titulo,
+          subtitle: l.prospects?.nome ?? l.data,
+          to: "/calendario",
+        });
+      });
       (onb.data ?? []).forEach((o: any) => items.push({
         id: `onb-${o.id}`, icon: "📦", group: "Onboarding pendente",
         title: o.nome, to: "/onboarding",
