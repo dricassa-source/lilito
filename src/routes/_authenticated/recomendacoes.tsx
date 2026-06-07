@@ -300,8 +300,8 @@ function Recomendacoes() {
                 <TableHead>Nome</TableHead>
                 <TableHead>Profissão</TableHead>
                 <TableHead>Etapa</TableHead>
-                <TableHead className="text-right">ORN-E</TableHead>
-                <TableHead className="text-right">Dias</TableHead>
+                <TableHead className="text-right">Score</TableHead>
+                <TableHead className="text-right">Tempo etapa</TableHead>
                 <TableHead className="text-right">Renda est.</TableHead>
                 <TableHead>Recomendante</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -310,6 +310,8 @@ function Recomendacoes() {
             <TableBody>
               {filtered.map((p: any) => {
                 const score = orneScore(p);
+                const dias = diasDesde(p.entrou_etapa_em ?? p.created_at);
+                const dot = tempoEtapaDot(dias);
                 return (
                   <TableRow key={p.id}>
                     <TableCell>
@@ -326,10 +328,17 @@ function Recomendacoes() {
                         {ETAPA_LABEL[p.etapa_funil] ?? p.etapa_funil}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm">
-                      {score > 0 ? score : "—"}
+                    <TableCell className="text-right">
+                      <div className="flex justify-end">
+                        <ScoreStars score={score} />
+                      </div>
                     </TableCell>
-                    <TableCell className="text-right text-muted-foreground">{diasDesde(p.created_at)}d</TableCell>
+                    <TableCell className="text-right">
+                      <span className="inline-flex items-center gap-1.5 text-muted-foreground" title={dot.label}>
+                        <span className={`h-2 w-2 rounded-full ${dot.cor}`} />
+                        {dias}d
+                      </span>
+                    </TableCell>
                     <TableCell className="text-right">{brl(p.renda_estimada)}</TableCell>
                     <TableCell className="text-muted-foreground">{p.quem_recomendou ?? "—"}</TableCell>
                     <TableCell className="text-right">
