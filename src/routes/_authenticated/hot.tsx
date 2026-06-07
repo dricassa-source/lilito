@@ -71,7 +71,10 @@ function Hot() {
           q = q.lte("entrou_etapa_em", `${listaSelecionada.data_fim}T23:59:59`);
         }
       }
-      const { data, error } = await q.order("nota_qualificacao", { ascending: false });
+      const { data, error } = await q
+        .order("score", { ascending: false, nullsFirst: false })
+        .order("nota_qualificacao", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
