@@ -112,7 +112,8 @@ export function AppSidebar({ isMaster }: { isMaster: boolean }) {
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={showBadge ? `${item.title} (${delaysCount})` : item.title}
                       className="data-[active=true]:bg-sidebar-accent data-[active=true]:text-gold data-[active=true]:border-l-2 data-[active=true]:border-gold rounded-none">
-                      <Link to={item.url} className="flex items-center gap-3">
+                      <Link to={item.url} onClick={closeIfMobile} className="flex items-center gap-3">
+
                         <span className="relative">
                           <item.icon className="h-4 w-4" strokeWidth={1.5} />
                           {showBadge && collapsed && (
