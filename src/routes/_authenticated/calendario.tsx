@@ -187,6 +187,7 @@ function Calendario() {
     qc.invalidateQueries({ queryKey: ["lembretes-cal"] });
     qc.invalidateQueries({ queryKey: ["recorrentes"] });
     qc.invalidateQueries({ queryKey: ["em-delay"] });
+    qc.invalidateQueries({ queryKey: ["em-delay-count"] });
     qc.invalidateQueries({ queryKey: ["funil"] });
   };
 
