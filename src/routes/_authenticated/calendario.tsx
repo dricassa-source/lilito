@@ -87,7 +87,22 @@ function Calendario() {
   const [view, setView] = useState<View>("semana");
   const [anchor, setAnchor] = useState<Date>(new Date());
   const isMobile = useIsMobile();
-  const { slotHeight, containerRef } = useCalendarZoom(isMobile ? 22 : 48);
+  const baseSlot = isMobile ? 22 : 48;
+  const { slotHeight, containerRef } = useCalendarZoom(baseSlot);
+  const scale = slotHeight / baseSlot;
+  const [baseCol, setBaseCol] = useState<number>(48);
+  useEffect(() => {
+    if (!isMobile) { setBaseCol(0); return; }
+    const compute = () => {
+      const w = containerRef.current?.clientWidth ?? window.innerWidth;
+      // 26px gutter + 7 day columns; leave 2px buffer
+      setBaseCol(Math.max(40, Math.floor((w - 28) / 7)));
+    };
+    compute();
+    window.addEventListener("resize", compute);
+    return () => window.removeEventListener("resize", compute);
+  }, [isMobile, containerRef]);
+  const colWidth = isMobile && baseCol > 0 ? Math.round(baseCol * scale) : 0;
 
   const range = useMemo(() => {
     if (view === "dia") return { from: startOfDay(anchor), to: endOfDay(anchor) };
