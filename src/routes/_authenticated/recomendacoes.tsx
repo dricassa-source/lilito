@@ -316,7 +316,7 @@ function Recomendacoes() {
             <TableBody>
               {filtered.map((p: any) => {
                 const score = orneScore(p);
-                const dias = diasDesde(p.entrou_etapa_em ?? p.created_at);
+                const dias = diasDesde(p.entrou_etapa_em);
                 const dot = tempoEtapaDot(dias);
                 return (
                   <TableRow key={p.id}>
