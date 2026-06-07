@@ -186,7 +186,7 @@ function Onboarding() {
                 </div>
                 <div className="col-span-8 md:col-span-2">
                   <Select value={r.onboarding_status}
-                    onValueChange={(v) => updateStatus.mutate({ id: r.id, status: v as Onb })}>
+                    onValueChange={(v) => updateStatus.mutate({ id: r.id, status: v as Onb, row: r })}>
                     <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {STATUS_OPTIONS.map((s) => (
