@@ -86,6 +86,7 @@ export function AppSidebar({ isMaster }: { isMaster: boolean }) {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
   const isActive = (url: string) => path === url || (url !== "/" && path.startsWith(url));
+  const delaysCount = useDelaysCount();
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -106,17 +107,29 @@ export function AppSidebar({ isMaster }: { isMaster: boolean }) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}
-                    className="data-[active=true]:bg-sidebar-accent data-[active=true]:text-gold data-[active=true]:border-l-2 data-[active=true]:border-gold rounded-none">
-                    <Link to={item.url} className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4" strokeWidth={1.5} />
-                      <span className="text-sm">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {items.map((item) => {
+                const showBadge = item.badge === "delays" && delaysCount > 0;
+                return (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={showBadge ? `${item.title} (${delaysCount})` : item.title}
+                      className="data-[active=true]:bg-sidebar-accent data-[active=true]:text-gold data-[active=true]:border-l-2 data-[active=true]:border-gold rounded-none">
+                      <Link to={item.url} className="flex items-center gap-3">
+                        <span className="relative">
+                          <item.icon className="h-4 w-4" strokeWidth={1.5} />
+                          {showBadge && collapsed && (
+                            <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-3.5 px-1 rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground flex items-center justify-center leading-none">{delaysCount}</span>
+                          )}
+                        </span>
+                        <span className="text-sm flex-1">{item.title}</span>
+                        {showBadge && !collapsed && (
+                          <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground flex items-center justify-center">{delaysCount}</span>
+                        )}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+
               {isMaster && masterItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}
