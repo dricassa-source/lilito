@@ -47,7 +47,7 @@ function Onboarding() {
     enabled: !!auth,
     queryFn: async () => {
       let q = supabase.from("apolices")
-        .select("id, consultor_id, prospect_id, cliente_id, produto, premio_atual, capital_segurado, onboarding_status, data_fechamento, onboarding_observacao, prospects(nome), clientes(nome)")
+        .select("id, consultor_id, prospect_id, cliente_id, produto, premio_atual, capital_segurado, onboarding_status, data_fechamento, onboarding_observacao, prospects(id,nome,telefone,pa_estimado), clientes(nome)")
         .neq("onboarding_status", "nao_aplicavel")
         .neq("onboarding_status", "emitida")
         .order("data_fechamento", { ascending: true, nullsFirst: false });
@@ -59,15 +59,78 @@ function Onboarding() {
   });
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: Onb }) => {
-      const patch: any = { onboarding_status: status };
-      if (status === "emitida") patch.data_emissao = new Date().toISOString();
-      const { error } = await supabase.from("apolices").update(patch).eq("id", id);
-      if (error) throw error;
+    mutationFn: async ({ id, status, row }: { id: string; status: Onb; row?: any }) => {
+      if (status !== "emitida") {
+        const { error } = await supabase.from("apolices").update({ onboarding_status: status }).eq("id", id);
+        if (error) throw error;
+        return;
+      }
+
+      // EMISSÃO: converte prospect em Cliente (arquitetura oficial LILITO)
+      let clienteId: string | null = row?.cliente_id ?? null;
+
+      if (!clienteId && row?.prospect_id) {
+        const { data: existing } = await supabase
+          .from("clientes")
+          .select("id")
+          .eq("prospect_id", row.prospect_id)
+          .maybeSingle();
+        clienteId = existing?.id ?? null;
+
+        if (!clienteId) {
+          const { data: novo, error: cErr } = await supabase
+            .from("clientes")
+            .insert({
+              consultor_id: row.consultor_id,
+              prospect_id: row.prospect_id,
+              nome: row.prospects?.nome ?? "Cliente",
+              telefone: row.prospects?.telefone ?? null,
+              pa_total: Number(row.premio_atual ?? 0) * 12,
+              capital_segurado: Number(row.capital_segurado ?? 0),
+            })
+            .select("id")
+            .single();
+          if (cErr) throw cErr;
+          clienteId = novo.id;
+        }
+      }
+
+      const { error: aErr } = await supabase
+        .from("apolices")
+        .update({
+          onboarding_status: "emitida",
+          data_emissao: new Date().toISOString(),
+          status: "migrado" as any,
+          ...(clienteId ? { cliente_id: clienteId } : {}),
+        })
+        .eq("id", id);
+      if (aErr) throw aErr;
+
+      if (row?.prospect_id) {
+        await supabase
+          .from("prospects")
+          .update({
+            etapa_funil: "cliente" as any,
+            entrou_etapa_em: new Date().toISOString(),
+            ultima_interacao: new Date().toISOString(),
+          })
+          .eq("id", row.prospect_id);
+
+        await supabase.from("atividades").insert({
+          consultor_id: row.consultor_id,
+          prospect_id: row.prospect_id,
+          cliente_id: clienteId,
+          tipo: "agendamento",
+          resultado: "Apólice emitida — convertido em Cliente",
+        });
+      }
     },
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["onboarding"] });
       qc.invalidateQueries({ queryKey: ["clientes"] });
+      qc.invalidateQueries({ queryKey: ["funil"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      qc.invalidateQueries({ queryKey: ["resultado-semanal"] });
       toast.success(v.status === "emitida" ? "Apólice emitida — Cliente criado" : "Status atualizado");
     },
     onError: (e: any) => toast.error(e.message),
