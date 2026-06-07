@@ -46,8 +46,9 @@ function ResultadoSemanal() {
     },
   });
 
-  const consultorFilter = scope === "me" ? [auth!.user.id]
-    : scope === "unidade" ? (consultores ?? []).map((c) => c.id).concat(auth!.user.id)
+  const consultorFilter = !auth ? []
+    : scope === "me" ? [auth.user.id]
+    : scope === "unidade" ? (consultores ?? []).map((c) => c.id).concat(auth.user.id)
     : [scope];
 
   const { data } = useQuery({
