@@ -16,6 +16,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedRecomendacoesRouteImport } from './routes/_authenticated/recomendacoes'
 import { Route as AuthenticatedPosVendaRouteImport } from './routes/_authenticated/pos-venda'
 import { Route as AuthenticatedPlanejamentoRouteImport } from './routes/_authenticated/planejamento'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedHotRouteImport } from './routes/_authenticated/hot'
 import { Route as AuthenticatedFunilRouteImport } from './routes/_authenticated/funil'
 import { Route as AuthenticatedEmDelayRouteImport } from './routes/_authenticated/em-delay'
@@ -63,6 +64,11 @@ const AuthenticatedPlanejamentoRoute =
     path: '/planejamento',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedHotRoute = AuthenticatedHotRouteImport.update({
   id: '/hot',
   path: '/hot',
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/em-delay': typeof AuthenticatedEmDelayRoute
   '/funil': typeof AuthenticatedFunilRoute
   '/hot': typeof AuthenticatedHotRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/pos-venda': typeof AuthenticatedPosVendaRoute
   '/recomendacoes': typeof AuthenticatedRecomendacoesRoute
@@ -147,6 +154,7 @@ export interface FileRoutesByTo {
   '/em-delay': typeof AuthenticatedEmDelayRoute
   '/funil': typeof AuthenticatedFunilRoute
   '/hot': typeof AuthenticatedHotRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/pos-venda': typeof AuthenticatedPosVendaRoute
   '/recomendacoes': typeof AuthenticatedRecomendacoesRoute
@@ -167,6 +175,7 @@ export interface FileRoutesById {
   '/_authenticated/em-delay': typeof AuthenticatedEmDelayRoute
   '/_authenticated/funil': typeof AuthenticatedFunilRoute
   '/_authenticated/hot': typeof AuthenticatedHotRoute
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/_authenticated/pos-venda': typeof AuthenticatedPosVendaRoute
   '/_authenticated/recomendacoes': typeof AuthenticatedRecomendacoesRoute
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/em-delay'
     | '/funil'
     | '/hot'
+    | '/onboarding'
     | '/planejamento'
     | '/pos-venda'
     | '/recomendacoes'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/em-delay'
     | '/funil'
     | '/hot'
+    | '/onboarding'
     | '/planejamento'
     | '/pos-venda'
     | '/recomendacoes'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/_authenticated/em-delay'
     | '/_authenticated/funil'
     | '/_authenticated/hot'
+    | '/_authenticated/onboarding'
     | '/_authenticated/planejamento'
     | '/_authenticated/pos-venda'
     | '/_authenticated/recomendacoes'
@@ -285,6 +297,13 @@ declare module '@tanstack/react-router' {
       path: '/planejamento'
       fullPath: '/planejamento'
       preLoaderRoute: typeof AuthenticatedPlanejamentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/hot': {
@@ -371,6 +390,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEmDelayRoute: typeof AuthenticatedEmDelayRoute
   AuthenticatedFunilRoute: typeof AuthenticatedFunilRoute
   AuthenticatedHotRoute: typeof AuthenticatedHotRoute
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPlanejamentoRoute: typeof AuthenticatedPlanejamentoRoute
   AuthenticatedPosVendaRoute: typeof AuthenticatedPosVendaRoute
   AuthenticatedRecomendacoesRoute: typeof AuthenticatedRecomendacoesRoute
@@ -388,6 +408,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEmDelayRoute: AuthenticatedEmDelayRoute,
   AuthenticatedFunilRoute: AuthenticatedFunilRoute,
   AuthenticatedHotRoute: AuthenticatedHotRoute,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPlanejamentoRoute: AuthenticatedPlanejamentoRoute,
   AuthenticatedPosVendaRoute: AuthenticatedPosVendaRoute,
   AuthenticatedRecomendacoesRoute: AuthenticatedRecomendacoesRoute,
@@ -405,3 +426,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
