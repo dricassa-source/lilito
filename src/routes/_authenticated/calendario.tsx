@@ -297,28 +297,28 @@ function WeekGrid({ from, eventos, lembretes, onSelect }: { from: Date; eventos:
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i));
   return (
     <Card className="bg-surface border-border overflow-hidden">
-      <div className="grid grid-cols-[36px_repeat(7,minmax(0,1fr))] sm:grid-cols-[60px_repeat(7,minmax(0,1fr))] border-b border-border">
+      <div className="grid grid-cols-[26px_repeat(7,minmax(0,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))] border-b border-border">
         <div />
         {days.map((d) => {
           const today = isSameDay(d, new Date());
           const letra = format(d, "EEEEE", { locale: ptBR }).toUpperCase();
           return (
-            <div key={d.toISOString()} className={cn("py-2 px-0.5 text-center border-l border-border", today && "bg-surface-elevated")}>
-              <p className="font-sans text-[10px] sm:text-[11px] text-muted-foreground leading-none uppercase">
+            <div key={d.toISOString()} className={cn("py-1 px-0 text-center border-l border-border", today && "bg-surface-elevated")}>
+              <p className="font-sans text-[9px] sm:text-[10px] text-muted-foreground leading-none uppercase">
                 <span className="sm:hidden">{letra}</span>
                 <span className="hidden sm:inline">{format(d, "EEE", { locale: ptBR })}</span>
               </p>
-              <p className={cn("font-sans text-lg sm:text-xl font-semibold mt-1", today ? "text-gold" : "text-foreground")}>{format(d, "dd")}</p>
+              <p className={cn("font-sans text-[13px] sm:text-base font-semibold mt-0.5 leading-none", today ? "text-gold" : "text-foreground")}>{format(d, "dd")}</p>
               <DayLembretes lembretes={lembretes.filter((l) => isSameDay(new Date(l.data + "T00:00"), d))} />
             </div>
           );
         })}
       </div>
-      <div className="grid grid-cols-[36px_repeat(7,minmax(0,1fr))] sm:grid-cols-[60px_repeat(7,minmax(0,1fr))]">
+      <div className="grid grid-cols-[26px_repeat(7,minmax(0,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))]">
         <div>
           {HOURS.map((h) => (
-            <div key={h} className="border-b border-border text-right pr-1 sm:pr-2 text-[10px] sm:text-xs text-muted-foreground" style={{ height: SLOT_HEIGHT }}>
-              {String(h).padStart(2, "0")}:00
+            <div key={h} className="border-b border-border text-right pr-0.5 sm:pr-1 text-[9px] sm:text-[10px] text-muted-foreground leading-none pt-0.5" style={{ height: SLOT_HEIGHT }}>
+              {String(h).padStart(2, "0")}
             </div>
           ))}
         </div>
