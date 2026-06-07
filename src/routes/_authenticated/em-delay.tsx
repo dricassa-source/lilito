@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/em-delay")({
   component: EmDelay,
 });
 
-// Etapas que entram na fila de Em Delay (Onboarding NÃO entra)
+// Todo evento marcado como Delay no calendário entra nesta fila.
 const ETAPAS_ELEGIVEIS = ["ab", "revisita", "fechamento", "entrega_apolice"];
 
 const ETAPA_LABEL: Record<string, string> = {
@@ -58,10 +58,7 @@ function EmDelay() {
       ).order("delay_em", { ascending: false });
       const { data, error } = await q;
       if (error) throw error;
-      const rows = (data ?? []).filter((d: any) => {
-        const etapa = etapaDelay(d);
-        return ETAPAS_ELEGIVEIS.includes(etapa);
-      });
+      const rows = data ?? [];
       const ids = Array.from(new Set(rows.map((r: any) => r.consultor_id).filter(Boolean)));
       let profiles: Record<string, { id: string; nome: string }> = {};
       if (ids.length) {
