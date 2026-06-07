@@ -368,15 +368,23 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
       style={{ top, height }}
       title={`${nome} — ${TIPO_LABEL[e.tipo] ?? e.tipo}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
     >
-      {delayAtivo && <Flag className="absolute top-0.5 right-0.5 h-3 w-3 text-destructive fill-destructive" />}
-      <p className={cn("text-xs font-medium truncate flex items-center gap-1", c.text)}>
-        {format(start, "HH:mm")} {nome}
+      {delayAtivo && (
+        <span className="absolute -top-1.5 -left-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-destructive shadow-md shadow-destructive/40 ring-2 ring-background">
+          <Flag className="h-3 w-3 text-destructive-foreground fill-destructive-foreground" />
+        </span>
+      )}
+      <p className={cn("text-xs font-semibold truncate flex items-center gap-1", c.text)}>
+        {delayAtivo && <span className="text-destructive">🚩</span>}
+        {nome}
         {e.prospects?.score ? <ScoreStars score={e.prospects.score} /> : null}
       </p>
-      <p className="text-[10px] text-muted-foreground caps-tracking truncate">
-        {TIPO_LABEL[e.tipo] ?? e.tipo}
+      <p className="text-[10px] text-muted-foreground truncate">
+        <span className="font-mono">{format(start, "HH:mm")}</span>
+        <span className="mx-1 opacity-50">·</span>
+        <span className="caps-tracking">{TIPO_LABEL[e.tipo] ?? e.tipo}</span>
         {e.joint?.nome ? ` · Joint c/ ${e.joint.nome}` : ""}
       </p>
+
     </button>
   );
 }
