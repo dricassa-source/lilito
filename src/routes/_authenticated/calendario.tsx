@@ -302,7 +302,8 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight }: { from: Da
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i));
   return (
     <Card className="bg-surface border-border overflow-hidden">
-      <div className="grid grid-cols-[26px_repeat(7,minmax(0,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))] border-b border-border">
+      <div className="min-w-[640px] sm:min-w-0">
+      <div className="grid grid-cols-[26px_repeat(7,minmax(86px,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))] border-b border-border">
         <div />
         {days.map((d) => {
           const today = isSameDay(d, new Date());
@@ -319,7 +320,7 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight }: { from: Da
           );
         })}
       </div>
-      <div className="grid grid-cols-[26px_repeat(7,minmax(0,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))]">
+      <div className="grid grid-cols-[26px_repeat(7,minmax(86px,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))]">
         <div>
           {HOURS.map((h) => (
             <div key={h} className="border-b border-border text-right pr-0.5 sm:pr-1 text-[9px] sm:text-[10px] text-muted-foreground leading-none pt-0.5" style={{ height: slotHeight }}>
@@ -330,6 +331,7 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight }: { from: Da
         {days.map((d) => (
           <DayColumn key={d.toISOString()} day={d} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), d))} onSelect={onSelect} slotHeight={slotHeight} />
         ))}
+      </div>
       </div>
     </Card>
   );
