@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { EmptyState } from "@/components/lilito/EmptyState";
 import { Flame, Phone, MessageCircle, Calendar, Clock, XCircle, PhoneOff, Brain, Users, Plus, Trash2, ListFilter } from "lucide-react";
+import { ScoreStars } from "@/components/lilito/ScoreStars";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/hot")({
