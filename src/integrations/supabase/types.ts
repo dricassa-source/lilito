@@ -483,12 +483,48 @@ export type Database = {
         }
         Relationships: []
       }
+      hot_lista_prospects: {
+        Row: {
+          created_at: string
+          id: string
+          lista_id: string
+          prospect_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lista_id: string
+          prospect_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lista_id?: string
+          prospect_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hot_lista_prospects_lista_id_fkey"
+            columns: ["lista_id"]
+            isOneToOne: false
+            referencedRelation: "hot_listas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hot_lista_prospects_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hot_listas: {
         Row: {
           consultor_id: string
           created_at: string
           data_fim: string | null
-          data_inicio: string
+          data_inicio: string | null
           id: string
           nome: string
           updated_at: string
@@ -497,7 +533,7 @@ export type Database = {
           consultor_id: string
           created_at?: string
           data_fim?: string | null
-          data_inicio: string
+          data_inicio?: string | null
           id?: string
           nome: string
           updated_at?: string
@@ -506,7 +542,7 @@ export type Database = {
           consultor_id?: string
           created_at?: string
           data_fim?: string | null
-          data_inicio?: string
+          data_inicio?: string | null
           id?: string
           nome?: string
           updated_at?: string
