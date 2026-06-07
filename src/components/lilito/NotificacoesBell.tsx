@@ -47,8 +47,8 @@ export function NotificacoesBell() {
         applyScope(supabase.from("atividades")
           .select("id,prospect_id,observacao,follow_up_em,prospects(nome)")
           .not("follow_up_em", "is", null)
-          .eq("follow_up_realizado", false)
           .lte("follow_up_em", hojeISO), scopeIds),
+
         applyScope(supabase.from("prospects")
           .select("id,nome,etapa_funil")
           .in("etapa_funil", ["implantacao", "entrega_apolice"]), scopeIds),
