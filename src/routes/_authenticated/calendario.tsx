@@ -343,7 +343,8 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
   const top = (offsetMin / 60) * SLOT_HEIGHT;
   const height = (durMin / 60) * SLOT_HEIGHT;
   const c = NATUREZA_COLOR[e.tipo] ?? NATUREZA_COLOR.review;
-  const nome = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
+  const nomeCompleto = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
+  const primeiroNome = String(nomeCompleto).trim().split(/\s+/)[0];
   const hasDelay = !!e.delay_em;
   const delayAtivo = hasDelay && !e.delay_resolvido;
   const isRecorrente = e.__recorrente === true;
@@ -352,28 +353,20 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
       type="button"
       onClick={() => !isRecorrente && onSelect(e)}
       className={cn(
-        "absolute left-1 right-1 rounded-md border px-2 py-1 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer",
+        "absolute left-0.5 right-0.5 rounded-md border px-1.5 py-1 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
         c.bg, c.border,
         delayAtivo && "border-destructive",
         isRecorrente && "cursor-default",
       )}
       style={{ top, height }}
-      title={`${nome} — ${TIPO_LABEL[e.tipo] ?? e.tipo}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
+      title={`${nomeCompleto} — ${TIPO_LABEL[e.tipo] ?? e.tipo}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
     >
       {delayAtivo && (
         <span className="absolute top-0.5 left-0.5 z-10 text-[10px] leading-none select-none" aria-label="Delay">🚩</span>
       )}
-      <p className={cn("text-xs font-semibold truncate flex items-center gap-1", c.text, delayAtivo && "pl-3.5")}>
-        {nome}
-        {e.prospects?.score ? <ScoreStars score={e.prospects.score} /> : null}
+      <p className={cn("text-[13px] font-semibold leading-tight truncate", c.text, delayAtivo && "pl-3")}>
+        {primeiroNome}
       </p>
-      <p className="text-[10px] text-muted-foreground truncate">
-        <span className="font-mono">{format(start, "HH:mm")}</span>
-        <span className="mx-1 opacity-50">·</span>
-        <span className="caps-tracking">{TIPO_LABEL[e.tipo] ?? e.tipo}</span>
-        {e.joint?.nome ? ` · Joint c/ ${e.joint.nome}` : ""}
-      </p>
-
     </button>
   );
 }
