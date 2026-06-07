@@ -1329,36 +1329,48 @@ function RecorrenteSheet({ evento, onClose, onChanged }: { evento: any; onClose:
         </SheetHeader>
 
         <div className="mt-4 space-y-3">
-          <p className="text-xs text-muted-foreground">
-            Este compromisso faz parte de uma série recorrente. Escolha o escopo
-            da alteração:
-          </p>
+          {isMaster ? (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Este compromisso faz parte de uma série recorrente. Escolha o escopo
+                da alteração:
+              </p>
 
-          <div className="space-y-2">
-            <p className="caps-tracking text-gold">Excluir</p>
-            <div className="grid grid-cols-1 gap-2">
-              <Button variant="outline" onClick={() => setConfirmEscopo("esta")}>
-                Apenas esta ocorrência
-              </Button>
-              <Button variant="outline" onClick={() => setConfirmEscopo("futuras")}>
-                Esta e as próximas
-              </Button>
-              <Button
-                variant="outline"
-                className="border-destructive/40 text-destructive hover:text-destructive"
-                onClick={() => setConfirmEscopo("serie")}
-              >
-                Toda a série
-              </Button>
+              <div className="space-y-2">
+                <p className="caps-tracking text-gold">Excluir</p>
+                <div className="grid grid-cols-1 gap-2">
+                  <Button variant="outline" onClick={() => setConfirmEscopo("esta")}>
+                    Apenas esta ocorrência
+                  </Button>
+                  <Button variant="outline" onClick={() => setConfirmEscopo("futuras")}>
+                    Esta e as próximas
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-destructive/40 text-destructive hover:text-destructive"
+                    onClick={() => setConfirmEscopo("serie")}
+                  >
+                    Toda a série
+                  </Button>
+                </div>
+              </div>
+
+              <Separator className="my-2" />
+
+              <p className="text-[11px] text-muted-foreground">
+                Para editar a série recorrente (título, horário, participantes), use
+                a área de configurações de Compromissos Recorrentes.
+              </p>
+            </>
+          ) : (
+            <div className="rounded-md border border-border bg-surface-elevated p-3">
+              <p className="text-sm text-foreground">Compromisso institucional VINCA.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Apenas usuários Master podem editar, cancelar ou alterar a recorrência.
+                Em caso de conflito, fale com a liderança da unidade.
+              </p>
             </div>
-          </div>
-
-          <Separator className="my-2" />
-
-          <p className="text-[11px] text-muted-foreground">
-            Para editar a série recorrente (título, horário, participantes), use
-            a área de configurações de Compromissos Recorrentes.
-          </p>
+          )}
         </div>
       </SheetContent>
 
