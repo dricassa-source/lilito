@@ -186,7 +186,10 @@ function Funil() {
           {openProspect && (
             <>
               <SheetHeader>
-                <SheetTitle className="font-display text-2xl">{openProspect.nome}</SheetTitle>
+                <SheetTitle className="font-display text-2xl flex items-center gap-2 flex-wrap">
+                  {openProspect.nome}
+                  <ScoreStars score={openProspect.score ?? 1} />
+                </SheetTitle>
                 <SheetDescription>
                   {COLUNAS.find((c) => c.id === openProspect.etapa_funil)?.label ?? openProspect.etapa_funil}
                   {" · "}
