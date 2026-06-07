@@ -3,10 +3,11 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu,
   SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sun, LayoutDashboard, Users2, Flame, CalendarDays, Target, AlertTriangle,
-  ListChecks, Users, FileText, Heart, RefreshCcw, Trophy, Settings, LogOut,
-  TrendingUp, CircleDot, Bell, ShieldCheck, Handshake,
+  ListChecks, Users, FileText, Trophy, Settings, LogOut,
+  TrendingUp, CircleDot, ShieldCheck, Handshake,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,7 +62,6 @@ const items: NavItem[] = [
   { title: "Funil", url: "/funil", icon: Target },
   { title: "Em Delay", url: "/em-delay", icon: AlertTriangle, badge: "delays" },
   { title: "Resultado Semanal", url: "/resultado-semanal", icon: TrendingUp },
-  { title: "Lembretes", url: "/lembretes", icon: Bell },
   { title: "Onboarding", url: "/onboarding", icon: CircleDot },
   { title: "Atividades", url: "/atividades", icon: ListChecks },
   { title: "Clientes", url: "/clientes", icon: Users },
@@ -75,23 +75,22 @@ const masterItems = [
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
-const fase2 = [
-  { title: "Pós-venda", url: "/pos-venda", icon: Heart },
-  { title: "Ciclo de Revisão", url: "/ciclo-revisao", icon: RefreshCcw },
-];
 
 export function AppSidebar({ isMaster }: { isMaster: boolean }) {
-  const { state } = useSidebar();
+  const { state, setOpenMobile } = useSidebar();
+  const isMobile = useIsMobile();
   const collapsed = state === "collapsed";
   const path = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
   const isActive = (url: string) => path === url || (url !== "/" && path.startsWith(url));
   const delaysCount = useDelaysCount();
+  const closeIfMobile = () => { if (isMobile) setOpenMobile(false); };
 
   async function signOut() {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
+
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -113,7 +112,8 @@ export function AppSidebar({ isMaster }: { isMaster: boolean }) {
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={showBadge ? `${item.title} (${delaysCount})` : item.title}
                       className="data-[active=true]:bg-sidebar-accent data-[active=true]:text-gold data-[active=true]:border-l-2 data-[active=true]:border-gold rounded-none">
-                      <Link to={item.url} className="flex items-center gap-3">
+                      <Link to={item.url} onClick={closeIfMobile} className="flex items-center gap-3">
+
                         <span className="relative">
                           <item.icon className="h-4 w-4" strokeWidth={1.5} />
                           {showBadge && collapsed && (
@@ -134,7 +134,7 @@ export function AppSidebar({ isMaster }: { isMaster: boolean }) {
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}
                     className="data-[active=true]:bg-sidebar-accent data-[active=true]:text-gold data-[active=true]:border-l-2 data-[active=true]:border-gold rounded-none">
-                    <Link to={item.url} className="flex items-center gap-3">
+                    <Link to={item.url} onClick={closeIfMobile} className="flex items-center gap-3">
                       <item.icon className="h-4 w-4" strokeWidth={1.5} />
                       <span className="text-sm">{item.title}</span>
                     </Link>
@@ -145,7 +145,7 @@ export function AppSidebar({ isMaster }: { isMaster: boolean }) {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={isActive("/administracao")} tooltip="Administração"
                     className="data-[active=true]:bg-sidebar-accent data-[active=true]:text-gold data-[active=true]:border-l-2 data-[active=true]:border-gold rounded-none">
-                    <Link to="/administracao" className="flex items-center gap-3">
+                    <Link to="/administracao" onClick={closeIfMobile} className="flex items-center gap-3">
                       <Settings className="h-4 w-4" strokeWidth={1.5} />
                       <span className="text-sm">Administração</span>
                     </Link>
@@ -156,28 +156,6 @@ export function AppSidebar({ isMaster }: { isMaster: boolean }) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {!collapsed && (
-          <div className="px-4 mt-6 mb-2">
-            <div className="hairline-gold opacity-60" />
-            <p className="caps-tracking text-muted-foreground mt-4 mb-2">Fase 2 — em breve</p>
-          </div>
-        )}
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {fase2.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild tooltip={`${item.title} — em breve`} className="opacity-50">
-                    <Link to={item.url} className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4" strokeWidth={1.5} />
-                      <span className="text-sm">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-2">

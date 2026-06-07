@@ -297,20 +297,27 @@ function WeekGrid({ from, eventos, lembretes, onSelect }: { from: Date; eventos:
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i));
   return (
     <Card className="bg-surface border-border overflow-hidden">
-      <div className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] border-b border-border">
+      <div className="grid grid-cols-[36px_repeat(7,minmax(0,1fr))] sm:grid-cols-[60px_repeat(7,minmax(0,1fr))] border-b border-border">
         <div />
-        {days.map((d) => (
-          <div key={d.toISOString()} className={cn("p-3 text-center border-l border-border", isSameDay(d, new Date()) && "bg-surface-elevated")}>
-            <p className="caps-tracking text-muted-foreground">{format(d, "EEE", { locale: ptBR })}</p>
-            <p className={cn("font-display text-xl mt-1", isSameDay(d, new Date()) ? "text-gold" : "text-foreground")}>{format(d, "dd")}</p>
-            <DayLembretes lembretes={lembretes.filter((l) => isSameDay(new Date(l.data + "T00:00"), d))} />
-          </div>
-        ))}
+        {days.map((d) => {
+          const today = isSameDay(d, new Date());
+          const letra = format(d, "EEEEE", { locale: ptBR }).toUpperCase();
+          return (
+            <div key={d.toISOString()} className={cn("py-2 px-0.5 text-center border-l border-border", today && "bg-surface-elevated")}>
+              <p className="font-sans text-[10px] sm:text-[11px] text-muted-foreground leading-none uppercase">
+                <span className="sm:hidden">{letra}</span>
+                <span className="hidden sm:inline">{format(d, "EEE", { locale: ptBR })}</span>
+              </p>
+              <p className={cn("font-sans text-lg sm:text-xl font-semibold mt-1", today ? "text-gold" : "text-foreground")}>{format(d, "dd")}</p>
+              <DayLembretes lembretes={lembretes.filter((l) => isSameDay(new Date(l.data + "T00:00"), d))} />
+            </div>
+          );
+        })}
       </div>
-      <div className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))]">
+      <div className="grid grid-cols-[36px_repeat(7,minmax(0,1fr))] sm:grid-cols-[60px_repeat(7,minmax(0,1fr))]">
         <div>
           {HOURS.map((h) => (
-            <div key={h} className="border-b border-border text-right pr-2 text-xs text-muted-foreground" style={{ height: SLOT_HEIGHT }}>
+            <div key={h} className="border-b border-border text-right pr-1 sm:pr-2 text-[10px] sm:text-xs text-muted-foreground" style={{ height: SLOT_HEIGHT }}>
               {String(h).padStart(2, "0")}:00
             </div>
           ))}
@@ -322,6 +329,7 @@ function WeekGrid({ from, eventos, lembretes, onSelect }: { from: Date; eventos:
     </Card>
   );
 }
+
 
 function DayColumn({ day, eventos, onSelect }: { day: Date; eventos: any[]; onSelect: (e: any) => void }) {
   return (
@@ -353,7 +361,7 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
       type="button"
       onClick={() => !isRecorrente && onSelect(e)}
       className={cn(
-        "absolute left-0.5 right-0.5 rounded-md border px-1.5 py-1 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
+        "absolute left-px right-px rounded-[3px] border px-1 py-0.5 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
         c.bg, c.border,
         delayAtivo && "border-destructive",
         isRecorrente && "cursor-default",
@@ -362,11 +370,12 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
       title={`${nomeCompleto} — ${TIPO_LABEL[e.tipo] ?? e.tipo}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
     >
       {delayAtivo && (
-        <span className="absolute top-0.5 left-0.5 z-10 text-[10px] leading-none select-none" aria-label="Delay">🚩</span>
+        <span className="absolute top-0 left-0.5 z-10 text-[9px] leading-none select-none" aria-label="Delay">🚩</span>
       )}
-      <p className={cn("text-[13px] font-semibold leading-tight truncate", c.text, delayAtivo && "pl-3")}>
+      <p className={cn("text-[12px] sm:text-[13px] font-medium leading-tight truncate", c.text, delayAtivo && "pl-2.5")}>
         {primeiroNome}
       </p>
+
     </button>
   );
 }
@@ -402,16 +411,17 @@ function DayGrid({ day, eventos, lembretes, onSelect }: { day: Date; eventos: an
           </div>
         </div>
       )}
-      <div className="grid grid-cols-[60px_minmax(0,1fr)]">
+      <div className="grid grid-cols-[36px_minmax(0,1fr)] sm:grid-cols-[60px_minmax(0,1fr)]">
         <div>
           {HOURS.map((h) => (
-            <div key={h} className="border-b border-border text-right pr-2 text-xs text-muted-foreground" style={{ height: SLOT_HEIGHT }}>
+            <div key={h} className="border-b border-border text-right pr-1 sm:pr-2 text-[10px] sm:text-xs text-muted-foreground" style={{ height: SLOT_HEIGHT }}>
               {String(h).padStart(2, "0")}:00
             </div>
           ))}
         </div>
         <DayColumn day={day} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), day))} onSelect={onSelect} />
       </div>
+
     </Card>
   );
 }

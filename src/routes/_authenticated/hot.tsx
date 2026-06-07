@@ -15,7 +15,9 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { EmptyState } from "@/components/lilito/EmptyState";
-import { Flame, Phone, MessageCircle, Calendar, Clock, XCircle, PhoneOff, Brain, Users, Plus, Trash2, ListFilter } from "lucide-react";
+import { Flame, Phone, MessageCircle, Calendar, Clock, XCircle, PhoneOff, Brain, Users, Plus, Trash2, ListFilter, BookmarkPlus } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScoreStars } from "@/components/lilito/ScoreStars";
 import { toast } from "sonner";
 
@@ -64,20 +66,24 @@ function Hot() {
   );
 
   const { data: fila } = useQuery({
-    queryKey: ["hot-fila", listaId, listaSelecionada?.data_inicio, listaSelecionada?.data_fim, scopeIds.join(",")],
+    queryKey: ["hot-fila", listaId, scopeIds.join(",")],
     enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
+      let memberIds: string[] | null = null;
+      if (listaSelecionada) {
+        const { data: mems } = await supabase
+          .from("hot_lista_prospects")
+          .select("prospect_id")
+          .eq("lista_id", listaSelecionada.id);
+        memberIds = (mems ?? []).map((m: any) => m.prospect_id);
+        if (memberIds.length === 0) return [];
+      }
       let q = applyScope(
         supabase.from("prospects").select("*")
           .eq("etapa_funil", "hot").eq("status_hot", "pendente"),
         scopeIds,
       );
-      if (listaSelecionada) {
-        q = q.gte("entrou_etapa_em", `${listaSelecionada.data_inicio}T00:00:00`);
-        if (listaSelecionada.data_fim) {
-          q = q.lte("entrou_etapa_em", `${listaSelecionada.data_fim}T23:59:59`);
-        }
-      }
+      if (memberIds) q = q.in("id", memberIds);
       const { data, error } = await q
         .order("score", { ascending: false, nullsFirst: false })
         .order("nota_qualificacao", { ascending: false, nullsFirst: false })
@@ -86,6 +92,7 @@ function Hot() {
       return data ?? [];
     },
   });
+
 
 
   useEffect(() => { setCurrentIndex(0); }, [listaId, fila?.length]);
@@ -292,6 +299,7 @@ function Hot() {
                           >
                             <Phone className="h-4 w-4" />
                           </Button>
+                          <AdicionarALista prospectId={p.id} listas={listas ?? []} />
                           <Button
                             size="icon" variant="ghost"
                             onClick={(e) => { e.stopPropagation(); removerDaHot(p); }}
@@ -301,6 +309,7 @@ function Hot() {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
+
                       </div>
                     </Card>
                   );
@@ -325,6 +334,59 @@ function Hot() {
     </div>
   );
 }
+
+function AdicionarALista({ prospectId, listas }: { prospectId: string; listas: any[] }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const { data: membros } = useQuery({
+    queryKey: ["hot-prospect-listas", prospectId],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await supabase.from("hot_lista_prospects")
+        .select("lista_id").eq("prospect_id", prospectId);
+      return new Set((data ?? []).map((m: any) => m.lista_id));
+    },
+  });
+  async function toggle(listaId: string, checked: boolean) {
+    if (checked) {
+      const { error } = await supabase.from("hot_lista_prospects").insert({ lista_id: listaId, prospect_id: prospectId });
+      if (error) return toast.error(error.message);
+    } else {
+      const { error } = await supabase.from("hot_lista_prospects").delete().eq("lista_id", listaId).eq("prospect_id", prospectId);
+      if (error) return toast.error(error.message);
+    }
+    qc.invalidateQueries({ queryKey: ["hot-prospect-listas", prospectId] });
+    qc.invalidateQueries({ queryKey: ["hot-fila"] });
+  }
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="icon" variant="ghost" onClick={(e) => e.stopPropagation()} title="Adicionar à Lista" className="h-8 w-8 hover:text-gold">
+          <BookmarkPlus className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 bg-surface border-border p-2" onClick={(e) => e.stopPropagation()}>
+        <p className="caps-tracking text-gold text-[10px] px-2 py-1">Adicionar à Lista</p>
+        {listas.length === 0 ? (
+          <p className="text-xs text-muted-foreground px-2 py-2">Crie uma lista primeiro.</p>
+        ) : (
+          <div className="space-y-1 max-h-64 overflow-y-auto">
+            {listas.map((l) => {
+              const checked = membros?.has(l.id) ?? false;
+              return (
+                <label key={l.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-surface-elevated rounded cursor-pointer text-sm">
+                  <Checkbox checked={checked} onCheckedChange={(v) => toggle(l.id, !!v)} />
+                  <span className="truncate">{l.nome}</span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 
 
 function diasDesde(dateStr: string | null | undefined) {
@@ -578,24 +640,22 @@ function NaoAtendeuDialog({ state, setState, onDone }: { state: DialogState; set
 function NovaListaDialog({ state, setState, onDone }: { state: DialogState; setState: (s: DialogState) => void; onDone: (id?: string) => void }) {
   const { auth } = useAuth();
   const [nome, setNome] = useState("");
-  const [inicio, setInicio] = useState(() => new Date().toISOString().slice(0, 10));
-  const [fim, setFim] = useState("");
   const [saving, setSaving] = useState(false);
   const open = state.kind === "novalista";
 
   async function save() {
-    if (!auth || !nome || !inicio) return;
+    if (!auth || !nome) return;
     setSaving(true);
     const { data, error } = await supabase.from("hot_listas").insert({
       consultor_id: auth.user.id,
       nome,
-      data_inicio: inicio,
-      data_fim: fim || null,
+      data_inicio: null,
+      data_fim: null,
     }).select("id").single();
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Lista HOT criada.");
-    setNome(""); setFim("");
+    setNome("");
     close(setState); onDone(data?.id);
   }
 
@@ -606,24 +666,19 @@ function NovaListaDialog({ state, setState, onDone }: { state: DialogState; setS
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>Nome da lista <span className="text-destructive">*</span></Label>
-            <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Lista semana 1" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Data início <span className="text-destructive">*</span></Label>
-              <Input type="date" value={inicio} onChange={(e) => setInicio(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Data fim</Label>
-              <Input type="date" value={fim} onChange={(e) => setFim(e.target.value)} />
-            </div>
+            <Input
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Ex.: São João, Empresários, Médicos…"
+              autoFocus
+            />
           </div>
           <p className="text-xs text-muted-foreground">
-            A lista exibirá os prospects HOT cujo ingresso na etapa ocorra dentro do período.
+            Listas são agrupamentos manuais. Adicione prospects diretamente pela ação “Adicionar à Lista”.
           </p>
         </div>
         <DialogFooter>
-          <Button onClick={save} disabled={!nome || !inicio || saving} className="gold-gradient text-background">
+          <Button onClick={save} disabled={!nome || saving} className="gold-gradient text-background">
             {saving ? "Salvando..." : "Criar lista"}
           </Button>
         </DialogFooter>
@@ -631,6 +686,7 @@ function NovaListaDialog({ state, setState, onDone }: { state: DialogState; setS
     </Dialog>
   );
 }
+
 
 // ============= HOT Gestão (Sessão da Semana + Ranking + Funil) =============
 

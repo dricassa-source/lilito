@@ -3,7 +3,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/lilito/AppSidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Badge } from "@/components/ui/badge";
+import { NotificacoesBell } from "@/components/lilito/NotificacoesBell";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -35,18 +35,19 @@ function AuthenticatedLayout() {
             <SidebarTrigger className="text-muted-foreground hover:text-gold" />
             <div className="h-5 w-px bg-border" />
             <span className="caps-tracking text-muted-foreground">VINCA</span>
-            <div className="ml-auto flex items-center gap-3">
-              {auth?.isMaster && (
-                <Badge variant="outline" className="border-gold text-gold caps-tracking">Master</Badge>
-              )}
+            <div className="ml-auto flex items-center gap-2 sm:gap-3">
+              <NotificacoesBell />
               <div className="text-right">
                 <p className="text-sm text-foreground leading-tight">{auth?.profile?.nome ?? "Consultor"}</p>
-                <p className="text-xs text-muted-foreground leading-tight">{auth?.profile?.email}</p>
+                <p className="text-[10px] caps-tracking text-gold leading-tight">
+                  {auth?.isMaster ? "MASTER" : "CONSULTOR"}
+                </p>
               </div>
               <div className="h-9 w-9 rounded-full gold-gradient flex items-center justify-center font-semibold text-background">
                 {(auth?.profile?.nome ?? "?").slice(0, 1).toUpperCase()}
               </div>
             </div>
+
           </header>
           <main className="flex-1 overflow-auto">
             <div className="max-w-7xl mx-auto px-6 py-8">
