@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/lilito/EmptyState";
 import { ScoreStars } from "@/components/lilito/ScoreStars";
 import { AlertTriangle, Phone, MessageCircle, CalendarClock, Clock3, XCircle, Unplug } from "lucide-react";
@@ -137,51 +136,55 @@ function EmDelay() {
 
         <EmptyState icon={AlertTriangle} title="Nada travado" description="Sua operação está fluindo bem." />
       ) : (
-        <Card className="bg-surface border-border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Prospect</TableHead>
-                <TableHead>Etapa</TableHead>
-                <TableHead>Motivo</TableHead>
-                <TableHead>Consultor</TableHead>
-                <TableHead>Dias parado</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {delays.map((d: any) => {
-                const etapa = d.etapa_origem ?? d.tipo;
-                const nome = d.prospects?.nome ?? d.titulo ?? "—";
-                const tel = d.prospects?.telefone;
-                return (
-                  <TableRow key={d.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{nome}</span>
-                        <ScoreStars score={d.prospects?.score} />
-                      </div>
-                    </TableCell>
-                    <TableCell><span className="caps-tracking text-gold text-[0.65rem]">{ETAPA_LABEL[etapa] ?? etapa}</span></TableCell>
-                    <TableCell className="text-destructive text-sm">{d.delay_motivo ?? "—"}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{d.consultor?.nome ?? "—"}</TableCell>
-                    <TableCell className="text-destructive">{diasParado(d.delay_em)}d</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1 flex-wrap">
-                        <Button size="sm" variant="ghost" onClick={() => setReagendar(d)} title="Reagendar"><CalendarClock className="h-3.5 w-3.5" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => adiar7(d)} title="Adiar 7 dias"><Clock3 className="h-3.5 w-3.5" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => ligar(tel)} title="Ligar" disabled={!tel}><Phone className="h-3.5 w-3.5" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => whatsapp(tel)} title="WhatsApp" disabled={!tel}><MessageCircle className="h-3.5 w-3.5" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => destravar(d)} title="Destravar agora" className="text-gold"><Unplug className="h-3.5 w-3.5" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => setPerdaOpen(d)} title="Marcar Perdido" className="text-destructive"><XCircle className="h-3.5 w-3.5" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {delays.map((d: any) => {
+            const etapa = d.etapa_origem ?? d.tipo;
+            const nome = d.prospects?.nome ?? d.titulo ?? "—";
+            const tel = d.prospects?.telefone;
+            const dias = diasParado(d.delay_em);
+            return (
+              <Card key={d.id} className="bg-surface border-border border-l-4 border-l-destructive p-4 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-display text-lg truncate">{nome}</p>
+                      <ScoreStars score={d.prospects?.score} />
+                    </div>
+                    <p className="caps-tracking text-gold text-[0.65rem] mt-1">{ETAPA_LABEL[etapa] ?? etapa}</p>
+                  </div>
+                  <span className="shrink-0 text-right">
+                    <span className="font-display text-2xl text-destructive leading-none">{dias}d</span>
+                    <span className="block text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">parado</span>
+                  </span>
+                </div>
+                <div className="text-sm space-y-1">
+                  <p><span className="text-muted-foreground text-xs">Motivo: </span><span className="text-destructive">{d.delay_motivo ?? "—"}</span></p>
+                  <p className="text-xs text-muted-foreground">Consultor: {d.consultor?.nome ?? "—"}</p>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-auto pt-2">
+                  <Button size="sm" variant="outline" onClick={() => setReagendar(d)} className="h-10">
+                    <CalendarClock className="h-4 w-4 mr-1" />Reagendar
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => adiar7(d)} className="h-10">
+                    <Clock3 className="h-4 w-4 mr-1" />+7d
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => ligar(tel)} disabled={!tel} className="h-10">
+                    <Phone className="h-4 w-4 mr-1" />Ligar
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => whatsapp(tel)} disabled={!tel} className="h-10 text-emerald-500 hover:text-emerald-500">
+                    <MessageCircle className="h-4 w-4 mr-1" />WhatsApp
+                  </Button>
+                  <Button size="sm" onClick={() => destravar(d)} className="h-10 gold-gradient text-background">
+                    <Unplug className="h-4 w-4 mr-1" />Destravar
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => setPerdaOpen(d)} className="h-10">
+                    <XCircle className="h-4 w-4 mr-1" />Perdido
+                  </Button>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
       )}
 
       <Dialog open={!!perdaOpen} onOpenChange={(o) => !o && setPerdaOpen(null)}>
