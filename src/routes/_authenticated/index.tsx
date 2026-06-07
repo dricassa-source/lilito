@@ -165,13 +165,10 @@ function MeuDia() {
         description={isMaster ? "Visão executiva da operação VINCA." : "Sua plataforma de relacionamento e gestão comercial."}
       />
 
-      <div className="relative overflow-hidden rounded-md border border-gold/30 bg-gradient-to-r from-surface to-surface-elevated p-6 mb-8">
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gold/10 blur-3xl" />
-        <p className="caps-tracking text-gold">Mantra da semana</p>
-        <p className="font-display text-3xl text-foreground mt-2 italic">
-          "Quem resolve a semana resolve o mês."
-        </p>
-      </div>
+      <FraseRotativa />
+
+      <LembretesHoje />
+
 
       {isMaster && (
         <div className="mb-6">
