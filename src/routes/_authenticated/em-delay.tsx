@@ -39,28 +39,39 @@ function EmDelay() {
   const [reagendar, setReagendar] = useState<any | null>(null);
 
   const { data: delays } = useQuery({
-    queryKey: ["em-delay", auth?.user.id],
+    queryKey: ["em-delay", auth?.user.id, auth?.isMaster],
     enabled: !!auth,
     queryFn: async () => {
       let q = supabase.from("agenda_eventos")
-        .select("*,prospects(id,nome,telefone,score,etapa_funil),consultor:consultor_id(id,nome)")
+        .select("*,prospects(id,nome,telefone,score,etapa_funil)")
         .not("delay_em", "is", null)
         .eq("delay_resolvido", false)
         .order("delay_em", { ascending: false });
       if (!auth?.isMaster) q = q.eq("consultor_id", auth!.user.id);
       const { data, error } = await q;
       if (error) throw error;
-      return (data ?? []).filter((d: any) => {
+      const rows = (data ?? []).filter((d: any) => {
         const etapa = d.etapa_origem ?? d.tipo;
         return ETAPAS_ELEGIVEIS.includes(etapa);
       });
+      // Fetch consultor profiles separately (no FK to public.profiles)
+      const ids = Array.from(new Set(rows.map((r: any) => r.consultor_id).filter(Boolean)));
+      let profiles: Record<string, { id: string; nome: string }> = {};
+      if (ids.length) {
+        const { data: ps } = await supabase.from("profiles").select("id,nome").in("id", ids);
+        profiles = Object.fromEntries((ps ?? []).map((p: any) => [p.id, p]));
+      }
+      return rows.map((r: any) => ({ ...r, consultor: profiles[r.consultor_id] ?? null }));
     },
   });
 
+
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["em-delay"] });
+    qc.invalidateQueries({ queryKey: ["em-delay-count"] });
     qc.invalidateQueries({ queryKey: ["agenda"] });
   };
+
 
   async function destravar(d: any) {
     await supabase.from("agenda_eventos").update({ delay_resolvido: true }).eq("id", d.id);
