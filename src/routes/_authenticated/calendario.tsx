@@ -68,11 +68,11 @@ const NATUREZA_COLOR: Record<string, { bg: string; border: string; text: string;
   ab:              { bg: "bg-nat-ab/15",         border: "border-nat-ab/60",         text: "text-nat-ab",         dot: "bg-nat-ab" },
   revisita:        { bg: "bg-nat-revisita/15",   border: "border-nat-revisita/60",   text: "text-nat-revisita",   dot: "bg-nat-revisita" },
   fechamento:      { bg: "bg-nat-fechamento/15", border: "border-nat-fechamento/60", text: "text-nat-fechamento", dot: "bg-nat-fechamento" },
-  entrega_apolice: { bg: "bg-emerald-300/15",    border: "border-emerald-300/60",    text: "text-emerald-300",    dot: "bg-emerald-300" },
+  entrega_apolice: { bg: "bg-nat-entrega/15",    border: "border-nat-entrega/60",    text: "text-nat-entrega",    dot: "bg-nat-entrega" },
   joint_work:      { bg: "bg-gold/10",           border: "border-gold/40",           text: "text-gold",           dot: "bg-gold" },
   review:          { bg: "bg-muted",             border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground" },
   bloqueio:        { bg: "bg-muted/60",          border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground" },
-  recorrente:      { bg: "bg-gold/5",            border: "border-gold/30 border-dashed", text: "text-gold/80",     dot: "bg-gold/70" },
+  recorrente:      { bg: "bg-nat-vinca/15",      border: "border-nat-vinca/60 border-dashed", text: "text-nat-vinca",   dot: "bg-nat-vinca" },
 };
 
 type View = "dia" | "semana" | "mes";
@@ -106,17 +106,17 @@ function Calendario() {
   // Pinch-to-zoom continues to scale slotHeight (vertical density).
   const colWidth = isMobile && baseCol > 0 ? baseCol : 0;
 
-  // On mobile, scroll the grid to 05:00 by default so the useful range
-  // (05:00–21:00) is visible first; users can scroll up/down for the rest.
+  // Default vertical scroll posiciona em 05:00 (faixa útil 05–21).
+  // Horários fora da faixa continuam acessíveis por scroll vertical.
   const didInitialScrollRef = useRef(false);
   useEffect(() => {
-    if (!isMobile) return;
     if (didInitialScrollRef.current) return;
+    if (view !== "semana" && view !== "dia") return;
     const el = containerRef.current;
     if (!el) return;
     el.scrollTop = 5 * slotHeight;
     didInitialScrollRef.current = true;
-  }, [isMobile, slotHeight, containerRef]);
+  }, [view, slotHeight, containerRef]);
 
   const range = useMemo(() => {
     if (view === "dia") return { from: startOfDay(anchor), to: endOfDay(anchor) };
@@ -221,10 +221,13 @@ function Calendario() {
     qc.invalidateQueries({ queryKey: ["agenda"] });
     qc.invalidateQueries({ queryKey: ["agenda-semana"] });
     qc.invalidateQueries({ queryKey: ["lembretes-cal"] });
+    qc.invalidateQueries({ queryKey: ["lembretes"] });
     qc.invalidateQueries({ queryKey: ["recorrentes"] });
     qc.invalidateQueries({ queryKey: ["em-delay"] });
     qc.invalidateQueries({ queryKey: ["em-delay-count"] });
     qc.invalidateQueries({ queryKey: ["funil"] });
+    qc.invalidateQueries({ queryKey: ["notificacoes-bell"] });
+    qc.invalidateQueries({ queryKey: ["meu-dia"] });
   };
 
   return (
@@ -389,6 +392,20 @@ function DayColumn({ day, eventos, onSelect, slotHeight }: { day: Date; eventos:
   );
 }
 
+function abreviarLocal(raw?: string | null): string | null {
+  if (!raw) return null;
+  const s = raw.trim();
+  const low = s.toLowerCase();
+  if (/online|zoom|meet|teams|google\s*meet|hangout/.test(low)) return "💻 Online";
+  if (/vinca|escritório|escritorio|sede/.test(low)) return "🏢 VINCA";
+  if (/hsi/.test(low)) return "📍 HSI";
+  if (/(^|\s)hp(\s|$)|hospital portugu/.test(low)) return "📍 HP";
+  if (/aliança|alianca/.test(low)) return "📍 Aliança";
+  // fallback: 1ª palavra significativa, máx 14 chars
+  const first = s.split(/[,\-–|]/)[0]?.trim() ?? s;
+  return "📍 " + (first.length > 14 ? first.slice(0, 14) + "…" : first);
+}
+
 function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSelect: (e: any) => void; slotHeight: number }) {
   const start = new Date(e.inicio);
   const end = new Date(e.fim);
@@ -402,6 +419,10 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
   const hasDelay = !!e.delay_em;
   const delayAtivo = hasDelay && !e.delay_resolvido;
   const isRecorrente = e.__recorrente === true;
+  const horario = `${format(start, "HH:mm")}–${format(end, "HH:mm")}`;
+  const localAbr = abreviarLocal(e.local);
+  const showHorario = height >= 30;
+  const showLocal = !!localAbr && height >= 54;
   return (
     <button
       type="button"
@@ -413,15 +434,24 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
         isRecorrente && "cursor-default",
       )}
       style={{ top, height }}
-      title={`${nomeCompleto} — ${TIPO_LABEL[e.tipo] ?? e.tipo}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
+      title={`${nomeCompleto} — ${TIPO_LABEL[e.tipo] ?? e.tipo} · ${horario}${e.local ? ` · ${e.local}` : ""}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
     >
       {delayAtivo && (
         <span className="absolute top-0 left-0.5 z-10 text-[9px] leading-none select-none" aria-label="Delay">🚩</span>
       )}
-      <p className={cn("text-[11px] sm:text-[13px] font-medium leading-tight whitespace-normal [overflow-wrap:normal] [word-break:normal] line-clamp-3", c.text, delayAtivo && "pl-2.5")}>
+      <p className={cn("text-[11px] sm:text-[13px] font-medium leading-tight whitespace-normal [overflow-wrap:normal] [word-break:normal] line-clamp-2", c.text, delayAtivo && "pl-2.5")}>
         {nomeCompleto}
       </p>
-
+      {showHorario && (
+        <p className={cn("text-[10px] sm:text-[11px] leading-tight opacity-80 tabular-nums", c.text)}>
+          {horario}
+        </p>
+      )}
+      {showLocal && (
+        <p className={cn("text-[10px] sm:text-[11px] leading-tight opacity-75 truncate", c.text)}>
+          {localAbr}
+        </p>
+      )}
     </button>
   );
 }
@@ -879,9 +909,29 @@ function EventoSheet({ evento, onClose, onChanged }: { evento: any | null; onClo
   const fim = new Date(evento.fim);
 
   async function excluir() {
+    // Limpa follow-ups e lembretes vinculados ao prospect deste evento para evitar registros órfãos.
+    if (evento.prospect_id) {
+      const ini = new Date(evento.inicio);
+      const fim = new Date(evento.fim);
+      // Janela: 1h antes do início até 24h depois do fim — cobre follow-ups gerados por este evento.
+      const winStart = new Date(ini.getTime() - 60 * 60 * 1000).toISOString();
+      const winEnd = new Date(fim.getTime() + 24 * 60 * 60 * 1000).toISOString();
+      await supabase.from("atividades")
+        .delete()
+        .eq("prospect_id", evento.prospect_id)
+        .not("follow_up_em", "is", null)
+        .gte("follow_up_em", winStart)
+        .lte("follow_up_em", winEnd);
+      const dataStr = format(ini, "yyyy-MM-dd");
+      await supabase.from("lembretes")
+        .delete()
+        .eq("prospect_id", evento.prospect_id)
+        .eq("data", dataStr)
+        .eq("concluido", false);
+    }
     const { error } = await supabase.from("agenda_eventos").delete().eq("id", evento.id);
     if (error) { toast.error(error.message); return; }
-    toast.success("Removido.");
+    toast.success("Removido. Follow-ups e lembretes vinculados também foram limpos.");
     onChanged();
   }
 
