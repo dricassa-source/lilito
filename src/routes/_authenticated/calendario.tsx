@@ -872,8 +872,7 @@ function EventoSheet({ evento, onClose, onChanged }: { evento: any | null; onClo
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="outline" onClick={() => setMode("agendar_fechamento")}>Agendar Fechamento</Button>
                   <Button variant="outline" onClick={() => setMode("agendar_revisita")}>Agendar Revisita</Button>
-                  <Button variant="outline" onClick={() => setMode("delay")}>Marcar Delay</Button>
-                  <Button variant="outline" onClick={() => marcarResultado(evento, "no_show", { status: "no_show" }).then(onChanged)}>No Show</Button>
+                  <Button variant="outline" className="col-span-2 border-destructive/40 text-destructive hover:text-destructive" onClick={() => setMode("delay")}><Flag className="h-3 w-3 mr-1" />Marcar Delay</Button>
                   <Button variant="outline" className="col-span-2" onClick={() => marcarSemInteresse(evento).then(onChanged)}>Sem Interesse</Button>
                 </div>
               )}
@@ -882,23 +881,21 @@ function EventoSheet({ evento, onClose, onChanged }: { evento: any | null; onClo
                   <Button className="gold-gradient text-background col-span-2" onClick={() => setMode("proposta_fechada")}>Proposta Fechada</Button>
                   <Button variant="outline" onClick={() => marcarF2(evento).then(onChanged)}>F2 (Vai Pensar)</Button>
                   <Button variant="outline" onClick={() => setMode("agendar_revisita")}>Agendar Revisita</Button>
-                  <Button variant="outline" onClick={() => setMode("delay")}>Delay</Button>
-                  <Button variant="outline" onClick={() => marcarResultado(evento, "no_show", { status: "no_show" }).then(onChanged)}>No Show</Button>
+                  <Button variant="outline" className="col-span-2 border-destructive/40 text-destructive hover:text-destructive" onClick={() => setMode("delay")}><Flag className="h-3 w-3 mr-1" />Marcar Delay</Button>
                 </div>
               )}
               {evento.tipo === "entrega_apolice" && (
                 <div className="grid grid-cols-1 gap-2">
                   <Button className="gold-gradient text-background" onClick={() => marcarEntregue(evento).then(onChanged)}>Entregue</Button>
                   <Button variant="outline" onClick={() => setMode("agendar_revisita")}>Reagendar</Button>
-                  <Button variant="outline" onClick={() => marcarResultado(evento, "nao_compareceu", { status: "no_show" }).then(onChanged)}>Não Compareceu</Button>
+                  <Button variant="outline" className="border-destructive/40 text-destructive hover:text-destructive" onClick={() => setMode("delay")}><Flag className="h-3 w-3 mr-1" />Marcar Delay</Button>
                 </div>
               )}
               {(evento.tipo === "revisita" || evento.tipo === "joint_work") && (
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="outline" onClick={() => marcarResultado(evento, "realizado", { status: "realizado" }).then(onChanged)}>Realizado</Button>
                   <Button variant="outline" onClick={() => setMode("agendar_fechamento")}>Agendar Fechamento</Button>
-                  <Button variant="outline" onClick={() => setMode("delay")}>Delay</Button>
-                  <Button variant="outline" onClick={() => marcarResultado(evento, "no_show", { status: "no_show" }).then(onChanged)}>No Show</Button>
+                  <Button variant="outline" className="col-span-2 border-destructive/40 text-destructive hover:text-destructive" onClick={() => setMode("delay")}><Flag className="h-3 w-3 mr-1" />Marcar Delay</Button>
                 </div>
               )}
             </>
