@@ -173,25 +173,8 @@ function Dashboard() {
     <div>
       <PageHeader eyebrow="Gestão" title="Dashboard" description="Visão executiva — produção, funil, conversão, equipe e qualidade." />
 
-      {isMaster && (
-        <div className="flex flex-wrap gap-3 mb-6">
-          <Tabs value={scope} onValueChange={(v) => setScope(v as any)}>
-            <TabsList className="bg-surface border border-border">
-              <TabsTrigger value="individual">Individual</TabsTrigger>
-              <TabsTrigger value="equipe">Equipe</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          {scope === "equipe" && (consultores ?? []).length > 0 && (
-            <Select value={consultorFiltro} onValueChange={setConsultorFiltro}>
-              <SelectTrigger className="w-56"><SelectValue placeholder="Filtrar consultor" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toda a equipe</SelectItem>
-                {(consultores ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
-      )}
+      <ConsultorFilter />
+
 
       <Bloco titulo="Produção">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
