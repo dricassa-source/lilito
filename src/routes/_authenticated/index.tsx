@@ -1,73 +1,49 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/lilito/PageHeader";
+import { ScoreStars } from "@/components/lilito/ScoreStars";
 import { NovoLembrete } from "./lembretes";
 import {
-  Flame,
-  CalendarDays,
-  AlertTriangle,
-  Users2,
-  Cake,
-  Target,
-  Users,
-  FileSignature,
-  TrendingUp,
-  Wallet,
-  Crown,
-  Bell,
-  Check,
+  Flame, CalendarDays, AlertTriangle, Cake, Bell, Check,
+  PhoneCall, Plus, Trash2, MessageCircle, Calendar as CalIcon,
+  Target, Clock, AlertOctagon,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay, addDays, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
-
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Meu Dia — LILITO" }] }),
   component: MeuDia,
 });
 
-function StatCard({ icon: Icon, label, value, sub, to }: any) {
+function StatCard({ icon: Icon, label, value, sub, to, tone }: any) {
   const content = (
-    <Card className="p-5 bg-surface border-border hover:border-gold/40 transition-colors group h-full">
+    <Card className={`p-4 bg-surface border-border hover:border-gold/40 transition-colors group h-full ${tone === "warn" ? "border-yellow-500/40" : ""} ${tone === "danger" ? "border-destructive/40" : ""}`}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="caps-tracking text-muted-foreground">{label}</p>
-          <p className="font-display text-4xl text-foreground mt-2">{value}</p>
+          <p className="caps-tracking text-muted-foreground text-[0.6rem]">{label}</p>
+          <p className="font-display text-3xl text-foreground mt-1">{value}</p>
           {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
         </div>
-        <Icon className="h-5 w-5 text-gold opacity-60 group-hover:opacity-100" strokeWidth={1.3} />
+        <Icon className={`h-5 w-5 opacity-70 group-hover:opacity-100 ${tone === "danger" ? "text-destructive" : tone === "warn" ? "text-yellow-500" : "text-gold"}`} strokeWidth={1.3} />
       </div>
     </Card>
   );
   return to ? <Link to={to}>{content}</Link> : content;
 }
 
-function formatBRL(n: number) {
-  return `R$ ${Math.round(n).toLocaleString("pt-BR")}`;
-}
-
-function weekRange() {
-  const now = new Date();
-  const day = now.getDay(); // 0 sun .. 6 sat
-  const diffToMonday = (day + 6) % 7;
-  const start = new Date(now);
-  start.setDate(now.getDate() - diffToMonday);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 7);
-  return { start, end };
-}
-
-function monthRange() {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  return { start, end };
+function whatsappLink(tel?: string | null) {
+  if (!tel) return null;
+  const clean = tel.replace(/\D+/g, "");
+  if (!clean) return null;
+  const withCc = clean.startsWith("55") ? clean : `55${clean}`;
+  return `https://wa.me/${withCc}`;
 }
 
 function MeuDia() {
@@ -75,84 +51,89 @@ function MeuDia() {
   const uid = auth?.user.id;
   const isMaster = auth?.isMaster ?? false;
 
+  const today = new Date();
+  const dayStart = startOfDay(today).toISOString();
+  const dayEnd = endOfDay(today).toISOString();
+
   const { data: stats } = useQuery({
-    queryKey: ["meu-dia", uid, isMaster],
+    queryKey: ["meu-dia-stats", uid],
     enabled: !!uid,
     queryFn: async () => {
-      const today = new Date();
-      const start = new Date(today); start.setHours(0, 0, 0, 0);
-      const end = new Date(today); end.setHours(23, 59, 59, 999);
-
-      const [hot, eventos, followups, recomendacoes] = await Promise.all([
-        supabase.from("prospects").select("id", { count: "exact", head: true }).eq("etapa_funil", "hot").eq("status_hot", "pendente"),
+      const [hot, eventos, followups, delays] = await Promise.all([
+        supabase.from("prospects").select("id", { count: "exact", head: true })
+          .eq("etapa_funil", "hot").eq("status_hot", "pendente"),
         supabase.from("agenda_eventos").select("id", { count: "exact", head: true })
-          .gte("inicio", start.toISOString()).lte("inicio", end.toISOString()),
+          .gte("inicio", dayStart).lte("inicio", dayEnd),
         supabase.from("atividades").select("id", { count: "exact", head: true })
           .lte("follow_up_em", new Date().toISOString()).not("follow_up_em", "is", null),
-        supabase.from("prospects").select("id", { count: "exact", head: true }).eq("origem", "recomendacao").eq("etapa_funil", "recomendacao"),
+        supabase.from("agenda_eventos").select("id", { count: "exact", head: true })
+          .eq("delay_resolvido", false).not("delay_em", "is", null),
       ]);
-
       return {
         hot: hot.count ?? 0,
         eventos: eventos.count ?? 0,
         followups: followups.count ?? 0,
-        recomendacoes: recomendacoes.count ?? 0,
+        delays: delays.count ?? 0,
       };
     },
   });
 
-  const { data: equipe } = useQuery({
-    queryKey: ["meu-dia-equipe", uid],
-    enabled: !!uid && isMaster,
+  const { data: reunioesHoje } = useQuery({
+    queryKey: ["meu-dia-reunioes", uid, dayStart],
+    enabled: !!uid,
     queryFn: async () => {
-      const { start: wStart, end: wEnd } = weekRange();
-      const { start: mStart, end: mEnd } = monthRange();
+      const { data } = await supabase.from("agenda_eventos")
+        .select("id,titulo,tipo,inicio,fim,prospect_id")
+        .gte("inicio", dayStart).lte("inicio", dayEnd)
+        .order("inicio", { ascending: true });
+      return data ?? [];
+    },
+  });
 
-      // Only users with role = 'consultor' (exclude masters)
-      const { data: consultorRolesRaw } = await supabase
-        .from("user_roles").select("user_id").eq("role", "consultor");
-      const consultorIds = Array.from(new Set((consultorRolesRaw ?? []).map((r: any) => r.user_id)));
+  const { data: agendaSemana } = useQuery({
+    queryKey: ["meu-dia-agenda-semana", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const end = addDays(today, 7).toISOString();
+      const { data } = await supabase.from("agenda_eventos")
+        .select("id,titulo,tipo,inicio")
+        .gte("inicio", dayStart).lte("inicio", end)
+        .order("inicio", { ascending: true }).limit(10);
+      return data ?? [];
+    },
+  });
 
-      if (consultorIds.length === 0) {
-        return { consultoresAtivos: 0, planosSemana: 0, paSemana: 0, paMes: 0, ranking: [] as { id: string; nome: string; pa: number }[] };
-      }
+  const { data: followupsList } = useQuery({
+    queryKey: ["meu-dia-followups", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data } = await supabase.from("atividades")
+        .select("id,prospect_id,follow_up_em,observacao,prospects(nome,telefone,score)")
+        .lte("follow_up_em", new Date().toISOString())
+        .not("follow_up_em", "is", null)
+        .order("follow_up_em", { ascending: true }).limit(8);
+      return data ?? [];
+    },
+  });
 
-      const [consultoresRes, planosSemanaRes, paSemanaRes, paMesRes, perfis] = await Promise.all([
-        supabase.from("profiles").select("id", { count: "exact", head: true })
-          .eq("ativo", true).in("id", consultorIds),
-        supabase.from("apolices").select("id", { count: "exact", head: true })
-          .eq("status", "migrado").in("consultor_id", consultorIds)
-          .gte("updated_at", wStart.toISOString()).lt("updated_at", wEnd.toISOString()),
-        supabase.from("apolices").select("premio_atual,updated_at,status")
-          .eq("status", "migrado").in("consultor_id", consultorIds)
-          .gte("updated_at", wStart.toISOString()).lt("updated_at", wEnd.toISOString()),
-        supabase.from("apolices").select("premio_atual,consultor_id,updated_at,status")
-          .eq("status", "migrado").in("consultor_id", consultorIds)
-          .gte("updated_at", mStart.toISOString()).lt("updated_at", mEnd.toISOString()),
-        supabase.from("profiles").select("id,nome").eq("ativo", true).in("id", consultorIds),
+  const { data: alertas } = useQuery({
+    queryKey: ["meu-dia-alertas", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
+      const [parados, delaysAtivos, semResultado] = await Promise.all([
+        supabase.from("prospects").select("id", { count: "exact", head: true })
+          .not("etapa_funil", "in", "(cliente,pos_venda,perdido)")
+          .lte("entrou_etapa_em", sevenDaysAgo),
+        supabase.from("agenda_eventos").select("id", { count: "exact", head: true })
+          .eq("delay_resolvido", false).not("delay_em", "is", null),
+        supabase.from("agenda_eventos").select("id", { count: "exact", head: true })
+          .lt("fim", new Date().toISOString()).is("resultado", null),
       ]);
-
-      const paSemana = (paSemanaRes.data ?? []).reduce((s, r: any) => s + Number(r.premio_atual ?? 0), 0);
-      const mesRows = (paMesRes.data ?? []) as any[];
-      const paMes = mesRows.reduce((s, r) => s + Number(r.premio_atual ?? 0), 0);
-
-      const byConsultor = new Map<string, number>();
-      for (const r of mesRows) {
-        byConsultor.set(r.consultor_id, (byConsultor.get(r.consultor_id) ?? 0) + Number(r.premio_atual ?? 0));
-      }
-      const nomes = new Map<string, string>();
-      for (const p of (perfis.data ?? []) as any[]) nomes.set(p.id, p.nome);
-      const ranking = Array.from(byConsultor.entries())
-        .map(([id, pa]) => ({ id, nome: nomes.get(id) ?? "—", pa }))
-        .sort((a, b) => b.pa - a.pa)
-        .slice(0, 5);
-
       return {
-        consultoresAtivos: consultoresRes.count ?? 0,
-        planosSemana: planosSemanaRes.count ?? 0,
-        paSemana,
-        paMes,
-        ranking,
+        parados: parados.count ?? 0,
+        delays: delaysAtivos.count ?? 0,
+        semResultado: semResultado.count ?? 0,
       };
     },
   });
@@ -162,66 +143,47 @@ function MeuDia() {
       <PageHeader
         eyebrow={isMaster ? "Painel da Unidade" : "Hoje"}
         title={`Bom dia, ${auth?.profile?.nome?.split(" ")[0] ?? ""}`}
-        description={isMaster ? "Visão executiva da operação VINCA." : "Sua plataforma de relacionamento e gestão comercial."}
+        description="Sua tela de execução da operação VINCA."
       />
-
-      <FraseRotativa />
 
       <LembretesHoje />
 
-
-      {isMaster && (
-        <div className="mb-6">
-          <p className="caps-tracking text-gold mb-3 flex items-center gap-2">
-            <Crown className="h-3.5 w-3.5" strokeWidth={1.4} /> Gestão da Unidade
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard icon={Users} label="Consultores ativos" value={equipe?.consultoresAtivos ?? "—"} to="/administracao" />
-            <StatCard icon={FileSignature} label="Planos da semana" value={equipe?.planosSemana ?? "—"} sub="Equipe" />
-            <StatCard icon={TrendingUp} label="PA emitido — semana" value={equipe ? formatBRL(equipe.paSemana) : "—"} />
-            <StatCard icon={Wallet} label="PA emitido — mês" value={equipe ? formatBRL(equipe.paMes) : "—"} />
-          </div>
-
-          <Card className="mt-4 p-6 bg-surface border-border">
-            <div className="flex items-center justify-between mb-4">
-              <p className="caps-tracking text-gold">Ranking — Produção do mês</p>
-              <Link to="/dashboard" className="text-xs text-muted-foreground hover:text-gold transition-colors">
-                Ver dashboard completo →
-              </Link>
-            </div>
-            {!equipe || equipe.ranking.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma produção registrada neste mês.</p>
-            ) : (
-              <ol className="divide-y divide-border">
-                {equipe.ranking.map((c, idx) => (
-                  <li key={c.id} className="py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <span className={`font-display text-2xl w-8 ${idx === 0 ? "text-gold" : "text-muted-foreground"}`}>
-                        {String(idx + 1).padStart(2, "0")}
-                      </span>
-                      <span className="text-foreground">{c.nome}</span>
-                    </div>
-                    <span className="font-display text-lg text-foreground">{formatBRL(c.pa)}</span>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </Card>
-        </div>
-      )}
-
-      <p className="caps-tracking text-muted-foreground mb-3 mt-2">
-        {isMaster ? "Sua agenda pessoal" : "Sua operação de hoje"}
-      </p>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard icon={AlertTriangle} label="Follow-ups vencidos" value={stats?.followups ?? "—"} to="/atividades" />
-        <StatCard icon={CalendarDays} label="Reuniões de hoje" value={stats?.eventos ?? "—"} to="/calendario" />
+      <p className="caps-tracking text-muted-foreground mb-3 mt-2">Resumo rápido</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <StatCard icon={AlertTriangle} label="Follow-ups vencidos" value={stats?.followups ?? "—"} to="/atividades" tone={stats?.followups ? "warn" : undefined} />
+        <StatCard icon={CalendarDays} label="Reuniões hoje" value={stats?.eventos ?? "—"} to="/calendario" />
         <StatCard icon={Flame} label="HOTs pendentes" value={stats?.hot ?? "—"} to="/hot" />
-        <StatCard icon={Users2} label="Recomendações recebidas" value={stats?.recomendacoes ?? "—"} to="/recomendacoes" />
-        <StatCard icon={Cake} label="Aniversariantes" value="—" sub="Em breve" />
-        {!isMaster && (
-          <StatCard icon={Target} label="Meta semanal" value="0 / 3" sub="Planos da semana" />
-        )}
+        <StatCard icon={Clock} label="Em Delay" value={stats?.delays ?? "—"} to="/em-delay" tone={stats?.delays ? "danger" : undefined} />
+      </div>
+
+      <div className="flex gap-2 mb-6">
+        <Link to="/hot" className="flex-1">
+          <Button className="w-full gold-gradient text-background h-12">
+            <PhoneCall className="h-4 w-4 mr-2" /> Iniciar Ligações (HOT)
+          </Button>
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <DesafiosDoDia uid={uid ?? ""} />
+        <MinhaAgenda items={agendaSemana ?? []} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <FollowupsBloco items={followupsList ?? []} />
+        <ReunioesBloco items={reunioesHoje ?? []} />
+      </div>
+
+      <AlertasOperacionais alertas={alertas} />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+        <Card className="p-5 bg-surface border-border">
+          <p className="caps-tracking text-muted-foreground flex items-center gap-2 text-[0.6rem]">
+            <Cake className="h-3.5 w-3.5" /> Aniversariantes
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">Em breve.</p>
+        </Card>
+        <FraseRotativa />
       </div>
     </div>
   );
@@ -236,13 +198,13 @@ function FraseRotativa() {
     },
   });
   const list = data && data.length > 0 ? data : ["Quem resolve a semana resolve o mês."];
-  const idx = Math.floor(Date.now() / (1000 * 60 * 60 * 6)) % list.length; // muda a cada 6h
+  const idx = Math.floor(Date.now() / (1000 * 60 * 60 * 6)) % list.length;
   return (
-    <div className="relative overflow-hidden rounded-md border border-gold/30 bg-gradient-to-r from-surface to-surface-elevated p-6 mb-6">
-      <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gold/10 blur-3xl" />
-      <p className="caps-tracking text-gold">Cultura VINCA</p>
-      <p className="font-display text-3xl text-foreground mt-2 italic">"{list[idx]}"</p>
-    </div>
+    <Card className="p-5 bg-surface border-border relative overflow-hidden">
+      <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gold/10 blur-3xl" />
+      <p className="caps-tracking text-gold text-[0.6rem]">Cultura VINCA</p>
+      <p className="font-display text-lg text-foreground mt-1 italic">"{list[idx]}"</p>
+    </Card>
   );
 }
 
@@ -267,30 +229,234 @@ function LembretesHoje() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["lembretes-meu-dia"] }),
   });
 
+  if (!data || data.length === 0) return null;
+
   return (
-    <Card className="p-5 bg-surface border-border mb-6">
+    <Card className="p-4 bg-surface border-border mb-4">
       <div className="flex items-center justify-between mb-3">
-        <p className="caps-tracking text-gold flex items-center gap-2">
-          <Bell className="h-3.5 w-3.5" /> Lembretes ({data?.length ?? 0})
+        <p className="caps-tracking text-gold flex items-center gap-2 text-[0.6rem]">
+          <Bell className="h-3.5 w-3.5" /> Lembretes ({data.length})
         </p>
         <NovoLembrete onSaved={() => qc.invalidateQueries({ queryKey: ["lembretes-meu-dia"] })} />
       </div>
-      {!data || data.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Sem lembretes pendentes. {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}.</p>
+      <ul className="divide-y divide-border">
+        {data.map((l) => (
+          <li key={l.id} className="py-2 flex items-center gap-2">
+            <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => toggle.mutate(l.id)}>
+              <Check className="h-3.5 w-3.5" />
+            </Button>
+            <div className="flex-1">
+              <p className="text-sm">{l.titulo}{l.hora ? <span className="text-muted-foreground ml-2 text-xs">{l.hora.slice(0,5)}</span> : null}</p>
+              {l.observacao && <p className="text-xs text-muted-foreground">{l.observacao}</p>}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+type Desafio = { id: string; texto: string; feito: boolean };
+
+function DesafiosDoDia({ uid }: { uid: string }) {
+  const hoje = format(new Date(), "yyyy-MM-dd");
+  const key = `desafios:${uid}:${hoje}`;
+  const [items, setItems] = useState<Desafio[]>([]);
+  const [novo, setNovo] = useState("");
+
+  useEffect(() => {
+    if (!uid) return;
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        setItems(JSON.parse(raw));
+      } else {
+        setItems([
+          { id: crypto.randomUUID(), texto: "Fazer 20 HOTs", feito: false },
+          { id: crypto.randomUUID(), texto: "Realizar 3 ABs", feito: false },
+          { id: crypto.randomUUID(), texto: "Captar 10 recomendações", feito: false },
+        ]);
+      }
+    } catch { /* noop */ }
+  }, [key, uid]);
+
+  function persist(next: Desafio[]) {
+    setItems(next);
+    try { localStorage.setItem(key, JSON.stringify(next)); } catch { /* noop */ }
+  }
+
+  function add() {
+    const t = novo.trim();
+    if (!t) return;
+    persist([...items, { id: crypto.randomUUID(), texto: t, feito: false }]);
+    setNovo("");
+  }
+  function toggle(id: string) {
+    persist(items.map((d) => d.id === id ? { ...d, feito: !d.feito } : d));
+  }
+  function remove(id: string) {
+    persist(items.filter((d) => d.id !== id));
+  }
+
+  const done = items.filter((d) => d.feito).length;
+  return (
+    <Card className="p-4 bg-surface border-border">
+      <div className="flex items-center justify-between mb-3">
+        <p className="caps-tracking text-gold flex items-center gap-2 text-[0.6rem]">
+          <Target className="h-3.5 w-3.5" /> Desafios do dia ({done}/{items.length})
+        </p>
+      </div>
+      <ul className="divide-y divide-border mb-3 max-h-48 overflow-y-auto">
+        {items.length === 0 && <li className="py-2 text-xs text-muted-foreground">Adicione seu primeiro desafio do dia.</li>}
+        {items.map((d) => (
+          <li key={d.id} className="py-2 flex items-center gap-2">
+            <Button size="icon" variant={d.feito ? "default" : "outline"} className="h-7 w-7" onClick={() => toggle(d.id)}>
+              <Check className="h-3.5 w-3.5" />
+            </Button>
+            <span className={`flex-1 text-sm ${d.feito ? "line-through text-muted-foreground" : ""}`}>{d.texto}</span>
+            <Button size="icon" variant="ghost" className="h-7 w-7 hover:text-destructive" onClick={() => remove(d.id)}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <div className="flex gap-2">
+        <Input
+          value={novo}
+          onChange={(e) => setNovo(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && add()}
+          placeholder="Novo desafio..."
+          className="h-9"
+        />
+        <Button size="icon" onClick={add} className="h-9 w-9 gold-gradient text-background"><Plus className="h-4 w-4" /></Button>
+      </div>
+    </Card>
+  );
+}
+
+function MinhaAgenda({ items }: { items: any[] }) {
+  return (
+    <Card className="p-4 bg-surface border-border">
+      <div className="flex items-center justify-between mb-3">
+        <p className="caps-tracking text-gold flex items-center gap-2 text-[0.6rem]">
+          <CalIcon className="h-3.5 w-3.5" /> Minha agenda — próximos 7 dias
+        </p>
+        <Link to="/calendario" className="text-xs text-muted-foreground hover:text-gold">Abrir calendário →</Link>
+      </div>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Sem compromissos nos próximos 7 dias.</p>
       ) : (
-        <ul className="divide-y divide-border">
-          {data.map((l) => (
-            <li key={l.id} className="py-2 flex items-center gap-2">
-              <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => toggle.mutate(l.id)}>
-                <Check className="h-3.5 w-3.5" />
-              </Button>
-              <div className="flex-1">
-                <p className="text-sm">{l.titulo}{l.hora ? <span className="text-muted-foreground ml-2 text-xs">{l.hora.slice(0,5)}</span> : null}</p>
-                {l.observacao && <p className="text-xs text-muted-foreground">{l.observacao}</p>}
+        <ul className="divide-y divide-border max-h-56 overflow-y-auto">
+          {items.map((e) => (
+            <li key={e.id} className="py-2 flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm truncate">{e.titulo}</p>
+                <p className="text-xs text-muted-foreground">
+                  {format(new Date(e.inicio), "EEE dd/MM HH:mm", { locale: ptBR })} · {e.tipo}
+                </p>
               </div>
             </li>
           ))}
         </ul>
+      )}
+    </Card>
+  );
+}
+
+function FollowupsBloco({ items }: { items: any[] }) {
+  return (
+    <Card className="p-4 bg-surface border-border">
+      <p className="caps-tracking text-gold flex items-center gap-2 text-[0.6rem] mb-3">
+        <AlertTriangle className="h-3.5 w-3.5" /> Follow-ups vencidos ({items.length})
+      </p>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhum follow-up em atraso. Bom trabalho.</p>
+      ) : (
+        <ul className="divide-y divide-border max-h-56 overflow-y-auto">
+          {items.map((a) => {
+            const p = a.prospects as any;
+            const dias = a.follow_up_em ? differenceInDays(new Date(), new Date(a.follow_up_em)) : 0;
+            const wa = whatsappLink(p?.telefone);
+            return (
+              <li key={a.id} className="py-2 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm truncate flex items-center gap-2">
+                    {p?.nome ?? "—"}
+                    <ScoreStars score={p?.score ?? 1} />
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {p?.telefone ?? "Sem telefone"} · {dias}d de atraso
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  {wa && (
+                    <a href={wa} target="_blank" rel="noopener noreferrer">
+                      <Button size="icon" variant="ghost" className="h-8 w-8 hover:text-emerald-500"><MessageCircle className="h-4 w-4" /></Button>
+                    </a>
+                  )}
+                  <Link to="/calendario">
+                    <Button size="icon" variant="ghost" className="h-8 w-8"><CalIcon className="h-4 w-4" /></Button>
+                  </Link>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function ReunioesBloco({ items }: { items: any[] }) {
+  return (
+    <Card className="p-4 bg-surface border-border">
+      <p className="caps-tracking text-gold flex items-center gap-2 text-[0.6rem] mb-3">
+        <CalendarDays className="h-3.5 w-3.5" /> Reuniões do dia ({items.length})
+      </p>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhuma reunião agendada para hoje.</p>
+      ) : (
+        <ul className="divide-y divide-border max-h-56 overflow-y-auto">
+          {items.map((e) => (
+            <li key={e.id} className="py-2">
+              <p className="text-sm flex items-center gap-2">
+                <span className="font-mono text-xs text-gold">{format(new Date(e.inicio), "HH:mm")}</span>
+                <span className="truncate">{e.titulo}</span>
+              </p>
+              <p className="text-xs text-muted-foreground capitalize">{e.tipo}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function AlertasOperacionais({ alertas }: { alertas: { parados: number; delays: number; semResultado: number } | undefined }) {
+  const a = alertas ?? { parados: 0, delays: 0, semResultado: 0 };
+  const total = a.parados + a.delays + a.semResultado;
+  return (
+    <Card className={`p-4 bg-surface ${total > 0 ? "border-destructive/40" : "border-border"}`}>
+      <p className="caps-tracking text-gold flex items-center gap-2 text-[0.6rem] mb-3">
+        <AlertOctagon className="h-3.5 w-3.5" /> Alertas operacionais
+      </p>
+      {total === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhuma pendência crítica.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+          <Link to="/funil" className="p-3 rounded-md border border-border hover:border-gold/40 transition-colors">
+            <p className="text-xs text-muted-foreground">Prospects parados &gt; 7d</p>
+            <p className="font-display text-2xl mt-1">{a.parados}</p>
+          </Link>
+          <Link to="/em-delay" className="p-3 rounded-md border border-border hover:border-gold/40 transition-colors">
+            <p className="text-xs text-muted-foreground">Delays ativos</p>
+            <p className="font-display text-2xl mt-1 text-destructive">{a.delays}</p>
+          </Link>
+          <Link to="/calendario" className="p-3 rounded-md border border-border hover:border-gold/40 transition-colors">
+            <p className="text-xs text-muted-foreground">Eventos sem resultado</p>
+            <p className="font-display text-2xl mt-1">{a.semResultado}</p>
+          </Link>
+        </div>
       )}
     </Card>
   );

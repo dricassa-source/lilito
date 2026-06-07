@@ -19,8 +19,15 @@ import {
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { EmptyState } from "@/components/lilito/EmptyState";
-import { Plus, Users2, Flame, XCircle, Pencil, Search } from "lucide-react";
+import { ScoreStars } from "@/components/lilito/ScoreStars";
+import { Plus, Users2, Flame, XCircle, Pencil, Search, Trophy } from "lucide-react";
 import { toast } from "sonner";
+
+function tempoEtapaDot(dias: number) {
+  if (dias <= 7) return { cor: "bg-emerald-500", label: "Recente" };
+  if (dias <= 14) return { cor: "bg-yellow-500", label: "Atenção" };
+  return { cor: "bg-red-500", label: "Crítico" };
+}
 
 export const Route = createFileRoute("/_authenticated/recomendacoes")({
   head: () => ({ meta: [{ title: "Recomendações — LILITO" }] }),
@@ -58,13 +65,9 @@ function diasDesde(iso: string) {
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
 }
 
-function orneScore(p: any) {
-  return (
-    (p.score_patrimonio ?? 0) +
-    (p.score_renda ?? 0) +
-    (p.score_necessidade ?? 0) +
-    (p.score_influencia ?? 0)
-  );
+function orneScore(p: any): number {
+  // Score automático (1-5) calculado pelo trigger. Fallback para 1 quando ausente.
+  return p.score ?? 1;
 }
 
 function Recomendacoes() {
@@ -80,6 +83,8 @@ function Recomendacoes() {
   const [fEstado, setFEstado] = useState("all");
   const [fFilhos, setFFilhos] = useState("all");
   const [fRecom, setFRecom] = useState("all");
+  const [mostrarPerdidos, setMostrarPerdidos] = useState(false);
+  const [rankingOpen, setRankingOpen] = useState(false);
 
   const { data: prospects } = useQuery({
     queryKey: ["prospects"],
@@ -105,6 +110,7 @@ function Recomendacoes() {
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     return (prospects ?? []).filter((p: any) => {
+      if (!mostrarPerdidos && p.etapa_funil === "perdido") return false;
       if (term) {
         const hay = `${p.nome ?? ""} ${p.telefone ?? ""} ${p.quem_recomendou ?? ""}`.toLowerCase();
         if (!hay.includes(term)) return false;
@@ -117,7 +123,24 @@ function Recomendacoes() {
       if (fRecom !== "all" && p.quem_recomendou !== fRecom) return false;
       return true;
     });
-  }, [prospects, q, fEtapa, fProfissao, fEstado, fFilhos, fRecom]);
+  }, [prospects, q, fEtapa, fProfissao, fEstado, fFilhos, fRecom, mostrarPerdidos]);
+
+  const rankingRecomendantes = useMemo(() => {
+    const map = new Map<string, { total: number; clientes: number; pa: number }>();
+    for (const p of (prospects ?? []) as any[]) {
+      const r = (p.quem_recomendou ?? "").trim();
+      if (!r) continue;
+      const cur = map.get(r) ?? { total: 0, clientes: 0, pa: 0 };
+      cur.total += 1;
+      if (p.etapa_funil === "cliente" || p.etapa_funil === "pos_venda") cur.clientes += 1;
+      cur.pa += Number(p.pa_estimado ?? 0);
+      map.set(r, cur);
+    }
+    return Array.from(map.entries())
+      .map(([nome, v]) => ({ nome, ...v }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 20);
+  }, [prospects]);
 
   async function enviarParaHot(p: any) {
     if (!auth) return;
@@ -155,22 +178,64 @@ function Recomendacoes() {
     <div>
       <PageHeader
         eyebrow="Originação"
-        title="Recomendações"
-        description="Carteira gerenciável de prospects — CRM operacional da unidade."
+        title="Prospects da unidade"
         actions={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button className="gold-gradient text-background">
-                <Plus className="h-4 w-4 mr-2" />Novo prospect
-              </Button>
-            </DialogTrigger>
-            <ProspectDialog onClose={() => {
-              setOpen(false);
-              qc.invalidateQueries({ queryKey: ["prospects"] });
-            }} />
-          </Dialog>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setRankingOpen(true)}>
+              <Trophy className="h-4 w-4 mr-2" />Ranking
+            </Button>
+            <Button
+              variant={mostrarPerdidos ? "default" : "outline"}
+              onClick={() => setMostrarPerdidos((v) => !v)}
+              title="Incluir prospects marcados como perdidos"
+            >
+              <XCircle className="h-4 w-4 mr-2" />{mostrarPerdidos ? "Ocultar perdidos" : "Mostrar perdidos"}
+            </Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button className="gold-gradient text-background">
+                  <Plus className="h-4 w-4 mr-2" />Novo prospect
+                </Button>
+              </DialogTrigger>
+              <ProspectDialog onClose={() => {
+                setOpen(false);
+                qc.invalidateQueries({ queryKey: ["prospects"] });
+              }} />
+            </Dialog>
+          </div>
         }
       />
+
+      <Dialog open={rankingOpen} onOpenChange={setRankingOpen}>
+        <DialogContent className="max-w-lg bg-surface border-border">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-gold" /> Ranking de Recomendantes
+            </DialogTitle>
+          </DialogHeader>
+          {rankingRecomendantes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum recomendante registrado ainda.</p>
+          ) : (
+            <ol className="divide-y divide-border max-h-[60vh] overflow-y-auto">
+              {rankingRecomendantes.map((r, idx) => (
+                <li key={r.nome} className="py-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={`font-display text-xl w-7 ${idx === 0 ? "text-gold" : "text-muted-foreground"}`}>
+                      {String(idx + 1).padStart(2, "0")}
+                    </span>
+                    <span className="text-foreground truncate">{r.nome}</span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm">{r.total} indicação{r.total > 1 ? "ões" : ""}</p>
+                    <p className="text-xs text-muted-foreground">{r.clientes} cliente(s) · {brl(r.pa)}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </DialogContent>
+      </Dialog>
+
 
       <Card className="bg-surface border-border p-4 mb-4 space-y-3">
         <div className="relative">
@@ -235,8 +300,8 @@ function Recomendacoes() {
                 <TableHead>Nome</TableHead>
                 <TableHead>Profissão</TableHead>
                 <TableHead>Etapa</TableHead>
-                <TableHead className="text-right">ORN-E</TableHead>
-                <TableHead className="text-right">Dias</TableHead>
+                <TableHead className="text-right">Score</TableHead>
+                <TableHead className="text-right">Tempo etapa</TableHead>
                 <TableHead className="text-right">Renda est.</TableHead>
                 <TableHead>Recomendante</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -245,6 +310,8 @@ function Recomendacoes() {
             <TableBody>
               {filtered.map((p: any) => {
                 const score = orneScore(p);
+                const dias = diasDesde(p.entrou_etapa_em ?? p.created_at);
+                const dot = tempoEtapaDot(dias);
                 return (
                   <TableRow key={p.id}>
                     <TableCell>
@@ -261,10 +328,17 @@ function Recomendacoes() {
                         {ETAPA_LABEL[p.etapa_funil] ?? p.etapa_funil}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm">
-                      {score > 0 ? score : "—"}
+                    <TableCell className="text-right">
+                      <div className="flex justify-end">
+                        <ScoreStars score={score} />
+                      </div>
                     </TableCell>
-                    <TableCell className="text-right text-muted-foreground">{diasDesde(p.created_at)}d</TableCell>
+                    <TableCell className="text-right">
+                      <span className="inline-flex items-center gap-1.5 text-muted-foreground" title={dot.label}>
+                        <span className={`h-2 w-2 rounded-full ${dot.cor}`} />
+                        {dias}d
+                      </span>
+                    </TableCell>
                     <TableCell className="text-right">{brl(p.renda_estimada)}</TableCell>
                     <TableCell className="text-muted-foreground">{p.quem_recomendou ?? "—"}</TableCell>
                     <TableCell className="text-right">
@@ -323,8 +397,9 @@ function PerfilDialog({ prospect, onEdit, onClose }: { prospect: any; onEdit: ()
   return (
     <DialogContent className="max-w-2xl bg-surface border-border max-h-[90vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle className="font-display text-2xl flex items-center gap-3">
+        <DialogTitle className="font-display text-2xl flex items-center gap-3 flex-wrap">
           {p.nome}
+          <ScoreStars score={score} />
           <Badge variant="outline" className={ETAPA_BADGE_CLASS[p.etapa_funil] ?? ""}>
             {ETAPA_LABEL[p.etapa_funil] ?? p.etapa_funil}
           </Badge>
@@ -340,7 +415,10 @@ function PerfilDialog({ prospect, onEdit, onClose }: { prospect: any; onEdit: ()
         <Field label="Renda estimada" value={brl(p.renda_estimada)} />
         <Field label="Patrimônio estimado" value={brl(p.patrimonio_estimado)} />
         <Field label="PA estimado" value={brl(p.pa_estimado)} />
-        <Field label="ORN-E (pontuação)" value={score > 0 ? String(score) : "—"} />
+        <div>
+          <div className="caps-tracking text-[0.65rem] text-muted-foreground mb-1">Score automático</div>
+          <ScoreStars score={score} className="text-sm" />
+        </div>
         <Field label="Recomendante" value={p.quem_recomendou} />
         <Field label="Origem" value={p.origem} />
         <Field label="Data de nascimento" value={p.data_nascimento} />
