@@ -40,6 +40,52 @@ function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode
   );
 }
 
+function BlocoColapsavel({ titulo, children, defaultOpen = false }: { titulo: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <section className="mb-6">
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <CollapsibleTrigger className="w-full flex items-center justify-between py-2 group">
+          <p className="caps-tracking text-muted-foreground group-hover:text-gold text-[0.65rem] transition-colors">{titulo}</p>
+          <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-3">
+          {children}
+        </CollapsibleContent>
+      </Collapsible>
+    </section>
+  );
+}
+
+function HeroKPI({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent?: "gold" | "blue" | "emerald" }) {
+  const tone =
+    accent === "gold" ? "border-gold/40 from-gold/10" :
+    accent === "blue" ? "border-blue-500/40 from-blue-500/10" :
+    accent === "emerald" ? "border-emerald-500/40 from-emerald-500/10" :
+    "border-border";
+  const text =
+    accent === "gold" ? "text-gold" :
+    accent === "blue" ? "text-blue-400" :
+    accent === "emerald" ? "text-emerald-400" : "text-foreground";
+  return (
+    <Card className={`p-6 bg-gradient-to-br to-surface bg-surface ${tone}`}>
+      <p className="caps-tracking text-muted-foreground text-[0.65rem]">{label}</p>
+      <p className={`font-display text-4xl md:text-5xl mt-3 ${text}`}>{value}</p>
+      {sub && <p className="text-xs text-muted-foreground mt-2">{sub}</p>}
+    </Card>
+  );
+}
+
+function PipelineStep({ label, qtd, pa, color, fg }: { label: string; qtd: number; pa: number; color: string; fg: string }) {
+  return (
+    <div className={`${color} rounded-md p-3 border border-white/5`}>
+      <p className={`caps-tracking text-[0.55rem] ${fg}`}>{label}</p>
+      <p className={`font-display text-3xl mt-1 ${fg}`}>{qtd}</p>
+      {pa > 0 && <p className="text-[10px] text-muted-foreground mt-1">PA: R$ {Math.round(pa).toLocaleString("pt-BR")}</p>}
+    </div>
+  );
+}
+
 function Dashboard() {
   const { auth } = useAuth();
   const { isMaster, scopeIds, consultorId } = useConsultorScope();
