@@ -96,7 +96,7 @@ function Planejamento() {
         faltante: Math.max(0, metaPa - proj),
       };
     });
-  }, [consultores, metas, producao, isMaster, auth, monthStart, monthEnd]);
+  }, [consultores, metas, producao, isMaster, auth, monthStart, monthEnd, consultorId, scopeIds]);
 
   const totalMeta = linhas.reduce((s, l) => s + l.metaPa, 0);
   const totalProj = linhas.reduce((s, l) => s + l.proj, 0);
@@ -111,6 +111,8 @@ function Planejamento() {
             onSaved={() => qc.invalidateQueries({ queryKey: ["metas"] })} />
         ) : undefined}
       />
+      <ConsultorFilter />
+
 
       {isMaster && (
         <Card className="p-5 bg-surface border-gold/30 mb-6">

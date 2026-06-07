@@ -1,12 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultorScope } from "@/hooks/useConsultorScope";
+import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, AlertTriangle } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/auditoria")({
   head: () => ({ meta: [{ title: "Auditoria — LILITO" }] }),
@@ -17,24 +22,13 @@ type Consultor = { id: string; nome: string };
 
 function Auditoria() {
   const { auth } = useAuth();
-  const isMaster = auth?.isMaster ?? false;
+  const { scopeIds, consultores: scopeConsultores } = useConsultorScope();
 
-  const { data: consultores } = useQuery({
-    queryKey: ["consultores-all", auth?.user.id, isMaster],
-    enabled: !!auth,
-    queryFn: async () => {
-      if (!auth) return [] as Consultor[];
-      if (!isMaster) {
-        const { data } = await supabase.from("profiles").select("id,nome").eq("id", auth.user.id);
-        return (data ?? []) as Consultor[];
-      }
-      const { data: roles } = await supabase.from("user_roles").select("user_id");
-      const ids = Array.from(new Set((roles ?? []).map((r) => r.user_id)));
-      if (!ids.length) return [] as Consultor[];
-      const { data } = await supabase.from("profiles").select("id,nome").in("id", ids);
-      return (data ?? []) as Consultor[];
-    },
-  });
+  const consultores = useMemo(
+    () => (scopeConsultores ?? []).filter((c) => scopeIds.includes(c.id)) as Consultor[],
+    [scopeConsultores, scopeIds],
+  );
+
 
   const { data: audit } = useQuery({
     queryKey: ["auditoria", consultores?.map((c) => c.id).join(",")],
@@ -105,6 +99,9 @@ function Auditoria() {
     <div>
       <PageHeader eyebrow="Integridade dos dados" title="Auditoria & Score de Qualidade"
         description="Nenhum número sem evidência. Nenhuma produção sem registro." />
+      <ConsultorFilter />
+
+
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <Card className="p-4 bg-surface border-border">
