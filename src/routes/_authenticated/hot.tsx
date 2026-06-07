@@ -578,24 +578,22 @@ function NaoAtendeuDialog({ state, setState, onDone }: { state: DialogState; set
 function NovaListaDialog({ state, setState, onDone }: { state: DialogState; setState: (s: DialogState) => void; onDone: (id?: string) => void }) {
   const { auth } = useAuth();
   const [nome, setNome] = useState("");
-  const [inicio, setInicio] = useState(() => new Date().toISOString().slice(0, 10));
-  const [fim, setFim] = useState("");
   const [saving, setSaving] = useState(false);
   const open = state.kind === "novalista";
 
   async function save() {
-    if (!auth || !nome || !inicio) return;
+    if (!auth || !nome) return;
     setSaving(true);
     const { data, error } = await supabase.from("hot_listas").insert({
       consultor_id: auth.user.id,
       nome,
-      data_inicio: inicio,
-      data_fim: fim || null,
+      data_inicio: null,
+      data_fim: null,
     }).select("id").single();
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Lista HOT criada.");
-    setNome(""); setFim("");
+    setNome("");
     close(setState); onDone(data?.id);
   }
 
@@ -606,24 +604,19 @@ function NovaListaDialog({ state, setState, onDone }: { state: DialogState; setS
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>Nome da lista <span className="text-destructive">*</span></Label>
-            <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Lista semana 1" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Data início <span className="text-destructive">*</span></Label>
-              <Input type="date" value={inicio} onChange={(e) => setInicio(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Data fim</Label>
-              <Input type="date" value={fim} onChange={(e) => setFim(e.target.value)} />
-            </div>
+            <Input
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Ex.: São João, Empresários, Médicos…"
+              autoFocus
+            />
           </div>
           <p className="text-xs text-muted-foreground">
-            A lista exibirá os prospects HOT cujo ingresso na etapa ocorra dentro do período.
+            Listas são agrupamentos manuais. Adicione prospects diretamente pela ação “Adicionar à Lista”.
           </p>
         </div>
         <DialogFooter>
-          <Button onClick={save} disabled={!nome || !inicio || saving} className="gold-gradient text-background">
+          <Button onClick={save} disabled={!nome || saving} className="gold-gradient text-background">
             {saving ? "Salvando..." : "Criar lista"}
           </Button>
         </DialogFooter>
@@ -631,6 +624,7 @@ function NovaListaDialog({ state, setState, onDone }: { state: DialogState; setS
     </Dialog>
   );
 }
+
 
 // ============= HOT Gestão (Sessão da Semana + Ranking + Funil) =============
 
