@@ -6,6 +6,7 @@ import {
 import {
   Sun, LayoutDashboard, Users2, Flame, CalendarDays, Target, AlertTriangle,
   ListChecks, Users, FileText, Heart, RefreshCcw, Trophy, Settings, LogOut,
+  TrendingUp, CircleDot, Bell, ShieldCheck, Handshake,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,15 +20,24 @@ const items = [
   { title: "Calendário", url: "/calendario", icon: CalendarDays },
   { title: "Funil", url: "/funil", icon: Target },
   { title: "Em Delay", url: "/em-delay", icon: AlertTriangle },
+  { title: "Resultado Semanal", url: "/resultado-semanal", icon: TrendingUp },
+  { title: "Lembretes", url: "/lembretes", icon: Bell },
+  { title: "Onboarding", url: "/onboarding", icon: CircleDot },
   { title: "Atividades", url: "/atividades", icon: ListChecks },
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Análise de Apólices", url: "/apolices", icon: FileText },
+  { title: "Planejamento", url: "/planejamento", icon: Trophy },
+];
+
+const masterItems = [
+  { title: "Auditoria", url: "/auditoria", icon: ShieldCheck },
+  { title: "Joint Work", url: "/joint", icon: Handshake },
+  { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
 const fase2 = [
   { title: "Pós-venda", url: "/pos-venda", icon: Heart },
   { title: "Ciclo de Revisão", url: "/ciclo-revisao", icon: RefreshCcw },
-  { title: "Planejamento", url: "/planejamento", icon: Trophy },
 ];
 
 export function AppSidebar({ isMaster }: { isMaster: boolean }) {
