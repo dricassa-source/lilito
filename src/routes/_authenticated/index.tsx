@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultorScope, applyScope } from "@/hooks/useConsultorScope";
+import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +18,7 @@ import {
 import { format, startOfDay, endOfDay, addDays, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useEffect, useState } from "react";
+
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Meu Dia — LILITO" }] }),
@@ -50,24 +53,26 @@ function MeuDia() {
   const { auth } = useAuth();
   const uid = auth?.user.id;
   const isMaster = auth?.isMaster ?? false;
+  const { scopeIds } = useConsultorScope();
+  const scopeKey = scopeIds.join(",");
 
   const today = new Date();
   const dayStart = startOfDay(today).toISOString();
   const dayEnd = endOfDay(today).toISOString();
 
   const { data: stats } = useQuery({
-    queryKey: ["meu-dia-stats", uid],
-    enabled: !!uid,
+    queryKey: ["meu-dia-stats", scopeKey],
+    enabled: !!uid && scopeIds.length > 0,
     queryFn: async () => {
       const [hot, eventos, followups, delays] = await Promise.all([
-        supabase.from("prospects").select("id", { count: "exact", head: true })
-          .eq("etapa_funil", "hot").eq("status_hot", "pendente"),
-        supabase.from("agenda_eventos").select("id", { count: "exact", head: true })
-          .gte("inicio", dayStart).lte("inicio", dayEnd),
-        supabase.from("atividades").select("id", { count: "exact", head: true })
-          .lte("follow_up_em", new Date().toISOString()).not("follow_up_em", "is", null),
-        supabase.from("agenda_eventos").select("id", { count: "exact", head: true })
-          .eq("delay_resolvido", false).not("delay_em", "is", null),
+        applyScope(supabase.from("prospects").select("id", { count: "exact", head: true })
+          .eq("etapa_funil", "hot").eq("status_hot", "pendente"), scopeIds),
+        applyScope(supabase.from("agenda_eventos").select("id", { count: "exact", head: true })
+          .gte("inicio", dayStart).lte("inicio", dayEnd), scopeIds),
+        applyScope(supabase.from("atividades").select("id", { count: "exact", head: true })
+          .lte("follow_up_em", new Date().toISOString()).not("follow_up_em", "is", null), scopeIds),
+        applyScope(supabase.from("agenda_eventos").select("id", { count: "exact", head: true })
+          .eq("delay_resolvido", false).not("delay_em", "is", null), scopeIds),
       ]);
       return {
         hot: hot.count ?? 0,
@@ -79,56 +84,62 @@ function MeuDia() {
   });
 
   const { data: reunioesHoje } = useQuery({
-    queryKey: ["meu-dia-reunioes", uid, dayStart],
-    enabled: !!uid,
+    queryKey: ["meu-dia-reunioes", scopeKey, dayStart],
+    enabled: !!uid && scopeIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase.from("agenda_eventos")
-        .select("id,titulo,tipo,inicio,fim,prospect_id")
-        .gte("inicio", dayStart).lte("inicio", dayEnd)
-        .order("inicio", { ascending: true });
+      const { data } = await applyScope(
+        supabase.from("agenda_eventos")
+          .select("id,titulo,tipo,inicio,fim,prospect_id")
+          .gte("inicio", dayStart).lte("inicio", dayEnd),
+        scopeIds,
+      ).order("inicio", { ascending: true });
       return data ?? [];
     },
   });
 
   const { data: agendaSemana } = useQuery({
-    queryKey: ["meu-dia-agenda-semana", uid],
-    enabled: !!uid,
+    queryKey: ["meu-dia-agenda-semana", scopeKey],
+    enabled: !!uid && scopeIds.length > 0,
     queryFn: async () => {
       const end = addDays(today, 7).toISOString();
-      const { data } = await supabase.from("agenda_eventos")
-        .select("id,titulo,tipo,inicio")
-        .gte("inicio", dayStart).lte("inicio", end)
-        .order("inicio", { ascending: true }).limit(10);
+      const { data } = await applyScope(
+        supabase.from("agenda_eventos")
+          .select("id,titulo,tipo,inicio")
+          .gte("inicio", dayStart).lte("inicio", end),
+        scopeIds,
+      ).order("inicio", { ascending: true }).limit(10);
       return data ?? [];
     },
   });
 
   const { data: followupsList } = useQuery({
-    queryKey: ["meu-dia-followups", uid],
-    enabled: !!uid,
+    queryKey: ["meu-dia-followups", scopeKey],
+    enabled: !!uid && scopeIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase.from("atividades")
-        .select("id,prospect_id,follow_up_em,observacao,prospects(nome,telefone,score)")
-        .lte("follow_up_em", new Date().toISOString())
-        .not("follow_up_em", "is", null)
-        .order("follow_up_em", { ascending: true }).limit(8);
+      const { data } = await applyScope(
+        supabase.from("atividades")
+          .select("id,prospect_id,follow_up_em,observacao,prospects(nome,telefone,score)")
+          .lte("follow_up_em", new Date().toISOString())
+          .not("follow_up_em", "is", null),
+        scopeIds,
+      ).order("follow_up_em", { ascending: true }).limit(8);
       return data ?? [];
     },
   });
 
   const { data: alertas } = useQuery({
-    queryKey: ["meu-dia-alertas", uid],
-    enabled: !!uid,
+    queryKey: ["meu-dia-alertas", scopeKey],
+    enabled: !!uid && scopeIds.length > 0,
     queryFn: async () => {
       const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
       const [parados, delaysAtivos, semResultado] = await Promise.all([
-        supabase.from("prospects").select("id", { count: "exact", head: true })
+        applyScope(supabase.from("prospects").select("id", { count: "exact", head: true })
           .not("etapa_funil", "in", "(cliente,pos_venda,perdido)")
-          .lte("entrou_etapa_em", sevenDaysAgo),
-        supabase.from("agenda_eventos").select("id", { count: "exact", head: true })
-          .eq("delay_resolvido", false).not("delay_em", "is", null),
-        supabase.from("agenda_eventos").select("id", { count: "exact", head: true })
-          .lt("fim", new Date().toISOString()).is("resultado", null),
+          .lte("entrou_etapa_em", sevenDaysAgo), scopeIds),
+        applyScope(supabase.from("agenda_eventos").select("id", { count: "exact", head: true })
+          .eq("delay_resolvido", false).not("delay_em", "is", null), scopeIds),
+        applyScope(supabase.from("agenda_eventos").select("id", { count: "exact", head: true })
+          .lt("fim", new Date().toISOString()).is("resultado", null), scopeIds),
       ]);
       return {
         parados: parados.count ?? 0,
@@ -138,6 +149,7 @@ function MeuDia() {
     },
   });
 
+
   return (
     <div>
       <PageHeader
@@ -145,8 +157,10 @@ function MeuDia() {
         title={`Bom dia, ${auth?.profile?.nome?.split(" ")[0] ?? ""}`}
         description="Sua tela de execução da operação VINCA."
       />
+      <ConsultorFilter />
 
       <LembretesHoje />
+
 
       <p className="caps-tracking text-muted-foreground mb-3 mt-2">Resumo rápido</p>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
