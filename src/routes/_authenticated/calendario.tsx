@@ -322,13 +322,13 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight }: { from: Da
       <div className="grid grid-cols-[26px_repeat(7,minmax(0,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))]">
         <div>
           {HOURS.map((h) => (
-            <div key={h} className="border-b border-border text-right pr-0.5 sm:pr-1 text-[9px] sm:text-[10px] text-muted-foreground leading-none pt-0.5" style={{ height: SLOT_HEIGHT }}>
+            <div key={h} className="border-b border-border text-right pr-0.5 sm:pr-1 text-[9px] sm:text-[10px] text-muted-foreground leading-none pt-0.5" style={{ height: slotHeight }}>
               {String(h).padStart(2, "0")}
             </div>
           ))}
         </div>
         {days.map((d) => (
-          <DayColumn key={d.toISOString()} day={d} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), d))} onSelect={onSelect} />
+          <DayColumn key={d.toISOString()} day={d} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), d))} onSelect={onSelect} slotHeight={slotHeight} />
         ))}
       </div>
     </Card>
@@ -336,25 +336,25 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight }: { from: Da
 }
 
 
-function DayColumn({ day, eventos, onSelect }: { day: Date; eventos: any[]; onSelect: (e: any) => void }) {
+function DayColumn({ day, eventos, onSelect, slotHeight }: { day: Date; eventos: any[]; onSelect: (e: any) => void; slotHeight: number }) {
   return (
-    <div className="relative border-l border-border" style={{ height: HOURS.length * SLOT_HEIGHT }}>
+    <div className="relative border-l border-border" style={{ height: HOURS.length * slotHeight }}>
       {HOURS.map((h) => (
-        <div key={h} className="border-b border-border" style={{ height: SLOT_HEIGHT }} />
+        <div key={h} className="border-b border-border" style={{ height: slotHeight }} />
       ))}
-      {eventos.map((e) => <EventBlock key={e.id} e={e} day={day} onSelect={onSelect} />)}
+      {eventos.map((e) => <EventBlock key={e.id} e={e} day={day} onSelect={onSelect} slotHeight={slotHeight} />)}
     </div>
   );
 }
 
-function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any) => void }) {
+function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSelect: (e: any) => void; slotHeight: number }) {
   const start = new Date(e.inicio);
   const end = new Date(e.fim);
   const dayStart = new Date(day); dayStart.setHours(HOURS[0], 0, 0, 0);
   const offsetMin = differenceInMinutes(start, dayStart);
   const durMin = Math.max(30, differenceInMinutes(end, start));
-  const top = (offsetMin / 60) * SLOT_HEIGHT;
-  const height = (durMin / 60) * SLOT_HEIGHT;
+  const top = (offsetMin / 60) * slotHeight;
+  const height = (durMin / 60) * slotHeight;
   const c = NATUREZA_COLOR[e.tipo] ?? NATUREZA_COLOR.review;
   const nomeCompleto = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
   const hasDelay = !!e.delay_em;
@@ -376,7 +376,7 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
       {delayAtivo && (
         <span className="absolute top-0 left-0.5 z-10 text-[9px] leading-none select-none" aria-label="Delay">🚩</span>
       )}
-      <p className={cn("text-[12px] sm:text-[13px] font-medium leading-tight truncate", c.text, delayAtivo && "pl-2.5")}>
+      <p className={cn("text-[12px] sm:text-[13px] font-medium leading-tight break-words line-clamp-3", c.text, delayAtivo && "pl-2.5")}>
         {nomeCompleto}
       </p>
 
