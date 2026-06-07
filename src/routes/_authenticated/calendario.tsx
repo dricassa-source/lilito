@@ -207,6 +207,11 @@ function Calendario() {
             <Button variant="outline" onClick={() => setDialog("bloqueio")}>
               <Ban className="h-4 w-4 mr-2" />Bloquear Horário
             </Button>
+            {auth?.isMaster && (
+              <Button variant="outline" onClick={() => setDialog("recorrente")} className="border-gold/40">
+                <Repeat className="h-4 w-4 mr-2" />Compromisso Recorrente
+              </Button>
+            )}
           </div>
         }
       />
