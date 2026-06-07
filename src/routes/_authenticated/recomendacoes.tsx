@@ -178,22 +178,64 @@ function Recomendacoes() {
     <div>
       <PageHeader
         eyebrow="Originação"
-        title="Recomendações"
-        description="Carteira gerenciável de prospects — CRM operacional da unidade."
+        title="Prospects da unidade"
         actions={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button className="gold-gradient text-background">
-                <Plus className="h-4 w-4 mr-2" />Novo prospect
-              </Button>
-            </DialogTrigger>
-            <ProspectDialog onClose={() => {
-              setOpen(false);
-              qc.invalidateQueries({ queryKey: ["prospects"] });
-            }} />
-          </Dialog>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setRankingOpen(true)}>
+              <Trophy className="h-4 w-4 mr-2" />Ranking
+            </Button>
+            <Button
+              variant={mostrarPerdidos ? "default" : "outline"}
+              onClick={() => setMostrarPerdidos((v) => !v)}
+              title="Incluir prospects marcados como perdidos"
+            >
+              <XCircle className="h-4 w-4 mr-2" />{mostrarPerdidos ? "Ocultar perdidos" : "Mostrar perdidos"}
+            </Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button className="gold-gradient text-background">
+                  <Plus className="h-4 w-4 mr-2" />Novo prospect
+                </Button>
+              </DialogTrigger>
+              <ProspectDialog onClose={() => {
+                setOpen(false);
+                qc.invalidateQueries({ queryKey: ["prospects"] });
+              }} />
+            </Dialog>
+          </div>
         }
       />
+
+      <Dialog open={rankingOpen} onOpenChange={setRankingOpen}>
+        <DialogContent className="max-w-lg bg-surface border-border">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-gold" /> Ranking de Recomendantes
+            </DialogTitle>
+          </DialogHeader>
+          {rankingRecomendantes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum recomendante registrado ainda.</p>
+          ) : (
+            <ol className="divide-y divide-border max-h-[60vh] overflow-y-auto">
+              {rankingRecomendantes.map((r, idx) => (
+                <li key={r.nome} className="py-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={`font-display text-xl w-7 ${idx === 0 ? "text-gold" : "text-muted-foreground"}`}>
+                      {String(idx + 1).padStart(2, "0")}
+                    </span>
+                    <span className="text-foreground truncate">{r.nome}</span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm">{r.total} indicação{r.total > 1 ? "ões" : ""}</p>
+                    <p className="text-xs text-muted-foreground">{r.clientes} cliente(s) · {brl(r.pa)}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </DialogContent>
+      </Dialog>
+
 
       <Card className="bg-surface border-border p-4 mb-4 space-y-3">
         <div className="relative">
