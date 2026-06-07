@@ -296,7 +296,7 @@ function MetricCard({ label, value, dot }: { label: string; value: number; dot: 
 }
 
 // ---------- Grids ----------
-const HOURS = Array.from({ length: 14 }, (_, i) => i + 7);
+const HOURS = Array.from({ length: 23 }, (_, i) => i + 1);
 
 function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight }: { from: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; slotHeight: number }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i));
