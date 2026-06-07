@@ -18,10 +18,12 @@ import { Route as AuthenticatedRecomendacoesRouteImport } from './routes/_authen
 import { Route as AuthenticatedPosVendaRouteImport } from './routes/_authenticated/pos-venda'
 import { Route as AuthenticatedPlanejamentoRouteImport } from './routes/_authenticated/planejamento'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedLembretesRouteImport } from './routes/_authenticated/lembretes'
 import { Route as AuthenticatedHotRouteImport } from './routes/_authenticated/hot'
 import { Route as AuthenticatedFunilRouteImport } from './routes/_authenticated/funil'
 import { Route as AuthenticatedEmDelayRouteImport } from './routes/_authenticated/em-delay'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedCicloRevisaoRouteImport } from './routes/_authenticated/ciclo-revisao'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
@@ -77,6 +79,11 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLembretesRoute = AuthenticatedLembretesRouteImport.update({
+  id: '/lembretes',
+  path: '/lembretes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedHotRoute = AuthenticatedHotRouteImport.update({
   id: '/hot',
   path: '/hot',
@@ -97,6 +104,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedConfiguracoesRoute =
+  AuthenticatedConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -146,10 +159,12 @@ export interface FileRoutesByFullPath {
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/ciclo-revisao': typeof AuthenticatedCicloRevisaoRoute
   '/clientes': typeof AuthenticatedClientesRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/em-delay': typeof AuthenticatedEmDelayRoute
   '/funil': typeof AuthenticatedFunilRoute
   '/hot': typeof AuthenticatedHotRoute
+  '/lembretes': typeof AuthenticatedLembretesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/pos-venda': typeof AuthenticatedPosVendaRoute
@@ -166,10 +181,12 @@ export interface FileRoutesByTo {
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/ciclo-revisao': typeof AuthenticatedCicloRevisaoRoute
   '/clientes': typeof AuthenticatedClientesRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/em-delay': typeof AuthenticatedEmDelayRoute
   '/funil': typeof AuthenticatedFunilRoute
   '/hot': typeof AuthenticatedHotRoute
+  '/lembretes': typeof AuthenticatedLembretesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/pos-venda': typeof AuthenticatedPosVendaRoute
@@ -189,10 +206,12 @@ export interface FileRoutesById {
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/ciclo-revisao': typeof AuthenticatedCicloRevisaoRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
+  '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/em-delay': typeof AuthenticatedEmDelayRoute
   '/_authenticated/funil': typeof AuthenticatedFunilRoute
   '/_authenticated/hot': typeof AuthenticatedHotRoute
+  '/_authenticated/lembretes': typeof AuthenticatedLembretesRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/_authenticated/pos-venda': typeof AuthenticatedPosVendaRoute
@@ -213,10 +232,12 @@ export interface FileRouteTypes {
     | '/calendario'
     | '/ciclo-revisao'
     | '/clientes'
+    | '/configuracoes'
     | '/dashboard'
     | '/em-delay'
     | '/funil'
     | '/hot'
+    | '/lembretes'
     | '/onboarding'
     | '/planejamento'
     | '/pos-venda'
@@ -233,10 +254,12 @@ export interface FileRouteTypes {
     | '/calendario'
     | '/ciclo-revisao'
     | '/clientes'
+    | '/configuracoes'
     | '/dashboard'
     | '/em-delay'
     | '/funil'
     | '/hot'
+    | '/lembretes'
     | '/onboarding'
     | '/planejamento'
     | '/pos-venda'
@@ -255,10 +278,12 @@ export interface FileRouteTypes {
     | '/_authenticated/calendario'
     | '/_authenticated/ciclo-revisao'
     | '/_authenticated/clientes'
+    | '/_authenticated/configuracoes'
     | '/_authenticated/dashboard'
     | '/_authenticated/em-delay'
     | '/_authenticated/funil'
     | '/_authenticated/hot'
+    | '/_authenticated/lembretes'
     | '/_authenticated/onboarding'
     | '/_authenticated/planejamento'
     | '/_authenticated/pos-venda'
@@ -338,6 +363,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/lembretes': {
+      id: '/_authenticated/lembretes'
+      path: '/lembretes'
+      fullPath: '/lembretes'
+      preLoaderRoute: typeof AuthenticatedLembretesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/hot': {
       id: '/_authenticated/hot'
       path: '/hot'
@@ -364,6 +396,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/configuracoes': {
+      id: '/_authenticated/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/clientes': {
@@ -426,10 +465,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
   AuthenticatedCicloRevisaoRoute: typeof AuthenticatedCicloRevisaoRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
+  AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEmDelayRoute: typeof AuthenticatedEmDelayRoute
   AuthenticatedFunilRoute: typeof AuthenticatedFunilRoute
   AuthenticatedHotRoute: typeof AuthenticatedHotRoute
+  AuthenticatedLembretesRoute: typeof AuthenticatedLembretesRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPlanejamentoRoute: typeof AuthenticatedPlanejamentoRoute
   AuthenticatedPosVendaRoute: typeof AuthenticatedPosVendaRoute
@@ -446,10 +487,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
   AuthenticatedCicloRevisaoRoute: AuthenticatedCicloRevisaoRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
+  AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEmDelayRoute: AuthenticatedEmDelayRoute,
   AuthenticatedFunilRoute: AuthenticatedFunilRoute,
   AuthenticatedHotRoute: AuthenticatedHotRoute,
+  AuthenticatedLembretesRoute: AuthenticatedLembretesRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPlanejamentoRoute: AuthenticatedPlanejamentoRoute,
   AuthenticatedPosVendaRoute: AuthenticatedPosVendaRoute,
@@ -469,3 +512,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
