@@ -389,6 +389,20 @@ function DayColumn({ day, eventos, onSelect, slotHeight }: { day: Date; eventos:
   );
 }
 
+function abreviarLocal(raw?: string | null): string | null {
+  if (!raw) return null;
+  const s = raw.trim();
+  const low = s.toLowerCase();
+  if (/online|zoom|meet|teams|google\s*meet|hangout/.test(low)) return "💻 Online";
+  if (/vinca|escritório|escritorio|sede/.test(low)) return "🏢 VINCA";
+  if (/hsi/.test(low)) return "📍 HSI";
+  if (/(^|\s)hp(\s|$)|hospital portugu/.test(low)) return "📍 HP";
+  if (/aliança|alianca/.test(low)) return "📍 Aliança";
+  // fallback: 1ª palavra significativa, máx 14 chars
+  const first = s.split(/[,\-–|]/)[0]?.trim() ?? s;
+  return "📍 " + (first.length > 14 ? first.slice(0, 14) + "…" : first);
+}
+
 function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSelect: (e: any) => void; slotHeight: number }) {
   const start = new Date(e.inicio);
   const end = new Date(e.fim);
@@ -402,6 +416,10 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
   const hasDelay = !!e.delay_em;
   const delayAtivo = hasDelay && !e.delay_resolvido;
   const isRecorrente = e.__recorrente === true;
+  const horario = `${format(start, "HH:mm")}–${format(end, "HH:mm")}`;
+  const localAbr = abreviarLocal(e.local);
+  const showHorario = height >= 30;
+  const showLocal = !!localAbr && height >= 54;
   return (
     <button
       type="button"
@@ -413,15 +431,24 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
         isRecorrente && "cursor-default",
       )}
       style={{ top, height }}
-      title={`${nomeCompleto} — ${TIPO_LABEL[e.tipo] ?? e.tipo}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
+      title={`${nomeCompleto} — ${TIPO_LABEL[e.tipo] ?? e.tipo} · ${horario}${e.local ? ` · ${e.local}` : ""}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
     >
       {delayAtivo && (
         <span className="absolute top-0 left-0.5 z-10 text-[9px] leading-none select-none" aria-label="Delay">🚩</span>
       )}
-      <p className={cn("text-[11px] sm:text-[13px] font-medium leading-tight whitespace-normal [overflow-wrap:normal] [word-break:normal] line-clamp-3", c.text, delayAtivo && "pl-2.5")}>
+      <p className={cn("text-[11px] sm:text-[13px] font-medium leading-tight whitespace-normal [overflow-wrap:normal] [word-break:normal] line-clamp-2", c.text, delayAtivo && "pl-2.5")}>
         {nomeCompleto}
       </p>
-
+      {showHorario && (
+        <p className={cn("text-[10px] sm:text-[11px] leading-tight opacity-80 tabular-nums", c.text)}>
+          {horario}
+        </p>
+      )}
+      {showLocal && (
+        <p className={cn("text-[10px] sm:text-[11px] leading-tight opacity-75 truncate", c.text)}>
+          {localAbr}
+        </p>
+      )}
     </button>
   );
 }
