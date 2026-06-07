@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultorScope, applyScope } from "@/hooks/useConsultorScope";
+import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { DndContext, useDraggable, useDroppable, DragOverlay, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { useState } from "react";
@@ -11,6 +13,7 @@ import { ScoreStars } from "@/components/lilito/ScoreStars";
 import { toast } from "sonner";
 import { differenceInDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
 
 function tempoEtapaDot(dias: number) {
   if (dias <= 7) return "bg-emerald-500";
@@ -96,15 +99,20 @@ function Funil() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [openProspect, setOpenProspect] = useState<any | null>(null);
 
+  const { scopeIds } = useConsultorScope();
   const { data: prospects } = useQuery({
-    queryKey: ["funil"],
-    enabled: !!auth,
+    queryKey: ["funil", scopeIds.join(",")],
+    enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase.from("prospects").select("*").order("entrou_etapa_em", { ascending: false });
+      const { data, error } = await applyScope(
+        supabase.from("prospects").select("*"),
+        scopeIds,
+      ).order("entrou_etapa_em", { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
   });
+
 
   const { data: atividades } = useQuery({
     queryKey: ["funil-atividades", openProspect?.id],
@@ -174,7 +182,9 @@ function Funil() {
         title="Funil"
         description="Originação → HOT → AB → Fechamento → Onboarding → Cliente. Arraste cartões ou clique para ver detalhes."
       />
+      <ConsultorFilter />
       <DndContext onDragStart={(e: DragStartEvent) => setActiveId(e.active.id as string)} onDragEnd={onDragEnd}>
+
         <div className="flex gap-3 overflow-x-auto pb-4">
           {COLUNAS.map((c) => <Coluna key={c.id} id={c.id} label={c.label} items={byCol[c.id]} onOpen={setOpenProspect} />)}
         </div>

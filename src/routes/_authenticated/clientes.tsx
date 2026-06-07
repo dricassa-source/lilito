@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultorScope, applyScope } from "@/hooks/useConsultorScope";
+import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/lilito/EmptyState";
@@ -14,11 +16,15 @@ export const Route = createFileRoute("/_authenticated/clientes")({
 
 function Clientes() {
   const { auth } = useAuth();
+  const { scopeIds } = useConsultorScope();
   const { data } = useQuery({
-    queryKey: ["clientes"],
-    enabled: !!auth,
+    queryKey: ["clientes", scopeIds.join(",")],
+    enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase.from("clientes").select("*").order("nome");
+      const { data, error } = await applyScope(
+        supabase.from("clientes").select("*"),
+        scopeIds,
+      ).order("nome");
       if (error) throw error;
       return data ?? [];
     },
@@ -27,6 +33,7 @@ function Clientes() {
   return (
     <div>
       <PageHeader eyebrow="Carteira" title="Clientes" description="Sua carteira ativa e familiares." />
+      <ConsultorFilter />
       {!data || data.length === 0 ? (
         <EmptyState icon={Users} title="Nenhum cliente ainda" description="Quando um prospect for promovido a Cliente no Funil, aparecerá aqui." />
       ) : (

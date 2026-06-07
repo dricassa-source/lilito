@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultorScope, applyScope } from "@/hooks/useConsultorScope";
+import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { Card } from "@/components/ui/card";
 
@@ -12,6 +14,7 @@ import { CircleDot, CheckCircle2, AlertTriangle } from "lucide-react";
 import { differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+
 
 type Onb = Database["public"]["Enums"]["onboarding_status"];
 
@@ -41,22 +44,25 @@ function formatBRL(n: number) { return `R$ ${Math.round(n).toLocaleString("pt-BR
 function Onboarding() {
   const { auth } = useAuth();
   const qc = useQueryClient();
+  const { scopeIds } = useConsultorScope();
 
   const { data: rows } = useQuery({
-    queryKey: ["onboarding", auth?.user.id, auth?.isMaster],
-    enabled: !!auth,
+    queryKey: ["onboarding", scopeIds.join(",")],
+    enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
-      let q = supabase.from("apolices")
-        .select("id, consultor_id, prospect_id, cliente_id, produto, premio_atual, capital_segurado, onboarding_status, data_fechamento, onboarding_observacao, prospects(id,nome,telefone,pa_estimado), clientes(nome)")
-        .neq("onboarding_status", "nao_aplicavel")
-        .neq("onboarding_status", "emitida")
-        .order("data_fechamento", { ascending: true, nullsFirst: false });
-      if (!auth?.isMaster) q = q.eq("consultor_id", auth!.user.id);
+      const q = applyScope(
+        supabase.from("apolices")
+          .select("id, consultor_id, prospect_id, cliente_id, produto, premio_atual, capital_segurado, onboarding_status, data_fechamento, onboarding_observacao, prospects(id,nome,telefone,pa_estimado), clientes(nome)")
+          .neq("onboarding_status", "nao_aplicavel")
+          .neq("onboarding_status", "emitida"),
+        scopeIds,
+      ).order("data_fechamento", { ascending: true, nullsFirst: false });
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
   });
+
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status, row }: { id: string; status: Onb; row?: any }) => {
@@ -151,6 +157,8 @@ function Onboarding() {
     <div>
       <PageHeader eyebrow="Pós-fechamento" title="Onboarding"
         description="Propostas fechadas aguardando emissão. Só vira Cliente quando a apólice for emitida." />
+      <ConsultorFilter />
+
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <Stat label="Em onboarding" value={String(totals.count)} />

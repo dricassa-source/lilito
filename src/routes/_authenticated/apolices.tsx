@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultorScope, applyScope } from "@/hooks/useConsultorScope";
+import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { EmptyState } from "@/components/lilito/EmptyState";
 import { Card } from "@/components/ui/card";
@@ -15,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Badge } from "@/components/ui/badge";
 import { FileText, Plus, Sparkles, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_authenticated/apolices")({
   head: () => ({ meta: [{ title: "Análise de Apólices — LILITO" }] }),
@@ -32,19 +35,24 @@ const STATUS_LABEL: Record<string,string> = {
 
 function Apolices() {
   const { auth } = useAuth();
+  const { scopeIds } = useConsultorScope();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<any | null>(null);
 
   const { data: apolices } = useQuery({
-    queryKey: ["apolices"],
-    enabled: !!auth,
+    queryKey: ["apolices", scopeIds.join(",")],
+    enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase.from("apolices").select("*,clientes(nome),prospects(nome)").order("created_at", { ascending: false });
+      const { data, error } = await applyScope(
+        supabase.from("apolices").select("*,clientes(nome),prospects(nome)"),
+        scopeIds,
+      ).order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
   });
+
 
   const grouped: Record<string, any[]> = {};
   (apolices ?? []).forEach((a: any) => {
@@ -63,6 +71,9 @@ function Apolices() {
           </Dialog>
         }
       />
+      <ConsultorFilter />
+
+
 
       {!apolices || apolices.length === 0 ? (
         <EmptyState icon={FileText} title="Nenhuma apólice cadastrada"

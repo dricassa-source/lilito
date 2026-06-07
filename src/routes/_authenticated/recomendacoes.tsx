@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultorScope, applyScope } from "@/hooks/useConsultorScope";
+import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +24,7 @@ import { EmptyState } from "@/components/lilito/EmptyState";
 import { ScoreStars } from "@/components/lilito/ScoreStars";
 import { Plus, Users2, Flame, XCircle, Pencil, Search, Trophy } from "lucide-react";
 import { toast } from "sonner";
+
 
 function tempoEtapaDot(dias: number) {
   if (dias <= 7) return { cor: "bg-emerald-500", label: "Recente" };
@@ -86,17 +89,20 @@ function Recomendacoes() {
   const [mostrarPerdidos, setMostrarPerdidos] = useState(false);
   const [rankingOpen, setRankingOpen] = useState(false);
 
+  const { scopeIds } = useConsultorScope();
   const { data: prospects } = useQuery({
-    queryKey: ["prospects"],
-    enabled: !!auth,
+    queryKey: ["prospects", scopeIds.join(",")],
+    enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("prospects").select("*")
-        .order("created_at", { ascending: false });
+      const { data, error } = await applyScope(
+        supabase.from("prospects").select("*"),
+        scopeIds,
+      ).order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
   });
+
 
   const profissoes = useMemo(
     () => Array.from(new Set((prospects ?? []).map((p: any) => p.especialidade_medica).filter(Boolean))) as string[],
