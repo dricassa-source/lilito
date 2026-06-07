@@ -143,7 +143,7 @@ function Dashboard() {
 
       // Equipe (só faz sentido em scope=equipe sem filtro)
       let equipe: { id: string; nome: string; pa: number; capital: number; recos: number; reunioes: number }[] = [];
-      if (scope === "equipe" && !consultorFiltro.includes("all") ? false : (scope === "equipe")) {
+      if (scope === "equipe") {
         const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "consultor");
         const ids = (roles ?? []).map((r) => r.user_id);
         if (ids.length) {
