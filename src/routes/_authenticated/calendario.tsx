@@ -87,7 +87,7 @@ function Calendario() {
   const [view, setView] = useState<View>("semana");
   const [anchor, setAnchor] = useState<Date>(new Date());
   const isMobile = useIsMobile();
-  const { slotHeight, containerRef } = useCalendarZoom(isMobile ? 36 : 48);
+  const { slotHeight, containerRef } = useCalendarZoom(isMobile ? 22 : 48);
 
   const range = useMemo(() => {
     if (view === "dia") return { from: startOfDay(anchor), to: endOfDay(anchor) };
@@ -296,13 +296,14 @@ function MetricCard({ label, value, dot }: { label: string; value: number; dot: 
 }
 
 // ---------- Grids ----------
-const HOURS = Array.from({ length: 14 }, (_, i) => i + 7);
+const HOURS = Array.from({ length: 23 }, (_, i) => i + 1);
 
 function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight }: { from: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; slotHeight: number }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i));
   return (
     <Card className="bg-surface border-border overflow-hidden">
-      <div className="grid grid-cols-[26px_repeat(7,minmax(0,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))] border-b border-border">
+      <div className="min-w-[640px] sm:min-w-0">
+      <div className="grid grid-cols-[26px_repeat(7,minmax(86px,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))] border-b border-border">
         <div />
         {days.map((d) => {
           const today = isSameDay(d, new Date());
@@ -319,7 +320,7 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight }: { from: Da
           );
         })}
       </div>
-      <div className="grid grid-cols-[26px_repeat(7,minmax(0,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))]">
+      <div className="grid grid-cols-[26px_repeat(7,minmax(86px,1fr))] sm:grid-cols-[44px_repeat(7,minmax(0,1fr))]">
         <div>
           {HOURS.map((h) => (
             <div key={h} className="border-b border-border text-right pr-0.5 sm:pr-1 text-[9px] sm:text-[10px] text-muted-foreground leading-none pt-0.5" style={{ height: slotHeight }}>
@@ -330,6 +331,7 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight }: { from: Da
         {days.map((d) => (
           <DayColumn key={d.toISOString()} day={d} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), d))} onSelect={onSelect} slotHeight={slotHeight} />
         ))}
+      </div>
       </div>
     </Card>
   );
@@ -376,7 +378,7 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
       {delayAtivo && (
         <span className="absolute top-0 left-0.5 z-10 text-[9px] leading-none select-none" aria-label="Delay">🚩</span>
       )}
-      <p className={cn("text-[12px] sm:text-[13px] font-medium leading-tight break-words line-clamp-3", c.text, delayAtivo && "pl-2.5")}>
+      <p className={cn("text-[11px] sm:text-[13px] font-medium leading-tight whitespace-normal [overflow-wrap:normal] [word-break:normal] line-clamp-3", c.text, delayAtivo && "pl-2.5")}>
         {nomeCompleto}
       </p>
 
