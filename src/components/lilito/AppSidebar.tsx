@@ -152,28 +152,6 @@ export function AppSidebar({ isMaster }: { isMaster: boolean }) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {!collapsed && (
-          <div className="px-4 mt-6 mb-2">
-            <div className="hairline-gold opacity-60" />
-            <p className="caps-tracking text-muted-foreground mt-4 mb-2">Fase 2 — em breve</p>
-          </div>
-        )}
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {fase2.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild tooltip={`${item.title} — em breve`} className="opacity-50">
-                    <Link to={item.url} className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4" strokeWidth={1.5} />
-                      <span className="text-sm">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-2">
