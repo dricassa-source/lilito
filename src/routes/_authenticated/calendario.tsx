@@ -358,19 +358,16 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
       className={cn(
         "absolute left-1 right-1 rounded-md border px-2 py-1 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer",
         c.bg, c.border,
-        hasDelay && "border-2 border-destructive",
+        delayAtivo && "border-destructive",
         isRecorrente && "cursor-default",
       )}
       style={{ top, height }}
       title={`${nome} — ${TIPO_LABEL[e.tipo] ?? e.tipo}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
     >
       {delayAtivo && (
-        <span className="absolute -top-1.5 -left-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-destructive shadow-md shadow-destructive/40 ring-2 ring-background">
-          <Flag className="h-3 w-3 text-destructive-foreground fill-destructive-foreground" />
-        </span>
+        <span className="absolute top-0.5 left-0.5 z-10 text-[10px] leading-none select-none" aria-label="Delay">🚩</span>
       )}
-      <p className={cn("text-xs font-semibold truncate flex items-center gap-1", c.text)}>
-        {delayAtivo && <span className="text-destructive">🚩</span>}
+      <p className={cn("text-xs font-semibold truncate flex items-center gap-1", c.text, delayAtivo && "pl-3.5")}>
         {nome}
         {e.prospects?.score ? <ScoreStars score={e.prospects.score} /> : null}
       </p>
