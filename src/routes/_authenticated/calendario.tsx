@@ -352,7 +352,6 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
   const height = (durMin / 60) * SLOT_HEIGHT;
   const c = NATUREZA_COLOR[e.tipo] ?? NATUREZA_COLOR.review;
   const nomeCompleto = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
-  const primeiroNome = String(nomeCompleto).trim().split(/\s+/)[0];
   const hasDelay = !!e.delay_em;
   const delayAtivo = hasDelay && !e.delay_resolvido;
   const isRecorrente = e.__recorrente === true;
@@ -361,7 +360,7 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
       type="button"
       onClick={() => !isRecorrente && onSelect(e)}
       className={cn(
-        "absolute left-px right-px rounded-[3px] border px-1 py-0.5 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
+        "absolute inset-x-0 rounded-[3px] border px-1 py-0.5 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
         c.bg, c.border,
         delayAtivo && "border-destructive",
         isRecorrente && "cursor-default",
@@ -373,7 +372,7 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
         <span className="absolute top-0 left-0.5 z-10 text-[9px] leading-none select-none" aria-label="Delay">🚩</span>
       )}
       <p className={cn("text-[12px] sm:text-[13px] font-medium leading-tight truncate", c.text, delayAtivo && "pl-2.5")}>
-        {primeiroNome}
+        {nomeCompleto}
       </p>
 
     </button>
