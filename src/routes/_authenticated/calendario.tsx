@@ -1014,38 +1014,73 @@ async function marcarEntregue(evento: any) {
 }
 
 function DelayForm({ evento, onClose }: { evento: any; onClose: () => void }) {
-  const [motivo, setMotivo] = useState("");
+  const [motivo, setMotivo] = useState<string>(MOTIVOS_DELAY[0]);
+  const [outro, setOutro] = useState("");
   const [proxima, setProxima] = useState("");
 
   async function save() {
-    if (!motivo.trim()) { toast.error("Informe o motivo."); return; }
-    await marcarResultado(evento, "delay", { status: "realizado" });
+    const motivoFinal = motivo === "Outro" ? outro.trim() : motivo;
+    if (!motivoFinal) { toast.error("Informe o motivo do Delay."); return; }
+
+    // Buscar etapa atual do prospect para snapshot
+    let etapaOrigem: string | null = evento.prospects?.etapa_funil ?? evento.tipo ?? null;
+    if (evento.prospect_id && !etapaOrigem) {
+      const { data } = await supabase.from("prospects").select("etapa_funil").eq("id", evento.prospect_id).maybeSingle();
+      etapaOrigem = data?.etapa_funil ?? null;
+    }
+
+    // Atualiza o evento original (não some — borda vermelha + bandeira)
+    const { error: upErr } = await supabase.from("agenda_eventos").update({
+      resultado: "delay",
+      delay_motivo: motivoFinal,
+      delay_em: new Date().toISOString(),
+      delay_resolvido: false,
+      etapa_origem: etapaOrigem,
+    }).eq("id", evento.id);
+    if (upErr) { toast.error(upErr.message); return; }
+
     if (evento.prospect_id) {
       await supabase.from("atividades").insert({
         consultor_id: evento.consultor_id,
         prospect_id: evento.prospect_id,
-        tipo: (evento.tipo === "ab" ? "ab" : evento.tipo === "fechamento" ? "fechamento" : "revisita") as any,
+        tipo: (evento.tipo === "ab" ? "ab" : evento.tipo === "fechamento" ? "fechamento" : evento.tipo === "entrega_apolice" ? "entrega_apolice" : "revisita") as any,
         resultado: "delay",
-        observacao: motivo,
+        observacao: motivoFinal,
         follow_up_em: proxima ? new Date(proxima).toISOString() : null,
       });
-      // Marca como travado: backdate entrou_etapa_em para acionar Em Delay
       await supabase.from("prospects").update({
-        entrou_etapa_em: new Date(Date.now() - 30 * 86_400_000).toISOString(),
+        ultima_interacao: new Date().toISOString(),
       }).eq("id", evento.prospect_id);
     }
-    toast.success("Delay registrado.");
+    toast.success("Delay registrado. Prospect movido para Em Delay.");
     onClose();
   }
 
   return (
     <DialogContent className="bg-surface border-border max-w-md">
-      <DialogHeader><DialogTitle className="font-display text-2xl">Marcar Delay</DialogTitle></DialogHeader>
+      <DialogHeader>
+        <DialogTitle className="font-display text-2xl flex items-center gap-2"><Flag className="h-5 w-5 text-destructive" />Marcar Delay</DialogTitle>
+        <p className="text-xs text-muted-foreground">O compromisso permanece visível no calendário com borda vermelha para auditoria.</p>
+      </DialogHeader>
       <div className="space-y-3">
-        <div className="space-y-1.5"><Label>Motivo</Label><Textarea rows={3} value={motivo} onChange={(e) => setMotivo(e.target.value)} /></div>
-        <div className="space-y-1.5"><Label>Próxima ação (data)</Label><Input type="datetime-local" value={proxima} onChange={(e) => setProxima(e.target.value)} /></div>
+        <div className="space-y-1.5"><Label>Motivo do Delay <span className="text-destructive">*</span></Label>
+          <Select value={motivo} onValueChange={setMotivo}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {MOTIVOS_DELAY.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        {motivo === "Outro" && (
+          <div className="space-y-1.5"><Label>Descrever motivo</Label>
+            <Textarea rows={2} value={outro} onChange={(e) => setOutro(e.target.value)} />
+          </div>
+        )}
+        <div className="space-y-1.5"><Label>Próxima ação (data/hora) — opcional</Label>
+          <Input type="datetime-local" value={proxima} onChange={(e) => setProxima(e.target.value)} />
+        </div>
       </div>
-      <DialogFooter><Button onClick={save} className="gold-gradient text-background">Confirmar Delay</Button></DialogFooter>
+      <DialogFooter><Button onClick={save} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">Confirmar Delay</Button></DialogFooter>
     </DialogContent>
   );
 }
