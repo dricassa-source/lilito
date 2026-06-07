@@ -64,20 +64,24 @@ function Hot() {
   );
 
   const { data: fila } = useQuery({
-    queryKey: ["hot-fila", listaId, listaSelecionada?.data_inicio, listaSelecionada?.data_fim, scopeIds.join(",")],
+    queryKey: ["hot-fila", listaId, scopeIds.join(",")],
     enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
+      let memberIds: string[] | null = null;
+      if (listaSelecionada) {
+        const { data: mems } = await supabase
+          .from("hot_lista_prospects")
+          .select("prospect_id")
+          .eq("lista_id", listaSelecionada.id);
+        memberIds = (mems ?? []).map((m: any) => m.prospect_id);
+        if (memberIds.length === 0) return [];
+      }
       let q = applyScope(
         supabase.from("prospects").select("*")
           .eq("etapa_funil", "hot").eq("status_hot", "pendente"),
         scopeIds,
       );
-      if (listaSelecionada) {
-        q = q.gte("entrou_etapa_em", `${listaSelecionada.data_inicio}T00:00:00`);
-        if (listaSelecionada.data_fim) {
-          q = q.lte("entrou_etapa_em", `${listaSelecionada.data_fim}T23:59:59`);
-        }
-      }
+      if (memberIds) q = q.in("id", memberIds);
       const { data, error } = await q
         .order("score", { ascending: false, nullsFirst: false })
         .order("nota_qualificacao", { ascending: false, nullsFirst: false })
@@ -86,6 +90,7 @@ function Hot() {
       return data ?? [];
     },
   });
+
 
 
   useEffect(() => { setCurrentIndex(0); }, [listaId, fila?.length]);
