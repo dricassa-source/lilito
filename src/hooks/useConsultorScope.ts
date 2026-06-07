@@ -71,3 +71,15 @@ export function useConsultorScope() {
     meuId,
   };
 }
+
+/**
+ * Aplica filtro `consultor_id` num query-builder Supabase, baseado no escopo.
+ * - Vazio → força nenhum resultado (placeholder id).
+ * - 1 id → .eq
+ * - N ids → .in
+ */
+export function applyScope<T extends { eq: any; in: any }>(q: T, scopeIds: string[]): T {
+  if (!scopeIds || scopeIds.length === 0) return q.in("consultor_id", ["00000000-0000-0000-0000-000000000000"]);
+  if (scopeIds.length === 1) return q.eq("consultor_id", scopeIds[0]);
+  return q.in("consultor_id", scopeIds);
+}
