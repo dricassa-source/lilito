@@ -397,8 +397,9 @@ function PerfilDialog({ prospect, onEdit, onClose }: { prospect: any; onEdit: ()
   return (
     <DialogContent className="max-w-2xl bg-surface border-border max-h-[90vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle className="font-display text-2xl flex items-center gap-3">
+        <DialogTitle className="font-display text-2xl flex items-center gap-3 flex-wrap">
           {p.nome}
+          <ScoreStars score={score} />
           <Badge variant="outline" className={ETAPA_BADGE_CLASS[p.etapa_funil] ?? ""}>
             {ETAPA_LABEL[p.etapa_funil] ?? p.etapa_funil}
           </Badge>
