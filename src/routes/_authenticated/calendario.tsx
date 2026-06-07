@@ -624,6 +624,8 @@ function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?
     fim: defaults?.fim ?? "",
     local: "",
     observacao: "",
+    is_joint: false,
+    joint_consultor_id: "",
   });
 
   const { data: prospects } = useQuery({
