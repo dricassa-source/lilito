@@ -225,17 +225,22 @@ function FraseRotativa() {
 function LembretesHoje() {
   const { auth } = useAuth();
   const qc = useQueryClient();
+  const { scopeIds } = useConsultorScope();
   const hoje = format(new Date(), "yyyy-MM-dd");
   const { data } = useQuery({
-    queryKey: ["lembretes-meu-dia", auth?.user.id, hoje],
-    enabled: !!auth,
+    queryKey: ["lembretes-meu-dia", scopeIds.join(","), hoje],
+    enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase.from("lembretes")
-        .select("id,titulo,hora,observacao")
-        .eq("concluido", false).lte("data", hoje).order("data").order("hora").limit(10);
+      const { data } = await applyScope(
+        supabase.from("lembretes")
+          .select("id,titulo,hora,observacao")
+          .eq("concluido", false).lte("data", hoje),
+        scopeIds,
+      ).order("data").order("hora").limit(10);
       return data ?? [];
     },
   });
+
   const toggle = useMutation({
     mutationFn: async (id: string) => {
       await supabase.from("lembretes").update({ concluido: true, concluido_em: new Date().toISOString() }).eq("id", id);
