@@ -11,15 +11,55 @@ import {
 import { Logo } from "./Logo";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 
-const items = [
+const ETAPAS_DELAY = ["ab", "revisita", "fechamento", "entrega_apolice"];
+
+function useDelaysCount() {
+  const { auth } = useAuth();
+  const q = useQuery({
+    queryKey: ["em-delay-count", auth?.user.id, auth?.isMaster],
+    enabled: !!auth,
+    queryFn: async () => {
+      let req = supabase.from("agenda_eventos")
+        .select("id,tipo,etapa_origem,consultor_id")
+        .not("delay_em", "is", null)
+        .eq("delay_resolvido", false);
+      if (!auth?.isMaster) req = req.eq("consultor_id", auth!.user.id);
+      const { data, error } = await req;
+      if (error) return 0;
+      return (data ?? []).filter((d: any) => ETAPAS_DELAY.includes(d.etapa_origem ?? d.tipo)).length;
+    },
+    refetchInterval: 30_000,
+  });
+
+  useEffect(() => {
+    if (!auth) return;
+    const ch = supabase
+      .channel("sidebar-delays")
+      .on("postgres_changes", { event: "*", schema: "public", table: "agenda_eventos" }, () => {
+        q.refetch();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth?.user.id]);
+
+  return q.data ?? 0;
+}
+
+type NavItem = { title: string; url: string; icon: typeof Sun; badge?: "delays" };
+
+const items: NavItem[] = [
   { title: "Meu Dia", url: "/", icon: Sun },
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Recomendações", url: "/recomendacoes", icon: Users2 },
   { title: "HOT", url: "/hot", icon: Flame },
   { title: "Calendário", url: "/calendario", icon: CalendarDays },
   { title: "Funil", url: "/funil", icon: Target },
-  { title: "Em Delay", url: "/em-delay", icon: AlertTriangle },
+  { title: "Em Delay", url: "/em-delay", icon: AlertTriangle, badge: "delays" },
   { title: "Resultado Semanal", url: "/resultado-semanal", icon: TrendingUp },
   { title: "Lembretes", url: "/lembretes", icon: Bell },
   { title: "Onboarding", url: "/onboarding", icon: CircleDot },
