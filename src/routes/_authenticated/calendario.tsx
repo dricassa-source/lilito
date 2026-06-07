@@ -654,10 +654,12 @@ function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?
       consultor_id: consultorId,
       prospect_id: f.prospect_id,
       tipo: f.tipo as any,
-      titulo: `${TIPO_LABEL[f.tipo]} — ${nome}`,
+      titulo: `${TIPO_LABEL[f.tipo]} — ${nome}${f.is_joint && f.joint_consultor_id ? " (Joint)" : ""}`,
       inicio, fim,
       local: f.local || null,
       observacao: f.observacao || null,
+      joint_consultor_id: f.is_joint && f.joint_consultor_id ? f.joint_consultor_id : null,
+      joint_status: f.is_joint && f.joint_consultor_id ? "pendente" as any : "nenhum" as any,
     });
     if (error) { toast.error(error.message); return; }
     toast.success("Agendamento criado.");
