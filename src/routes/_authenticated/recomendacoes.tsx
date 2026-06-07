@@ -19,8 +19,15 @@ import {
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { EmptyState } from "@/components/lilito/EmptyState";
-import { Plus, Users2, Flame, XCircle, Pencil, Search } from "lucide-react";
+import { ScoreStars } from "@/components/lilito/ScoreStars";
+import { Plus, Users2, Flame, XCircle, Pencil, Search, Trophy } from "lucide-react";
 import { toast } from "sonner";
+
+function tempoEtapaDot(dias: number) {
+  if (dias <= 7) return { cor: "bg-emerald-500", label: "Recente" };
+  if (dias <= 14) return { cor: "bg-yellow-500", label: "Atenção" };
+  return { cor: "bg-red-500", label: "Crítico" };
+}
 
 export const Route = createFileRoute("/_authenticated/recomendacoes")({
   head: () => ({ meta: [{ title: "Recomendações — LILITO" }] }),
@@ -58,13 +65,9 @@ function diasDesde(iso: string) {
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
 }
 
-function orneScore(p: any) {
-  return (
-    (p.score_patrimonio ?? 0) +
-    (p.score_renda ?? 0) +
-    (p.score_necessidade ?? 0) +
-    (p.score_influencia ?? 0)
-  );
+function orneScore(p: any): number {
+  // Score automático (1-5) calculado pelo trigger. Fallback para 1 quando ausente.
+  return p.score ?? 1;
 }
 
 function Recomendacoes() {
