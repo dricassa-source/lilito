@@ -33,6 +33,10 @@ const ETAPA_LABEL: Record<string, string> = {
   entrega_apolice: "Entrega de Apólice",
 };
 
+function etapaDelay(d: any) {
+  return ETAPAS_ELEGIVEIS.includes(d.tipo) ? d.tipo : d.etapa_origem;
+}
+
 function EmDelay() {
   const { auth } = useAuth();
   const qc = useQueryClient();
@@ -55,7 +59,7 @@ function EmDelay() {
       const { data, error } = await q;
       if (error) throw error;
       const rows = (data ?? []).filter((d: any) => {
-        const etapa = d.etapa_origem ?? d.tipo;
+        const etapa = etapaDelay(d);
         return ETAPAS_ELEGIVEIS.includes(etapa);
       });
       const ids = Array.from(new Set(rows.map((r: any) => r.consultor_id).filter(Boolean)));
@@ -138,7 +142,7 @@ function EmDelay() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {delays.map((d: any) => {
-            const etapa = d.etapa_origem ?? d.tipo;
+            const etapa = etapaDelay(d);
             const nome = d.prospects?.nome ?? d.titulo ?? "—";
             const tel = d.prospects?.telefone;
             const dias = diasParado(d.delay_em);
