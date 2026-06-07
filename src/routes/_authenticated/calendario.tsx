@@ -196,49 +196,45 @@ function Calendario() {
 
   return (
     <div>
-      <PageHeader
-        eyebrow="Centro Operacional"
-        title="Calendário"
-        description="Toda movimentação do funil acontece aqui. O resultado do compromisso move o prospect."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={() => setDialog("agendamento")} className="gold-gradient text-background">
-              <CalendarPlus className="h-4 w-4 mr-2" />Novo Agendamento
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h1 className="font-display text-2xl text-foreground">Calendário</h1>
+        <div className="flex flex-wrap gap-1.5">
+          <Button size="sm" onClick={() => setDialog("agendamento")} className="gold-gradient text-background h-8 px-3">
+            <CalendarPlus className="h-3.5 w-3.5 mr-1" />Agendar
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setDialog("lembrete")} className="h-8 px-3">
+            <BellPlus className="h-3.5 w-3.5 mr-1" />Lembrete
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setDialog("bloqueio")} className="h-8 px-3">
+            <Ban className="h-3.5 w-3.5 mr-1" />Bloquear
+          </Button>
+          {auth?.isMaster && (
+            <Button size="sm" variant="outline" onClick={() => setDialog("recorrente")} className="h-8 px-3 border-gold/40">
+              <Repeat className="h-3.5 w-3.5 mr-1" />Recorrente
             </Button>
-            <Button variant="outline" onClick={() => setDialog("lembrete")}>
-              <BellPlus className="h-4 w-4 mr-2" />Novo Lembrete
-            </Button>
-            <Button variant="outline" onClick={() => setDialog("bloqueio")}>
-              <Ban className="h-4 w-4 mr-2" />Bloquear Horário
-            </Button>
-            {auth?.isMaster && (
-              <Button variant="outline" onClick={() => setDialog("recorrente")} className="border-gold/40">
-                <Repeat className="h-4 w-4 mr-2" />Compromisso Recorrente
-              </Button>
-            )}
-          </div>
-        }
-      />
+          )}
+        </div>
+      </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => shift(-1)}><ChevronLeft className="h-4 w-4" /></Button>
-          <Button variant="outline" onClick={() => setAnchor(new Date())}>Hoje</Button>
-          <Button variant="outline" size="icon" onClick={() => shift(1)}><ChevronRight className="h-4 w-4" /></Button>
-          <p className="caps-tracking text-gold ml-2">{periodoLabel}</p>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-1.5">
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => shift(-1)}><ChevronLeft className="h-4 w-4" /></Button>
+          <Button variant="outline" size="sm" className="h-8" onClick={() => setAnchor(new Date())}>Hoje</Button>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => shift(1)}><ChevronRight className="h-4 w-4" /></Button>
+          <p className="caps-tracking text-gold ml-2 hidden sm:block">{periodoLabel}</p>
         </div>
         <div className="flex items-center gap-2">
           <ConsultorFilter className="flex items-center gap-2" />
-
           <Tabs value={view} onValueChange={(v) => setView(v as View)}>
-            <TabsList>
-              <TabsTrigger value="dia">Dia</TabsTrigger>
-              <TabsTrigger value="semana">Semana</TabsTrigger>
-              <TabsTrigger value="mes">Mês</TabsTrigger>
+            <TabsList className="h-8">
+              <TabsTrigger value="dia" className="h-6 text-xs">Dia</TabsTrigger>
+              <TabsTrigger value="semana" className="h-6 text-xs">Semana</TabsTrigger>
+              <TabsTrigger value="mes" className="h-6 text-xs">Mês</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
       </div>
+      <p className="caps-tracking text-gold mb-2 sm:hidden">{periodoLabel}</p>
 
       {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
       {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
