@@ -1256,3 +1256,127 @@ function PropostaFechadaForm({ evento, onClose }: { evento: any; onClose: () => 
     </DialogContent>
   );
 }
+
+// ---------- Sheet para evento recorrente (instância virtual) ----------
+function RecorrenteSheet({ evento, onClose, onChanged }: { evento: any; onClose: () => void; onChanged: () => void }) {
+  const inicio = new Date(evento.inicio);
+  const fim = new Date(evento.fim);
+  const recorrenciaId: string = evento.recorrencia_id;
+  const c = NATUREZA_COLOR.recorrente;
+  const [confirmEscopo, setConfirmEscopo] = useState<null | "esta" | "futuras" | "serie">(null);
+
+  async function excluirEsta() {
+    // Marca esta data como exceção criando um bloqueio efêmero? Como o modelo
+    // não suporta exceções, registramos a data no campo `observacoes` da
+    // recorrência. Solução simples: salvar uma lista de datas excluídas.
+    const { data: rec } = await supabase.from("compromissos_recorrentes")
+      .select("excecoes").eq("id", recorrenciaId).maybeSingle();
+    const lista: string[] = Array.isArray((rec as any)?.excecoes) ? (rec as any).excecoes : [];
+    const dataKey = format(inicio, "yyyy-MM-dd");
+    if (!lista.includes(dataKey)) lista.push(dataKey);
+    const { error } = await supabase.from("compromissos_recorrentes")
+      .update({ excecoes: lista } as any).eq("id", recorrenciaId);
+    if (error) { toast.error("Não foi possível excluir esta ocorrência: " + error.message); return; }
+    toast.success("Ocorrência removida.");
+    onChanged();
+  }
+
+  async function excluirFuturas() {
+    // Define data_final = dia anterior a esta ocorrência. Se não existir o
+    // campo, encerra a série com `ativo: false` a partir desta data.
+    const novaData = new Date(inicio); novaData.setDate(novaData.getDate() - 1);
+    const { error } = await supabase.from("compromissos_recorrentes")
+      .update({ data_final: format(novaData, "yyyy-MM-dd") } as any)
+      .eq("id", recorrenciaId);
+    if (error) { toast.error("Não foi possível encerrar a série: " + error.message); return; }
+    toast.success("Série encerrada a partir desta data.");
+    onChanged();
+  }
+
+  async function excluirSerie() {
+    const { error } = await supabase.from("compromissos_recorrentes")
+      .update({ ativo: false }).eq("id", recorrenciaId);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Série excluída.");
+    onChanged();
+  }
+
+  return (
+    <Sheet open onOpenChange={(o) => !o && onClose()}>
+      <SheetContent className="bg-surface border-border w-full sm:max-w-md">
+        <SheetHeader>
+          <div className="flex items-center gap-2">
+            <span className={cn("inline-block w-2 h-2 rounded-full", c.dot)} />
+            <span className="caps-tracking text-muted-foreground">Recorrente</span>
+          </div>
+          <SheetTitle className="font-display text-2xl flex items-center gap-2">
+            <Repeat className="h-5 w-5 text-nat-vinca" /> {evento.titulo}
+          </SheetTitle>
+          <SheetDescription>
+            {format(inicio, "EEEE, dd 'de' MMMM yyyy", { locale: ptBR })} · {format(inicio, "HH:mm")}–{format(fim, "HH:mm")}
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="mt-4 space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Este compromisso faz parte de uma série recorrente. Escolha o escopo
+            da alteração:
+          </p>
+
+          <div className="space-y-2">
+            <p className="caps-tracking text-gold">Excluir</p>
+            <div className="grid grid-cols-1 gap-2">
+              <Button variant="outline" onClick={() => setConfirmEscopo("esta")}>
+                Apenas esta ocorrência
+              </Button>
+              <Button variant="outline" onClick={() => setConfirmEscopo("futuras")}>
+                Esta e as próximas
+              </Button>
+              <Button
+                variant="outline"
+                className="border-destructive/40 text-destructive hover:text-destructive"
+                onClick={() => setConfirmEscopo("serie")}
+              >
+                Toda a série
+              </Button>
+            </div>
+          </div>
+
+          <Separator className="my-2" />
+
+          <p className="text-[11px] text-muted-foreground">
+            Para editar a série recorrente (título, horário, participantes), use
+            a área de configurações de Compromissos Recorrentes.
+          </p>
+        </div>
+      </SheetContent>
+
+      <Dialog open={!!confirmEscopo} onOpenChange={(o) => !o && setConfirmEscopo(null)}>
+        <DialogContent className="bg-surface border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">Confirmar exclusão</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {confirmEscopo === "esta" && "Esta ocorrência será removida da agenda. As demais permanecem."}
+            {confirmEscopo === "futuras" && "Esta e todas as ocorrências seguintes serão removidas. As anteriores permanecem."}
+            {confirmEscopo === "serie" && "Toda a série recorrente será desativada para todos os participantes."}
+          </p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmEscopo(null)}>Cancelar</Button>
+            <Button
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              onClick={async () => {
+                if (confirmEscopo === "esta") await excluirEsta();
+                else if (confirmEscopo === "futuras") await excluirFuturas();
+                else if (confirmEscopo === "serie") await excluirSerie();
+                setConfirmEscopo(null);
+              }}
+            >
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Sheet>
+  );
+}
