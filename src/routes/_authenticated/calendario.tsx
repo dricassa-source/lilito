@@ -1132,8 +1132,11 @@ function DelayForm({ evento, onClose }: { evento: any; onClose: () => void }) {
     const motivoFinal = motivo === "Outro" ? outro.trim() : motivo;
     if (!motivoFinal) { toast.error("Informe o motivo do Delay."); return; }
 
-    // Buscar etapa atual do prospect para snapshot
-    let etapaOrigem: string | null = evento.prospects?.etapa_funil ?? evento.tipo ?? null;
+    // Snapshot da etapa de origem. Prioriza o `tipo` do evento (ab/revisita/
+    // fechamento/entrega_apolice) que é o critério usado pelas filas de Em
+    // Delay e Sininho. Cai para a etapa atual do prospect como fallback.
+    const ETAPAS_DELAY = new Set(["ab", "revisita", "fechamento", "entrega_apolice"]);
+    let etapaOrigem: string | null = ETAPAS_DELAY.has(evento.tipo) ? evento.tipo : (evento.prospects?.etapa_funil ?? evento.tipo ?? null);
     if (evento.prospect_id && !etapaOrigem) {
       const { data } = await supabase.from("prospects").select("etapa_funil").eq("id", evento.prospect_id).maybeSingle();
       etapaOrigem = data?.etapa_funil ?? null;
