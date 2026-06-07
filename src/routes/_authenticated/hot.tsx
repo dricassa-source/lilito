@@ -320,6 +320,59 @@ function Hot() {
         </div>
       )}
 
+function AdicionarALista({ prospectId, listas }: { prospectId: string; listas: any[] }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const { data: membros } = useQuery({
+    queryKey: ["hot-prospect-listas", prospectId],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await supabase.from("hot_lista_prospects")
+        .select("lista_id").eq("prospect_id", prospectId);
+      return new Set((data ?? []).map((m: any) => m.lista_id));
+    },
+  });
+  async function toggle(listaId: string, checked: boolean) {
+    if (checked) {
+      const { error } = await supabase.from("hot_lista_prospects").insert({ lista_id: listaId, prospect_id: prospectId });
+      if (error) return toast.error(error.message);
+    } else {
+      const { error } = await supabase.from("hot_lista_prospects").delete().eq("lista_id", listaId).eq("prospect_id", prospectId);
+      if (error) return toast.error(error.message);
+    }
+    qc.invalidateQueries({ queryKey: ["hot-prospect-listas", prospectId] });
+    qc.invalidateQueries({ queryKey: ["hot-fila"] });
+  }
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="icon" variant="ghost" onClick={(e) => e.stopPropagation()} title="Adicionar à Lista" className="h-8 w-8 hover:text-gold">
+          <BookmarkPlus className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 bg-surface border-border p-2" onClick={(e) => e.stopPropagation()}>
+        <p className="caps-tracking text-gold text-[10px] px-2 py-1">Adicionar à Lista</p>
+        {listas.length === 0 ? (
+          <p className="text-xs text-muted-foreground px-2 py-2">Crie uma lista primeiro.</p>
+        ) : (
+          <div className="space-y-1 max-h-64 overflow-y-auto">
+            {listas.map((l) => {
+              const checked = membros?.has(l.id) ?? false;
+              return (
+                <label key={l.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-surface-elevated rounded cursor-pointer text-sm">
+                  <Checkbox checked={checked} onCheckedChange={(v) => toggle(l.id, !!v)} />
+                  <span className="truncate">{l.nome}</span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+
       <AbDialog state={dlg} setState={setDlg} onDone={() => qc.invalidateQueries({ queryKey: ["hot-fila"] })} />
       <PensarDialog state={dlg} setState={setDlg} onDone={() => qc.invalidateQueries({ queryKey: ["hot-fila"] })} />
       <RetornarDialog state={dlg} setState={setDlg} onDone={() => qc.invalidateQueries({ queryKey: ["hot-fila"] })} />
