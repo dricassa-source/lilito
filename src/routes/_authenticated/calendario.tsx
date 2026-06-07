@@ -399,7 +399,7 @@ function DayLembretes({ lembretes }: { lembretes: any[] }) {
   );
 }
 
-function DayGrid({ day, eventos, lembretes, onSelect }: { day: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void }) {
+function DayGrid({ day, eventos, lembretes, onSelect, slotHeight }: { day: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; slotHeight: number }) {
   const dayLembretes = lembretes.filter((l) => isSameDay(new Date(l.data + "T00:00"), day));
   return (
     <Card className="bg-surface border-border overflow-hidden">
@@ -418,12 +418,12 @@ function DayGrid({ day, eventos, lembretes, onSelect }: { day: Date; eventos: an
       <div className="grid grid-cols-[36px_minmax(0,1fr)] sm:grid-cols-[60px_minmax(0,1fr)]">
         <div>
           {HOURS.map((h) => (
-            <div key={h} className="border-b border-border text-right pr-1 sm:pr-2 text-[10px] sm:text-xs text-muted-foreground" style={{ height: SLOT_HEIGHT }}>
+            <div key={h} className="border-b border-border text-right pr-1 sm:pr-2 text-[10px] sm:text-xs text-muted-foreground" style={{ height: slotHeight }}>
               {String(h).padStart(2, "0")}:00
             </div>
           ))}
         </div>
-        <DayColumn day={day} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), day))} onSelect={onSelect} />
+        <DayColumn day={day} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), day))} onSelect={onSelect} slotHeight={slotHeight} />
       </div>
 
     </Card>
