@@ -86,6 +86,8 @@ function Calendario() {
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [view, setView] = useState<View>("semana");
   const [anchor, setAnchor] = useState<Date>(new Date());
+  const isMobile = useIsMobile();
+  const { slotHeight, containerRef } = useCalendarZoom(isMobile ? 36 : 48);
 
   const range = useMemo(() => {
     if (view === "dia") return { from: startOfDay(anchor), to: endOfDay(anchor) };
