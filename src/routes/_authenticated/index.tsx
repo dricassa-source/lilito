@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/lilito/PageHeader";
+import { NovoLembrete } from "./lembretes";
 import {
   Flame,
   CalendarDays,
@@ -16,7 +18,13 @@ import {
   TrendingUp,
   Wallet,
   Crown,
+  Bell,
+  Check,
 } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Meu Dia — LILITO" }] }),
