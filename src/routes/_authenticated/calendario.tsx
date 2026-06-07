@@ -563,26 +563,32 @@ function expandirRecorrentes(recs: any[], from: Date, to: Date): any[] {
   const out: any[] = [];
   for (const r of recs) {
     const inicial = new Date(r.data_inicial + "T00:00:00");
+    const final = r.data_final ? new Date(r.data_final + "T23:59:59") : null;
+    const excecoes: string[] = Array.isArray(r.excecoes) ? r.excecoes : [];
     const step = r.frequencia === "mensal" ? 28 : r.frequencia === "quinzenal" ? 14 : 7;
     let cursor = new Date(inicial);
     // avança até a janela
     while (cursor < from) cursor = new Date(cursor.getTime() + step * 86_400_000);
     while (cursor <= to) {
-      const [h1, m1] = String(r.hora_inicio).split(":").map(Number);
-      const [h2, m2] = String(r.hora_fim).split(":").map(Number);
-      const ini = new Date(cursor); ini.setHours(h1, m1 || 0, 0, 0);
-      const fim = new Date(cursor); fim.setHours(h2, m2 || 0, 0, 0);
-      out.push({
-        id: `rec-${r.id}-${ini.toISOString()}`,
-        __recorrente: true,
-        recorrencia_id: r.id,
-        tipo: "recorrente",
-        titulo: r.titulo,
-        inicio: ini.toISOString(),
-        fim: fim.toISOString(),
-        prospects: null,
-        clientes: null,
-      });
+      if (final && cursor > final) break;
+      const dataKey = format(cursor, "yyyy-MM-dd");
+      if (!excecoes.includes(dataKey)) {
+        const [h1, m1] = String(r.hora_inicio).split(":").map(Number);
+        const [h2, m2] = String(r.hora_fim).split(":").map(Number);
+        const ini = new Date(cursor); ini.setHours(h1, m1 || 0, 0, 0);
+        const fim = new Date(cursor); fim.setHours(h2, m2 || 0, 0, 0);
+        out.push({
+          id: `rec-${r.id}-${ini.toISOString()}`,
+          __recorrente: true,
+          recorrencia_id: r.id,
+          tipo: "recorrente",
+          titulo: r.titulo,
+          inicio: ini.toISOString(),
+          fim: fim.toISOString(),
+          prospects: null,
+          clientes: null,
+        });
+      }
       cursor = new Date(cursor.getTime() + step * 86_400_000);
     }
   }
