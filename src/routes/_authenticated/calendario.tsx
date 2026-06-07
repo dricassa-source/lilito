@@ -378,7 +378,7 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight, colWidth }: 
         <div>
           {HOURS.map((h) => (
             <div key={h} className="border-b border-border text-right pr-0.5 sm:pr-1 text-[9px] sm:text-[10px] text-muted-foreground leading-none pt-0.5" style={{ height: slotHeight }}>
-              {String(h).padStart(2, "0")}
+              {`${String(h).padStart(2, "0")}:00`}
             </div>
           ))}
         </div>
