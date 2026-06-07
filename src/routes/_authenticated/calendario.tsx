@@ -433,9 +433,9 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
         <span className="absolute top-0 right-0.5 z-10 text-[9px] leading-none select-none opacity-70" aria-label="Recorrente">🔁</span>
       )}
       {delayAtivo && (
-        <span className="absolute top-0 left-0.5 z-10 text-[9px] leading-none select-none" aria-label="Delay">🚩</span>
+        <span className="absolute top-1 left-2 z-10 text-[10px] leading-none select-none drop-shadow-sm" aria-label="Delay">🚩</span>
       )}
-      <p className={cn("text-[11px] sm:text-[13px] font-medium leading-tight whitespace-normal [overflow-wrap:normal] [word-break:normal] line-clamp-2", c.text, delayAtivo && "pl-2.5")}>
+      <p className={cn("text-[11px] sm:text-[13px] font-medium leading-tight whitespace-normal [overflow-wrap:normal] [word-break:normal] line-clamp-2", c.text, delayAtivo && "pl-5")}>
         {nomeCompleto}
       </p>
       {showHorario && (
