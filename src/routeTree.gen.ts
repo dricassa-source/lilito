@@ -13,6 +13,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedResultadoSemanalRouteImport } from './routes/_authenticated/resultado-semanal'
 import { Route as AuthenticatedRecomendacoesRouteImport } from './routes/_authenticated/recomendacoes'
 import { Route as AuthenticatedPosVendaRouteImport } from './routes/_authenticated/pos-venda'
 import { Route as AuthenticatedPlanejamentoRouteImport } from './routes/_authenticated/planejamento'
@@ -47,6 +48,12 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedResultadoSemanalRoute =
+  AuthenticatedResultadoSemanalRouteImport.update({
+    id: '/resultado-semanal',
+    path: '/resultado-semanal',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRecomendacoesRoute =
   AuthenticatedRecomendacoesRouteImport.update({
     id: '/recomendacoes',
@@ -140,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/pos-venda': typeof AuthenticatedPosVendaRoute
   '/recomendacoes': typeof AuthenticatedRecomendacoesRoute
+  '/resultado-semanal': typeof AuthenticatedResultadoSemanalRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -158,6 +166,7 @@ export interface FileRoutesByTo {
   '/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/pos-venda': typeof AuthenticatedPosVendaRoute
   '/recomendacoes': typeof AuthenticatedRecomendacoesRoute
+  '/resultado-semanal': typeof AuthenticatedResultadoSemanalRoute
   '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
@@ -179,6 +188,7 @@ export interface FileRoutesById {
   '/_authenticated/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/_authenticated/pos-venda': typeof AuthenticatedPosVendaRoute
   '/_authenticated/recomendacoes': typeof AuthenticatedRecomendacoesRoute
+  '/_authenticated/resultado-semanal': typeof AuthenticatedResultadoSemanalRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
@@ -201,6 +211,7 @@ export interface FileRouteTypes {
     | '/planejamento'
     | '/pos-venda'
     | '/recomendacoes'
+    | '/resultado-semanal'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/planejamento'
     | '/pos-venda'
     | '/recomendacoes'
+    | '/resultado-semanal'
     | '/'
   id:
     | '__root__'
@@ -239,6 +251,7 @@ export interface FileRouteTypes {
     | '/_authenticated/planejamento'
     | '/_authenticated/pos-venda'
     | '/_authenticated/recomendacoes'
+    | '/_authenticated/resultado-semanal'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
@@ -276,6 +289,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/resultado-semanal': {
+      id: '/_authenticated/resultado-semanal'
+      path: '/resultado-semanal'
+      fullPath: '/resultado-semanal'
+      preLoaderRoute: typeof AuthenticatedResultadoSemanalRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/recomendacoes': {
@@ -394,6 +414,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPlanejamentoRoute: typeof AuthenticatedPlanejamentoRoute
   AuthenticatedPosVendaRoute: typeof AuthenticatedPosVendaRoute
   AuthenticatedRecomendacoesRoute: typeof AuthenticatedRecomendacoesRoute
+  AuthenticatedResultadoSemanalRoute: typeof AuthenticatedResultadoSemanalRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
@@ -412,6 +433,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPlanejamentoRoute: AuthenticatedPlanejamentoRoute,
   AuthenticatedPosVendaRoute: AuthenticatedPosVendaRoute,
   AuthenticatedRecomendacoesRoute: AuthenticatedRecomendacoesRoute,
+  AuthenticatedResultadoSemanalRoute: AuthenticatedResultadoSemanalRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
