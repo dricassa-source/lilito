@@ -122,26 +122,28 @@ function ResultadoSemanal() {
       </div>
 
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <Stat label="AB Fone (ligações)" value={data?.ab_fone ?? "—"} />
-        <Stat label="ABs realizadas" value={data?.abs ?? "—"} />
-        <Stat label="Fechamentos agendados" value={data?.fechAg ?? "—"} />
-        <Stat label="Fechamentos realizados" value={data?.fechRea ?? "—"} />
-        <Stat label="Propostas fechadas" value={data?.propostas ?? "—"} />
-        <Stat label="PA fechado" value={data ? formatBRL(data.pa) : "—"} />
-        <Stat label="Capital segurado" value={data ? formatBRL(data.cs) : "—"} />
-        <Stat label="Recomendações" value={data?.recsCount ?? "—"} sub={data ? `${data.recsComplete} completas` : ""} />
-        <Stat label="Revisitas" value={data?.revisitas ?? "—"} />
-        <Stat label="Entregas de apólice" value={data?.entregas ?? "—"} />
-        <Stat label="Apólices emitidas" value={data?.emWeek ?? "—"} />
-      </div>
-
       <Card className="p-5 bg-surface border-border mb-6">
-        <p className="caps-tracking text-gold mb-3">Previsão — próxima semana</p>
-        <div className="grid grid-cols-3 gap-3">
-          <Stat label="ABs agendadas" value={data?.previsao.abs ?? "—"} />
-          <Stat label="Fechamentos agendados" value={data?.previsao.fech ?? "—"} />
-          <Stat label="Revisitas agendadas" value={data?.previsao.revisitas ?? "—"} />
+        <p className="caps-tracking text-gold mb-3">📊 Produção da semana</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <Stat label="📞 AB Fone" value={data?.ab_fone ?? "—"} />
+          <Stat label="📅 ABs Agendadas" value={data?.previsao ? "—" : "—"} sub="(agenda atual)" />
+          <Stat label="🤝 ABs Realizadas" value={data?.abs ?? "—"} />
+          <Stat label="💰 Fechamentos Agendados" value={data?.fechAg ?? "—"} />
+          <Stat label="🏆 Fechamentos Realizados" value={data?.fechRea ?? "—"} />
+          <Stat label="📄 Propostas Fechadas" value={data?.propostas ?? "—"} />
+          <Stat label="💵 PA Fechado" value={data ? formatBRL(data.pa) : "—"} />
+          <Stat label="🛡️ Capital Segurado" value={data ? formatBRL(data.cs) : "—"} />
+          <Stat label="👥 Recomendações Captadas" value={data?.recsCount ?? "—"} sub={data ? `${data.recsComplete} completas` : ""} />
+          <Stat label="📦 Entregas de Apólice" value={data?.entregas ?? "—"} />
+        </div>
+      </Card>
+
+      <Card className="p-5 bg-surface border-gold/30 mb-6">
+        <p className="caps-tracking text-gold mb-3">🔮 Próxima semana</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <Stat label="📅 ABs Agendadas" value={data?.previsao.abs ?? "—"} />
+          <Stat label="💰 Fechamentos Agendados" value={data?.previsao.fech ?? "—"} />
+          <Stat label="📄 Previsão de Propostas" value={data?.previsao.fech ?? "—"} sub="≈ fechamentos agendados" />
         </div>
       </Card>
 
