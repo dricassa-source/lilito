@@ -483,7 +483,137 @@ async function temConflito(consultorId: string, inicioISO: string, fimISO: strin
   return (data ?? []).length > 0;
 }
 
-// ---------- Novo Agendamento ----------
+// ---------- Expand recorrentes para instâncias no range visível ----------
+function expandirRecorrentes(recs: any[], from: Date, to: Date): any[] {
+  const out: any[] = [];
+  for (const r of recs) {
+    const inicial = new Date(r.data_inicial + "T00:00:00");
+    const step = r.frequencia === "mensal" ? 28 : r.frequencia === "quinzenal" ? 14 : 7;
+    let cursor = new Date(inicial);
+    // avança até a janela
+    while (cursor < from) cursor = new Date(cursor.getTime() + step * 86_400_000);
+    while (cursor <= to) {
+      const [h1, m1] = String(r.hora_inicio).split(":").map(Number);
+      const [h2, m2] = String(r.hora_fim).split(":").map(Number);
+      const ini = new Date(cursor); ini.setHours(h1, m1 || 0, 0, 0);
+      const fim = new Date(cursor); fim.setHours(h2, m2 || 0, 0, 0);
+      out.push({
+        id: `rec-${r.id}-${ini.toISOString()}`,
+        __recorrente: true,
+        recorrencia_id: r.id,
+        tipo: "recorrente",
+        titulo: r.titulo,
+        inicio: ini.toISOString(),
+        fim: fim.toISOString(),
+        prospects: null,
+        clientes: null,
+      });
+      cursor = new Date(cursor.getTime() + step * 86_400_000);
+    }
+  }
+  return out;
+}
+
+// ---------- Novo Compromisso Recorrente ----------
+function NovoRecorrente({ onClose }: { onClose: () => void }) {
+  const { auth } = useAuth();
+  const [f, setF] = useState({
+    titulo: "",
+    tipo: "reuniao_unidade",
+    data_inicial: "",
+    hora_inicio: "08:00",
+    hora_fim: "09:00",
+    frequencia: "semanal",
+    participantes: [] as string[],
+  });
+  const { data: consultores } = useQuery({
+    queryKey: ["consultores-ativos"], enabled: !!auth,
+    queryFn: async () => (await supabase.from("profiles").select("id,nome").eq("ativo", true).order("nome")).data ?? [],
+  });
+
+  function toggleParticipante(id: string) {
+    setF((prev) => ({
+      ...prev,
+      participantes: prev.participantes.includes(id)
+        ? prev.participantes.filter((p) => p !== id)
+        : [...prev.participantes, id],
+    }));
+  }
+
+  async function save() {
+    if (!auth) return;
+    if (!f.titulo || !f.data_inicial) { toast.error("Título e data inicial são obrigatórios."); return; }
+    const { error } = await supabase.from("compromissos_recorrentes").insert({
+      titulo: f.titulo,
+      tipo: f.tipo,
+      data_inicial: f.data_inicial,
+      hora_inicio: f.hora_inicio,
+      hora_fim: f.hora_fim,
+      frequencia: f.frequencia,
+      participantes: f.participantes,
+      criado_por: auth.user.id,
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Compromisso recorrente criado.");
+    onClose();
+  }
+
+  return (
+    <DialogContent className="bg-surface border-border max-w-lg">
+      <DialogHeader>
+        <DialogTitle className="font-display text-2xl flex items-center gap-2"><Repeat className="h-5 w-5 text-gold" />Compromisso Recorrente</DialogTitle>
+        <p className="text-xs text-muted-foreground">Aparece automaticamente nos calendários dos participantes.</p>
+      </DialogHeader>
+      <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+        <div className="space-y-1.5"><Label>Título</Label>
+          <Input value={f.titulo} onChange={(e) => setF({ ...f, titulo: e.target.value })} placeholder="Ex.: Reunião Vinca" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5"><Label>Tipo</Label>
+            <Select value={f.tipo} onValueChange={(v) => setF({ ...f, tipo: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="reuniao_unidade">Reunião Unidade</SelectItem>
+                <SelectItem value="treinamento">Treinamento</SelectItem>
+                <SelectItem value="rote">Rote</SelectItem>
+                <SelectItem value="ab_fone">AB Fone</SelectItem>
+                <SelectItem value="outro">Outro</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5"><Label>Frequência</Label>
+            <Select value={f.frequencia} onValueChange={(v) => setF({ ...f, frequencia: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="semanal">Semanal</SelectItem>
+                <SelectItem value="quinzenal">Quinzenal</SelectItem>
+                <SelectItem value="mensal">Mensal</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-1.5"><Label>Data inicial</Label><Input type="date" value={f.data_inicial} onChange={(e) => setF({ ...f, data_inicial: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>Hora início</Label><Input type="time" value={f.hora_inicio} onChange={(e) => setF({ ...f, hora_inicio: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>Hora fim</Label><Input type="time" value={f.hora_fim} onChange={(e) => setF({ ...f, hora_fim: e.target.value })} /></div>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Participantes</Label>
+          <div className="border border-border rounded-md p-2 max-h-40 overflow-y-auto space-y-1">
+            {(consultores ?? []).map((c: any) => (
+              <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-surface-elevated rounded px-2 py-1">
+                <Checkbox checked={f.participantes.includes(c.id)} onCheckedChange={() => toggleParticipante(c.id)} />
+                {c.nome}
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+      <DialogFooter><Button onClick={save} className="gold-gradient text-background">Criar Recorrente</Button></DialogFooter>
+    </DialogContent>
+  );
+}
+
 function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?: Partial<any> }) {
   const { auth } = useAuth();
   const [f, setF] = useState({
