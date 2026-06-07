@@ -7,9 +7,16 @@ import { DndContext, useDraggable, useDroppable, DragOverlay, type DragEndEvent,
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { ScoreStars } from "@/components/lilito/ScoreStars";
 import { toast } from "sonner";
 import { differenceInDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+function tempoEtapaDot(dias: number) {
+  if (dias <= 7) return "bg-emerald-500";
+  if (dias <= 14) return "bg-yellow-500";
+  return "bg-red-500";
+}
 
 export const Route = createFileRoute("/_authenticated/funil")({
   head: () => ({ meta: [{ title: "Funil — LILITO" }] }),
@@ -34,15 +41,22 @@ function daysInStage(iso: string | null) {
 }
 
 function ProspectCard({ p, dragging, onClick }: { p: any; dragging?: boolean; onClick?: () => void }) {
+  const dias = daysInStage(p.entrou_etapa_em);
   return (
     <Card
       className={`p-3 bg-surface-elevated border-border ${dragging ? "shadow-elegant" : ""} ${onClick ? "cursor-pointer hover:border-gold/40 transition-colors" : ""}`}
       onClick={onClick}
     >
-      <p className="font-medium text-foreground text-sm leading-tight">{p.nome}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="font-medium text-foreground text-sm leading-tight flex-1 min-w-0 truncate">{p.nome}</p>
+        <ScoreStars score={p.score ?? 1} />
+      </div>
       {p.especialidade_medica && <p className="text-xs text-muted-foreground mt-0.5">{p.especialidade_medica}</p>}
       <div className="flex items-center justify-between mt-2 text-xs">
-        <span className="text-muted-foreground">{daysInStage(p.entrou_etapa_em)}d na etapa</span>
+        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+          <span className={`h-1.5 w-1.5 rounded-full ${tempoEtapaDot(dias)}`} />
+          {dias}d na etapa
+        </span>
         <span className="text-gold">R$ {Math.round(Number(p.pa_estimado ?? 0) / 1000)}k</span>
       </div>
     </Card>
