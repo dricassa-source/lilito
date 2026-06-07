@@ -106,17 +106,17 @@ function Calendario() {
   // Pinch-to-zoom continues to scale slotHeight (vertical density).
   const colWidth = isMobile && baseCol > 0 ? baseCol : 0;
 
-  // On mobile, scroll the grid to 05:00 by default so the useful range
-  // (05:00–21:00) is visible first; users can scroll up/down for the rest.
+  // Default vertical scroll posiciona em 05:00 (faixa útil 05–21).
+  // Horários fora da faixa continuam acessíveis por scroll vertical.
   const didInitialScrollRef = useRef(false);
   useEffect(() => {
-    if (!isMobile) return;
     if (didInitialScrollRef.current) return;
+    if (view !== "semana" && view !== "dia") return;
     const el = containerRef.current;
     if (!el) return;
     el.scrollTop = 5 * slotHeight;
     didInitialScrollRef.current = true;
-  }, [isMobile, slotHeight, containerRef]);
+  }, [view, slotHeight, containerRef]);
 
   const range = useMemo(() => {
     if (view === "dia") return { from: startOfDay(anchor), to: endOfDay(anchor) };
