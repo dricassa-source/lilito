@@ -221,10 +221,13 @@ function Calendario() {
     qc.invalidateQueries({ queryKey: ["agenda"] });
     qc.invalidateQueries({ queryKey: ["agenda-semana"] });
     qc.invalidateQueries({ queryKey: ["lembretes-cal"] });
+    qc.invalidateQueries({ queryKey: ["lembretes"] });
     qc.invalidateQueries({ queryKey: ["recorrentes"] });
     qc.invalidateQueries({ queryKey: ["em-delay"] });
     qc.invalidateQueries({ queryKey: ["em-delay-count"] });
     qc.invalidateQueries({ queryKey: ["funil"] });
+    qc.invalidateQueries({ queryKey: ["notificacoes-bell"] });
+    qc.invalidateQueries({ queryKey: ["meu-dia"] });
   };
 
   return (
