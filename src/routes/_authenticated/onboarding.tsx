@@ -197,7 +197,7 @@ function Onboarding() {
                 </div>
                 <div className="col-span-4 md:col-span-2 flex justify-end">
                   <Button size="sm" className="gap-1"
-                    onClick={() => updateStatus.mutate({ id: r.id, status: "emitida" })}>
+                    onClick={() => updateStatus.mutate({ id: r.id, status: "emitida", row: r })}>
                     <CheckCircle2 className="h-3.5 w-3.5" /> Emitir
                   </Button>
                 </div>
