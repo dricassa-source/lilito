@@ -548,6 +548,9 @@ function MonthGrid({ anchor, eventos, lembretes, onSelect }: { anchor: Date; eve
 }
 
 // ---------- Conflict helper ----------
+// Bloqueia agendamento se houver:
+// - qualquer evento (AB/Revisita/Fechamento/Entrega/Bloqueio/Joint) no mesmo consultor
+// - reunião recorrente da unidade onde o consultor seja participante e o horário colida
 async function temConflito(consultorId: string, inicioISO: string, fimISO: string, excludeId?: string) {
   let q = supabase.from("agenda_eventos").select("id,inicio,fim")
     .eq("consultor_id", consultorId)
@@ -555,7 +558,36 @@ async function temConflito(consultorId: string, inicioISO: string, fimISO: strin
     .gt("fim", inicioISO);
   if (excludeId) q = q.neq("id", excludeId);
   const { data } = await q;
-  return (data ?? []).length > 0;
+  if ((data ?? []).length > 0) return true;
+
+  // Verifica conflito com compromissos recorrentes da unidade
+  const ini = new Date(inicioISO);
+  const fim = new Date(fimISO);
+  const { data: recs } = await supabase.from("compromissos_recorrentes")
+    .select("data_inicial,data_final,hora_inicio,hora_fim,frequencia,participantes,excecoes,ativo")
+    .eq("ativo", true);
+  for (const r of recs ?? []) {
+    const part: string[] = Array.isArray(r.participantes) ? r.participantes : [];
+    if (part.length > 0 && !part.includes(consultorId)) continue; // não bloqueia quem não participa
+    const dInicial = new Date(String(r.data_inicial) + "T00:00:00");
+    const dFinal = r.data_final ? new Date(String(r.data_final) + "T23:59:59") : null;
+    if (ini < dInicial) continue;
+    if (dFinal && ini > dFinal) continue;
+    const step = r.frequencia === "mensal" ? 28 : r.frequencia === "quinzenal" ? 14 : 7;
+    // diferença em dias
+    const diffDias = Math.floor((Date.UTC(ini.getFullYear(), ini.getMonth(), ini.getDate()) -
+      Date.UTC(dInicial.getFullYear(), dInicial.getMonth(), dInicial.getDate())) / 86_400_000);
+    if (diffDias < 0 || diffDias % step !== 0) continue;
+    const dataKey = format(ini, "yyyy-MM-dd");
+    const excecoes: string[] = Array.isArray(r.excecoes) ? r.excecoes.map(String) : [];
+    if (excecoes.includes(dataKey)) continue;
+    const [h1, m1] = String(r.hora_inicio).split(":").map(Number);
+    const [h2, m2] = String(r.hora_fim).split(":").map(Number);
+    const recIni = new Date(ini); recIni.setHours(h1, m1 || 0, 0, 0);
+    const recFim = new Date(ini); recFim.setHours(h2, m2 || 0, 0, 0);
+    if (recIni < fim && recFim > ini) return true;
+  }
+  return false;
 }
 
 // ---------- Expand recorrentes para instâncias no range visível ----------
