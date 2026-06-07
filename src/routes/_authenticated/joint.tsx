@@ -34,10 +34,16 @@ function JointPage() {
     enabled: !!auth,
     queryFn: async () => {
       const { data, error } = await supabase.from("joint_requests")
-        .select("*, agenda_eventos(titulo,inicio,tipo,consultor_id), profiles!joint_requests_consultor_id_fkey(nome)")
+        .select("*, agenda_eventos(titulo,inicio,tipo,consultor_id)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      const ids = Array.from(new Set((data ?? []).map((r: any) => r.consultor_id)));
+      const nomes: Record<string, string> = {};
+      if (ids.length) {
+        const { data: profs } = await supabase.from("profiles").select("id,nome").in("id", ids);
+        for (const p of profs ?? []) nomes[p.id] = p.nome;
+      }
+      return (data ?? []).map((r: any) => ({ ...r, consultor_nome: nomes[r.consultor_id] ?? "—" }));
     },
   });
 
