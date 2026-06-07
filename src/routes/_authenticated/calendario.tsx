@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultorScope, applyScope } from "@/hooks/useConsultorScope";
+import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +27,7 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/_authenticated/calendario")({
   head: () => ({ meta: [{ title: "Calendário — LILITO" }] }),
@@ -75,12 +78,12 @@ type DialogKind = null | "agendamento" | "lembrete" | "bloqueio" | "recorrente";
 
 function Calendario() {
   const { auth } = useAuth();
+  const { scopeIds, meuId } = useConsultorScope();
   const qc = useQueryClient();
   const [dialog, setDialog] = useState<DialogKind>(null);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [view, setView] = useState<View>("semana");
   const [anchor, setAnchor] = useState<Date>(new Date());
-  const [consultor, setConsultor] = useState<string>("me");
 
   const range = useMemo(() => {
     if (view === "dia") return { from: startOfDay(anchor), to: endOfDay(anchor) };
@@ -88,23 +91,17 @@ function Calendario() {
     return { from: startOfMonth(anchor), to: endOfMonth(anchor) };
   }, [view, anchor]);
 
-  const { data: consultores } = useQuery({
-    queryKey: ["consultores"],
-    enabled: !!auth?.isMaster,
-    queryFn: async () => (await supabase.from("profiles").select("id,nome").eq("ativo", true).order("nome")).data ?? [],
-  });
-
   const { data: eventos } = useQuery({
-    queryKey: ["agenda", range.from.toISOString(), range.to.toISOString(), consultor, auth?.user.id],
-    enabled: !!auth,
+    queryKey: ["agenda", range.from.toISOString(), range.to.toISOString(), scopeIds.join(",")],
+    enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
-      let q = supabase.from("agenda_eventos")
-        .select("*,prospects(id,nome,etapa_funil,score),clientes(id,nome),joint:joint_consultor_id(id,nome)")
-        .gte("inicio", range.from.toISOString())
-        .lte("inicio", range.to.toISOString())
-        .order("inicio");
-      if (consultor === "me") q = q.eq("consultor_id", auth!.user.id);
-      else if (consultor !== "all") q = q.eq("consultor_id", consultor);
+      const q = applyScope(
+        supabase.from("agenda_eventos")
+          .select("*,prospects(id,nome,etapa_funil,score),clientes(id,nome),joint:joint_consultor_id(id,nome)")
+          .gte("inicio", range.from.toISOString())
+          .lte("inicio", range.to.toISOString()),
+        scopeIds,
+      ).order("inicio");
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
@@ -112,28 +109,31 @@ function Calendario() {
   });
 
   const { data: recorrentes } = useQuery({
-    queryKey: ["recorrentes", auth?.user.id, consultor],
+    queryKey: ["recorrentes", scopeIds.join(",")],
     enabled: !!auth,
     queryFn: async () => {
       const { data } = await supabase.from("compromissos_recorrentes").select("*").eq("ativo", true);
       if (!data) return [];
-      if (consultor === "all" || auth?.isMaster) return data;
-      const uid = consultor === "me" ? auth!.user.id : consultor;
-      return data.filter((r: any) => (r.participantes ?? []).includes(uid) || r.criado_por === uid);
+      // Se filtro selecionou um consultor único, mostra apenas recorrentes que o incluem.
+      if (scopeIds.length === 1) {
+        const uid = scopeIds[0];
+        return data.filter((r: any) => (r.participantes ?? []).includes(uid) || r.criado_por === uid);
+      }
+      return data;
     },
   });
 
   const { data: lembretes } = useQuery({
-    queryKey: ["lembretes-cal", range.from.toISOString(), range.to.toISOString(), consultor, auth?.user.id],
-    enabled: !!auth,
+    queryKey: ["lembretes-cal", range.from.toISOString(), range.to.toISOString(), scopeIds.join(",")],
+    enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
-      let q = supabase.from("lembretes")
-        .select("*,prospects(id,nome)")
-        .gte("data", format(range.from, "yyyy-MM-dd"))
-        .lte("data", format(range.to, "yyyy-MM-dd"))
-        .order("data");
-      if (consultor === "me") q = q.eq("consultor_id", auth!.user.id);
-      else if (consultor !== "all") q = q.eq("consultor_id", consultor);
+      const q = applyScope(
+        supabase.from("lembretes")
+          .select("*,prospects(id,nome)")
+          .gte("data", format(range.from, "yyyy-MM-dd"))
+          .lte("data", format(range.to, "yyyy-MM-dd")),
+        scopeIds,
+      ).order("data");
       const { data } = await q;
       return data ?? [];
     },
@@ -145,18 +145,21 @@ function Calendario() {
   }), [anchor]);
 
   const { data: semanaEventos } = useQuery({
-    queryKey: ["agenda-semana", weekRange.from.toISOString(), consultor, auth?.user.id],
-    enabled: !!auth,
+    queryKey: ["agenda-semana", weekRange.from.toISOString(), scopeIds.join(",")],
+    enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
-      let q = supabase.from("agenda_eventos").select("tipo")
-        .gte("inicio", weekRange.from.toISOString())
-        .lte("inicio", weekRange.to.toISOString());
-      if (consultor === "me") q = q.eq("consultor_id", auth!.user.id);
-      else if (consultor !== "all") q = q.eq("consultor_id", consultor);
+      const q = applyScope(
+        supabase.from("agenda_eventos").select("tipo")
+          .gte("inicio", weekRange.from.toISOString())
+          .lte("inicio", weekRange.to.toISOString()),
+        scopeIds,
+      );
       const { data } = await q;
       return data ?? [];
     },
   });
+  void meuId;
+
 
   const counts = useMemo(() => {
     const c = { ab: 0, revisita: 0, fechamento: 0, entrega_apolice: 0 };
@@ -225,16 +228,8 @@ function Calendario() {
           <p className="caps-tracking text-gold ml-2">{periodoLabel}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={consultor} onValueChange={setConsultor}>
-            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="me">Minha agenda</SelectItem>
-              {auth?.isMaster && <SelectItem value="all">Toda a unidade</SelectItem>}
-              {auth?.isMaster && (consultores ?? []).map((c: any) => (
-                <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ConsultorFilter className="flex items-center gap-2" />
+
           <Tabs value={view} onValueChange={(v) => setView(v as View)}>
             <TabsList>
               <TabsTrigger value="dia">Dia</TabsTrigger>

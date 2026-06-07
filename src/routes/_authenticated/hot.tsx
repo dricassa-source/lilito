@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultorScope, applyScope } from "@/hooks/useConsultorScope";
+import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +18,7 @@ import { EmptyState } from "@/components/lilito/EmptyState";
 import { Flame, Phone, MessageCircle, Calendar, Clock, XCircle, PhoneOff, Brain, Users, Plus, Trash2, ListFilter } from "lucide-react";
 import { ScoreStars } from "@/components/lilito/ScoreStars";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_authenticated/hot")({
   head: () => ({ meta: [{ title: "HOT — LILITO" }] }),
@@ -38,6 +41,7 @@ type DialogState =
 function Hot() {
   const { auth } = useAuth();
   const qc = useQueryClient();
+  const { scopeIds } = useConsultorScope();
   const [dlg, setDlg] = useState<DialogState>({ kind: "none" });
   const [currentIndex, setCurrentIndex] = useState(0);
   const [listaId, setListaId] = useState<string>("geral");
@@ -60,12 +64,14 @@ function Hot() {
   );
 
   const { data: fila } = useQuery({
-    queryKey: ["hot-fila", listaId, listaSelecionada?.data_inicio, listaSelecionada?.data_fim],
-    enabled: !!auth,
+    queryKey: ["hot-fila", listaId, listaSelecionada?.data_inicio, listaSelecionada?.data_fim, scopeIds.join(",")],
+    enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
-      let q = supabase
-        .from("prospects").select("*")
-        .eq("etapa_funil", "hot").eq("status_hot", "pendente");
+      let q = applyScope(
+        supabase.from("prospects").select("*")
+          .eq("etapa_funil", "hot").eq("status_hot", "pendente"),
+        scopeIds,
+      );
       if (listaSelecionada) {
         q = q.gte("entrou_etapa_em", `${listaSelecionada.data_inicio}T00:00:00`);
         if (listaSelecionada.data_fim) {
@@ -80,6 +86,7 @@ function Hot() {
       return data ?? [];
     },
   });
+
 
   useEffect(() => { setCurrentIndex(0); }, [listaId, fila?.length]);
 
@@ -127,6 +134,9 @@ function Hot() {
   return (
     <div>
       <PageHeader eyebrow="Fila diária" title="HOT" description="Ligações priorizadas por qualificação." />
+      <ConsultorFilter />
+
+
 
       {/* Listas HOT */}
       <div className="max-w-2xl mx-auto mb-6">

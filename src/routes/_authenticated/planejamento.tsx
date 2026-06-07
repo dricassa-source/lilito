@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultorScope } from "@/hooks/useConsultorScope";
+import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +17,7 @@ import { Plus, Target } from "lucide-react";
 import { toast } from "sonner";
 import { startOfMonth, endOfMonth } from "date-fns";
 
+
 export const Route = createFileRoute("/_authenticated/planejamento")({
   head: () => ({ meta: [{ title: "Planejamento — LILITO" }] }),
   component: Planejamento,
@@ -25,6 +28,8 @@ function formatBRL(n: number) { return `R$ ${Math.round(n).toLocaleString("pt-BR
 function Planejamento() {
   const { auth } = useAuth();
   const isMaster = auth?.isMaster ?? false;
+  const { scopeIds, consultorId } = useConsultorScope();
+
   const qc = useQueryClient();
   const now = new Date();
   const [ano] = useState(now.getFullYear());
@@ -68,7 +73,11 @@ function Planejamento() {
   });
 
   const linhas = useMemo(() => {
-    const list = isMaster ? (consultores ?? []) : (consultores ?? []).filter((c) => c.id === auth?.user.id);
+    const base = consultorId
+      ? (consultores ?? []).filter((c) => c.id === consultorId)
+      : isMaster ? (consultores ?? []) : (consultores ?? []).filter((c) => c.id === auth?.user.id);
+    const list = base.filter((c) => scopeIds.includes(c.id));
+
     return list.map((c) => {
       const meta = metas?.find((m: any) => m.consultor_id === c.id);
       const rows = (producao ?? []).filter((p: any) => p.consultor_id === c.id);
@@ -87,7 +96,7 @@ function Planejamento() {
         faltante: Math.max(0, metaPa - proj),
       };
     });
-  }, [consultores, metas, producao, isMaster, auth, monthStart, monthEnd]);
+  }, [consultores, metas, producao, isMaster, auth, monthStart, monthEnd, consultorId, scopeIds]);
 
   const totalMeta = linhas.reduce((s, l) => s + l.metaPa, 0);
   const totalProj = linhas.reduce((s, l) => s + l.proj, 0);
@@ -102,6 +111,8 @@ function Planejamento() {
             onSaved={() => qc.invalidateQueries({ queryKey: ["metas"] })} />
         ) : undefined}
       />
+      <ConsultorFilter />
+
 
       {isMaster && (
         <Card className="p-5 bg-surface border-gold/30 mb-6">

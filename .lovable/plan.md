@@ -1,90 +1,60 @@
-# CORREÇÃO GLOBAL 08 — Plano de execução
+# CORREÇÃO GLOBAL 01 — Plano
 
-Vou implementar em **3 frentes coordenadas**, mantendo identidade visual atual da LILITO e usando exclusivamente componentes já existentes (`ScoreStars`, `PageHeader`, `Card`, etc.).
+Implementar um **filtro unificado de consultor** que rege todos os módulos, eliminando a necessidade de cada tela ter seu próprio toggle.
 
----
+## 1. Núcleo compartilhado (novos arquivos)
 
-## 1. MÓDULO RECOMENDAÇÕES (`src/routes/_authenticated/recomendacoes.tsx`)
+**`src/hooks/useConsultorScope.ts`**
+- Retorna `{ isMaster, consultores, consultorId, setConsultorId, scopeIds }`.
+- `consultorId`:
+  - Consultor → forçado ao próprio `auth.user.id` (não editável).
+  - Master → `null` = Unidade Consolidada, ou um `consultor_id` selecionado.
+- Persistência em `localStorage` (`lilito.scope.consultorId`) → seleção do master segue entre módulos.
+- `scopeIds`: array de IDs a aplicar nos `.in("consultor_id", …)` (Unidade = todos os consultores ativos; um consultor = `[id]`).
 
-### Score / ORN-E
-- **Migration**: ajustar trigger `prospects_calc_score()` para garantir score mínimo = 1 (nunca null), e dar peso correto à **profissão médica + renda alta**. Adicionar BEFORE INSERT trigger (hoje só roda em UPDATE provavelmente).
-- **Backfill**: rodar UPDATE em todos prospects sem score para recalcular.
-- Remover badges numéricos "20/29/15" → substituir por `<ScoreStars score={...} />`.
+**`src/components/lilito/ConsultorFilter.tsx`**
+- Renderiza um `<Select>` no topo da página.
+- Master: opções `Unidade (Consolidado)` + lista de consultores ativos.
+- Consultor: não renderiza nada (visão fixa).
+- Usado em **todos** os módulos abaixo, sempre no mesmo lugar (logo abaixo do `PageHeader`).
 
-### Tempo na etapa
-- Helper `tempoEtapaCor(dias)` → 🟢 (≤7), 🟡 (8-14), 🔴 (>14).
-- Aplicar como bolinha colorida ao lado do "X dias".
+## 2. Módulos a atualizar
 
-### Cabeçalho
-- Trocar descrição do `PageHeader` para "Prospects da unidade" (mais curto).
+Para cada um: trocar a lógica atual de filtragem por `useConsultorScope` + montar query com `.in("consultor_id", scopeIds)` (ou `.eq` quando individual). O `queryKey` inclui `consultorId` para invalidar ao trocar.
 
-### Recursos adicionais
-- Botão "Ranking de Recomendantes" → modal/sheet listando top recomendantes (agregado de `prospects` por `recomendado_por`).
-- Toggle "Mostrar perdidos" → filtro extra que inclui `etapa_funil = 'perdido'`.
+| Módulo | Arquivo |
+|---|---|
+| Meu Dia | `index.tsx` |
+| Dashboard | `dashboard.tsx` (substitui toggle atual) |
+| Recomendações | `recomendacoes.tsx` |
+| HOT | `hot.tsx` |
+| Funil | `funil.tsx` |
+| Calendário | `calendario.tsx` |
+| Em Delay | `em-delay.tsx` |
+| Onboarding | `onboarding.tsx` |
+| Clientes | `clientes.tsx` |
+| Apólices | `apolices.tsx` |
+| Resultado Semanal | `resultado-semanal.tsx` (substitui toggle atual) |
+| Planejamento | `planejamento.tsx` |
+| Auditoria | `auditoria.tsx` |
+| Atividades | `atividades.tsx` |
+| Lembretes | `lembretes.tsx` |
+| Pós-Venda | `pos-venda.tsx` |
+| Joint | `joint.tsx` (mantém lógica de requests; filtra por escopo) |
 
----
+## 3. Regras
 
-## 2. MÓDULO MEU DIA (`src/routes/_authenticated/index.tsx`)
+- **Consultor**: filtro oculto; queries sempre `eq("consultor_id", auth.user.id)`.
+- **Master**: filtro visível; padrão = Unidade (consolidado). Ao escolher consultor X, todas queries reagem.
+- **Sem duplicação de telas**: mesmo componente serve para os dois perfis.
+- **Sem novos módulos**: só patch nos existentes.
+- **Visual**: mantém padrão LILITO (Select já existente no design system).
 
-### Remover da área nobre
-- Bloco "Gestão da Unidade" inteiro (Consultores Ativos / Planos Semana / PA Semana / PA Mês / Ranking) — esses indicadores migram para Dashboard.
-- Cultura VINCA → rodapé.
-- Aniversariantes → rodapé.
+## 4. Fora de escopo
 
-### Adicionar (em ordem, área nobre)
-1. **Resumo Rápido** (4 cards clicáveis): Follow-ups vencidos, Reuniões hoje, HOTs pendentes, Em Delay.
-2. **Botão "Iniciar Ligações"** → link `/hot`.
-3. **Desafios do Dia** — bloco simples com checklist em `localStorage` por usuário/dia (sem schema novo). Botão "+" para adicionar.
-4. **Minha Agenda** — mini lista da semana (próximos 7 dias) de `agenda_eventos` do usuário + botão "Abrir Calendário Completo".
-5. **Follow-ups Vencidos** — lista com nome, telefone, dias de atraso, botões WhatsApp + Calendário.
-6. **Reuniões do Dia** — lista de eventos do dia por tipo (AB, Revisita, Fechamento, Entrega, Joint).
-7. **Alertas Operacionais** — prospects parados >7d, delays ativos, eventos sem resultado.
+- Schema/migrations — nenhuma alteração no banco.
+- Identidade visual.
+- Sidebar.
+- Lógica interna de cada módulo (apenas a fonte do filtro).
 
-### Rodapé
-- Aniversariantes + Cultura VINCA.
-
----
-
-## 3. MÓDULO DASHBOARD (`src/routes/_authenticated/dashboard.tsx`)
-
-Reescrever em **blocos gerenciais**, com toggle Master (Individual/Equipe + filtro consultor):
-
-1. **Produção**: PA Fechado, PA Emitido, Capital Segurado, Comissão Projetada (60% PA emitido).
-2. **Funil** (contagem por etapa): Recomendação, HOT, AB, Fechamento, Onboarding, Clientes.
-3. **Conversão**: taxas HOT→AB, AB→Fechamento, Fechamento→Onboarding, Onboarding→Cliente.
-4. **Equipe** (só Master): ranking por PA, Capital Segurado, Recomendações, Reuniões realizadas — com tabs.
-5. **Onboarding**: Propostas em onboarding, PA pendente, Capital pendente.
-6. **Delays**: AB, Revisita, Fechamento, Entrega de Apólice (contagem).
-7. **Qualidade**: Eventos sem resultado, Delays abandonados (>30d), Recomendações incompletas, Score médio.
-
----
-
-## 4. ScoreStars aplicado globalmente
-
-Inserir/garantir `<ScoreStars>` em:
-- HOT ✅ (já existe)
-- Calendário ✅ (já existe)
-- Em Delay ✅ (já existe)
-- Recomendações 🔧 (substituir números ORN-E)
-- Meu Dia 🔧 (em Follow-ups e Reuniões)
-- Dashboard 🔧 (no ranking)
-- Funil 🔧 (nos cards de prospect)
-- Cadastro do Prospect 🔧 (header da modal de detalhe)
-
----
-
-## Arquivos a editar
-1. `supabase/migrations/XXXX_score_fix.sql` — fix trigger + BEFORE INSERT + backfill
-2. `src/routes/_authenticated/recomendacoes.tsx`
-3. `src/routes/_authenticated/index.tsx` (Meu Dia)
-4. `src/routes/_authenticated/dashboard.tsx`
-5. `src/routes/_authenticated/funil.tsx` — adicionar ScoreStars nos cards
-6. `src/components/lilito/ScoreStars.tsx` — pequeno helper `<TempoEtapa>` se útil
-
-## Fora de escopo (manter como está)
-- Sidebar
-- Auth
-- Schema de outras tabelas
-- Identidade visual / tokens de cor
-
-Após sua aprovação, executo migration → atualizo os 3 módulos principais → propago ScoreStars nos demais.
+Aprovação para executar?

@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultorScope, applyScope } from "@/hooks/useConsultorScope";
+import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +18,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 
+
 export const Route = createFileRoute("/_authenticated/lembretes")({
   head: () => ({ meta: [{ title: "Lembretes — LILITO" }] }),
   component: Lembretes,
@@ -24,17 +27,21 @@ export const Route = createFileRoute("/_authenticated/lembretes")({
 function Lembretes() {
   const { auth } = useAuth();
   const qc = useQueryClient();
+  const { scopeIds } = useConsultorScope();
 
   const { data } = useQuery({
-    queryKey: ["lembretes", auth?.user.id],
-    enabled: !!auth,
+    queryKey: ["lembretes", scopeIds.join(",")],
+    enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase.from("lembretes")
-        .select("*, prospects(nome)").order("concluido").order("data").order("hora");
+      const { data, error } = await applyScope(
+        supabase.from("lembretes").select("*, prospects(nome)"),
+        scopeIds,
+      ).order("concluido").order("data").order("hora");
       if (error) throw error;
       return data ?? [];
     },
   });
+
 
   const toggle = useMutation({
     mutationFn: async ({ id, concluido }: { id: string; concluido: boolean }) => {
@@ -54,6 +61,9 @@ function Lembretes() {
       <PageHeader eyebrow="Tarefas" title="Lembretes"
         description="Não ocupam horário. Aparecem no Meu Dia até serem concluídos."
         actions={<NovoLembrete onSaved={() => qc.invalidateQueries({ queryKey: ["lembretes"] })} />} />
+      <ConsultorFilter />
+
+
 
       <p className="caps-tracking text-gold mb-3 flex items-center gap-2">
         <Bell className="h-3.5 w-3.5" /> Pendentes ({pendentes.length})

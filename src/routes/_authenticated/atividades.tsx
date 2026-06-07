@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultorScope, applyScope } from "@/hooks/useConsultorScope";
+import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/lilito/EmptyState";
@@ -16,12 +18,15 @@ export const Route = createFileRoute("/_authenticated/atividades")({
 
 function Atividades() {
   const { auth } = useAuth();
+  const { scopeIds } = useConsultorScope();
   const { data } = useQuery({
-    queryKey: ["atividades"],
-    enabled: !!auth,
+    queryKey: ["atividades", scopeIds.join(",")],
+    enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase.from("atividades")
-        .select("*,prospects(nome)").order("created_at", { ascending: false }).limit(100);
+      const { data, error } = await applyScope(
+        supabase.from("atividades").select("*,prospects(nome)"),
+        scopeIds,
+      ).order("created_at", { ascending: false }).limit(100);
       if (error) throw error;
       return data ?? [];
     },
@@ -30,6 +35,7 @@ function Atividades() {
   return (
     <div>
       <PageHeader eyebrow="Produtividade" title="Atividades" description="Histórico completo de interações." />
+      <ConsultorFilter />
       {!data || data.length === 0 ? (
         <EmptyState icon={ListChecks} title="Sem atividades ainda" description="Cada ligação, agendamento e fechamento aparecerá aqui." />
       ) : (

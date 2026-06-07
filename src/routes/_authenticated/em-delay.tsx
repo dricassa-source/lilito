@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useConsultorScope, applyScope } from "@/hooks/useConsultorScope";
+import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +17,7 @@ import { ScoreStars } from "@/components/lilito/ScoreStars";
 import { AlertTriangle, Phone, MessageCircle, CalendarClock, Clock3, XCircle, Unplug } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_authenticated/em-delay")({
   head: () => ({ meta: [{ title: "Em Delay — LILITO" }] }),
@@ -34,27 +37,28 @@ const ETAPA_LABEL: Record<string, string> = {
 function EmDelay() {
   const { auth } = useAuth();
   const qc = useQueryClient();
+  const { scopeIds } = useConsultorScope();
   const [perdaOpen, setPerdaOpen] = useState<any | null>(null);
   const [motivo, setMotivo] = useState("");
   const [reagendar, setReagendar] = useState<any | null>(null);
 
   const { data: delays } = useQuery({
-    queryKey: ["em-delay", auth?.user.id, auth?.isMaster],
-    enabled: !!auth,
+    queryKey: ["em-delay", scopeIds.join(",")],
+    enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
-      let q = supabase.from("agenda_eventos")
-        .select("*,prospects(id,nome,telefone,score,etapa_funil)")
-        .not("delay_em", "is", null)
-        .eq("delay_resolvido", false)
-        .order("delay_em", { ascending: false });
-      if (!auth?.isMaster) q = q.eq("consultor_id", auth!.user.id);
+      const q = applyScope(
+        supabase.from("agenda_eventos")
+          .select("*,prospects(id,nome,telefone,score,etapa_funil)")
+          .not("delay_em", "is", null)
+          .eq("delay_resolvido", false),
+        scopeIds,
+      ).order("delay_em", { ascending: false });
       const { data, error } = await q;
       if (error) throw error;
       const rows = (data ?? []).filter((d: any) => {
         const etapa = d.etapa_origem ?? d.tipo;
         return ETAPAS_ELEGIVEIS.includes(etapa);
       });
-      // Fetch consultor profiles separately (no FK to public.profiles)
       const ids = Array.from(new Set(rows.map((r: any) => r.consultor_id).filter(Boolean)));
       let profiles: Record<string, { id: string; nome: string }> = {};
       if (ids.length) {
@@ -64,6 +68,7 @@ function EmDelay() {
       return rows.map((r: any) => ({ ...r, consultor: profiles[r.consultor_id] ?? null }));
     },
   });
+
 
 
   const invalidate = () => {
@@ -127,7 +132,9 @@ function EmDelay() {
   return (
     <div>
       <PageHeader eyebrow="Resgate" title="Em Delay" description="Compromissos travados aguardando ação. Onboarding não entra nesta fila." />
+      <ConsultorFilter />
       {!delays || delays.length === 0 ? (
+
         <EmptyState icon={AlertTriangle} title="Nada travado" description="Sua operação está fluindo bem." />
       ) : (
         <Card className="bg-surface border-border">

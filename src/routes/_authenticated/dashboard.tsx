@@ -2,12 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useConsultorScope, applyScope } from "@/hooks/useConsultorScope";
+import { ConsultorFilter } from "@/components/lilito/ConsultorFilter";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/lilito/PageHeader";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import { ScoreStars } from "@/components/lilito/ScoreStars";
 import { useMemo, useState } from "react";
 
@@ -41,44 +40,21 @@ function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode
 
 function Dashboard() {
   const { auth } = useAuth();
-  const isMaster = auth?.isMaster ?? false;
-  const [scope, setScope] = useState<"individual" | "equipe">(isMaster ? "equipe" : "individual");
-  const [consultorFiltro, setConsultorFiltro] = useState<string>("all");
-
-  const { data: consultores } = useQuery({
-    queryKey: ["dash-consultores"],
-    enabled: isMaster,
-    queryFn: async () => {
-      const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "consultor");
-      const ids = (roles ?? []).map((r) => r.user_id);
-      if (!ids.length) return [];
-      const { data } = await supabase.from("profiles").select("id,nome").in("id", ids).eq("ativo", true);
-      return data ?? [];
-    },
-  });
-
-  const consultorId = scope === "individual"
-    ? auth?.user.id
-    : consultorFiltro !== "all" ? consultorFiltro : null;
+  const { isMaster, scopeIds, consultorId } = useConsultorScope();
+  const mostrarEquipe = isMaster && !consultorId; // Unidade (consolidado)
 
   const { data } = useQuery({
-    queryKey: ["dashboard-v2", scope, consultorId, auth?.user.id],
-    enabled: !!auth,
+    queryKey: ["dashboard-v2", scopeIds.join(","), auth?.user.id],
+    enabled: !!auth && scopeIds.length > 0,
     queryFn: async () => {
-      const eqConsultor = <T extends { eq: any }>(q: T): T => (consultorId ? q.eq("consultor_id", consultorId) : q);
-
       const [prospects, apolices, clientes, agenda, atividades] = await Promise.all([
-        eqConsultor(supabase.from("prospects").select("id,etapa_funil,pa_estimado,score,consultor_id"))
-          .then((r) => r.data ?? []),
-        eqConsultor(supabase.from("apolices").select("id,premio_atual,capital_segurado,status,consultor_id,onboarding_status"))
-          .then((r) => r.data ?? []),
-        eqConsultor(supabase.from("clientes").select("id,pa_total,capital_segurado,consultor_id"))
-          .then((r) => r.data ?? []),
-        eqConsultor(supabase.from("agenda_eventos").select("id,tipo,resultado,fim,delay_em,delay_resolvido,etapa_origem,consultor_id"))
-          .then((r) => r.data ?? []),
-        eqConsultor(supabase.from("atividades").select("id,tipo,prospect_id,consultor_id"))
-          .then((r) => r.data ?? []),
+        applyScope(supabase.from("prospects").select("id,etapa_funil,pa_estimado,score,consultor_id"), scopeIds).then((r) => r.data ?? []),
+        applyScope(supabase.from("apolices").select("id,premio_atual,capital_segurado,status,consultor_id,onboarding_status"), scopeIds).then((r) => r.data ?? []),
+        applyScope(supabase.from("clientes").select("id,pa_total,capital_segurado,consultor_id"), scopeIds).then((r) => r.data ?? []),
+        applyScope(supabase.from("agenda_eventos").select("id,tipo,resultado,fim,delay_em,delay_resolvido,etapa_origem,consultor_id"), scopeIds).then((r) => r.data ?? []),
+        applyScope(supabase.from("atividades").select("id,tipo,prospect_id,consultor_id"), scopeIds).then((r) => r.data ?? []),
       ]);
+
 
       // Funil
       const funil = {
@@ -141,9 +117,9 @@ function Dashboard() {
         ? (prospects as any[]).reduce((s, p) => s + (p.score ?? 1), 0) / prospects.length
         : 0;
 
-      // Equipe (só faz sentido em scope=equipe sem filtro)
+      // Equipe (só faz sentido em visão Unidade consolidada)
       let equipe: { id: string; nome: string; pa: number; capital: number; recos: number; reunioes: number }[] = [];
-      if (scope === "equipe") {
+      if (mostrarEquipe) {
         const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "consultor");
         const ids = (roles ?? []).map((r) => r.user_id);
         if (ids.length) {
@@ -177,6 +153,7 @@ function Dashboard() {
       }
       void atividades;
 
+
       return {
         funil, paFechado, paEmitido, capitalSegurado, comissao, conv,
         onb: { count: onbApolices.length, pa: onbPa, cap: onbCap },
@@ -196,25 +173,8 @@ function Dashboard() {
     <div>
       <PageHeader eyebrow="Gestão" title="Dashboard" description="Visão executiva — produção, funil, conversão, equipe e qualidade." />
 
-      {isMaster && (
-        <div className="flex flex-wrap gap-3 mb-6">
-          <Tabs value={scope} onValueChange={(v) => setScope(v as any)}>
-            <TabsList className="bg-surface border border-border">
-              <TabsTrigger value="individual">Individual</TabsTrigger>
-              <TabsTrigger value="equipe">Equipe</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          {scope === "equipe" && (consultores ?? []).length > 0 && (
-            <Select value={consultorFiltro} onValueChange={setConsultorFiltro}>
-              <SelectTrigger className="w-56"><SelectValue placeholder="Filtrar consultor" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toda a equipe</SelectItem>
-                {(consultores ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
-      )}
+      <ConsultorFilter />
+
 
       <Bloco titulo="Produção">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -277,7 +237,7 @@ function Dashboard() {
         </div>
       </Bloco>
 
-      {isMaster && scope === "equipe" && (
+      {mostrarEquipe && (
         <Bloco titulo="Equipe — Ranking">
           <Card className="p-6 bg-surface border-border">
             <Tabs value={rankBy} onValueChange={(v) => setRankBy(v as any)} className="mb-4">
