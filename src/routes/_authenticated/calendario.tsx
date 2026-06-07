@@ -633,7 +633,7 @@ function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?
     queryFn: async () => (await supabase.from("prospects").select("id,nome").order("nome")).data ?? [],
   });
   const { data: consultores } = useQuery({
-    queryKey: ["consultores-all"], enabled: !!auth?.isMaster,
+    queryKey: ["consultores-all"], enabled: !!auth,
     queryFn: async () => (await supabase.from("profiles").select("id,nome").eq("ativo", true).order("nome")).data ?? [],
   });
 
