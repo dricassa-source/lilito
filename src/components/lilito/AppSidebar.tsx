@@ -77,17 +77,20 @@ const masterItems = [
 
 
 export function AppSidebar({ isMaster }: { isMaster: boolean }) {
-  const { state } = useSidebar();
+  const { state, setOpenMobile } = useSidebar();
+  const isMobile = useIsMobile();
   const collapsed = state === "collapsed";
   const path = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
   const isActive = (url: string) => path === url || (url !== "/" && path.startsWith(url));
   const delaysCount = useDelaysCount();
+  const closeIfMobile = () => { if (isMobile) setOpenMobile(false); };
 
   async function signOut() {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
+
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
