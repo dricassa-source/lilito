@@ -71,7 +71,7 @@ const NATUREZA_COLOR: Record<string, { bg: string; border: string; text: string;
 };
 
 type View = "dia" | "semana" | "mes";
-type DialogKind = null | "agendamento" | "lembrete" | "bloqueio";
+type DialogKind = null | "agendamento" | "lembrete" | "bloqueio" | "recorrente";
 
 function Calendario() {
   const { auth } = useAuth();
