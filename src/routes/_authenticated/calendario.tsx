@@ -175,10 +175,17 @@ function Calendario() {
     : view === "semana" ? `${format(weekRange.from, "dd MMM", { locale: ptBR })} — ${format(weekRange.to, "dd MMM yyyy", { locale: ptBR })}`
     : format(anchor, "MMMM yyyy", { locale: ptBR });
 
+  const eventosComRecorrentes = useMemo(() => {
+    const base = eventos ?? [];
+    const inst = expandirRecorrentes(recorrentes ?? [], range.from, range.to);
+    return [...base, ...inst];
+  }, [eventos, recorrentes, range.from, range.to]);
+
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["agenda"] });
     qc.invalidateQueries({ queryKey: ["agenda-semana"] });
     qc.invalidateQueries({ queryKey: ["lembretes-cal"] });
+    qc.invalidateQueries({ queryKey: ["recorrentes"] });
     qc.invalidateQueries({ queryKey: ["em-delay"] });
     qc.invalidateQueries({ queryKey: ["funil"] });
   };
