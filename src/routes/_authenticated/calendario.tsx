@@ -228,16 +228,8 @@ function Calendario() {
           <p className="caps-tracking text-gold ml-2">{periodoLabel}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={consultor} onValueChange={setConsultor}>
-            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="me">Minha agenda</SelectItem>
-              {auth?.isMaster && <SelectItem value="all">Toda a unidade</SelectItem>}
-              {auth?.isMaster && (consultores ?? []).map((c: any) => (
-                <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ConsultorFilter className="flex items-center gap-2" />
+
           <Tabs value={view} onValueChange={(v) => setView(v as View)}>
             <TabsList>
               <TabsTrigger value="dia">Dia</TabsTrigger>
