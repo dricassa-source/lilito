@@ -160,6 +160,3 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "ok
     </Card>
   );
 }
-
-// Force-unused suppressor for Badge import (kept for future)
-void Badge;
