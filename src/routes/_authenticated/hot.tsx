@@ -256,8 +256,9 @@ function Hot() {
                             {idx + 1}
                           </span>
                           <div className="min-w-0">
-                            <p className={`font-display text-lg truncate ${isAtual ? "text-gold" : "text-foreground"}`}>
-                              {p.nome}
+                            <p className={`font-display text-lg truncate flex items-center gap-2 ${isAtual ? "text-gold" : "text-foreground"}`}>
+                              <span className="truncate">{p.nome}</span>
+                              <ScoreStars score={p.score} />
                             </p>
                             <p className="text-sm text-muted-foreground mt-0.5 truncate">
                               {p.especialidade_medica ?? "—"}
