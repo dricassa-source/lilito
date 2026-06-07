@@ -352,19 +352,31 @@ function EventBlock({ e, day, onSelect }: { e: any; day: Date; onSelect: (e: any
   const height = (durMin / 60) * SLOT_HEIGHT;
   const c = NATUREZA_COLOR[e.tipo] ?? NATUREZA_COLOR.review;
   const nome = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
+  const hasDelay = !!e.delay_em;
+  const delayAtivo = hasDelay && !e.delay_resolvido;
+  const isRecorrente = e.__recorrente === true;
   return (
     <button
       type="button"
-      onClick={() => onSelect(e)}
+      onClick={() => !isRecorrente && onSelect(e)}
       className={cn(
         "absolute left-1 right-1 rounded-md border px-2 py-1 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer",
         c.bg, c.border,
+        hasDelay && "border-2 border-destructive",
+        isRecorrente && "cursor-default",
       )}
       style={{ top, height }}
-      title={`${nome} — ${TIPO_LABEL[e.tipo] ?? e.tipo}`}
+      title={`${nome} — ${TIPO_LABEL[e.tipo] ?? e.tipo}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
     >
-      <p className={cn("text-xs font-medium truncate", c.text)}>{format(start, "HH:mm")} {nome}</p>
-      <p className="text-[10px] text-muted-foreground caps-tracking truncate">{TIPO_LABEL[e.tipo] ?? e.tipo}</p>
+      {delayAtivo && <Flag className="absolute top-0.5 right-0.5 h-3 w-3 text-destructive fill-destructive" />}
+      <p className={cn("text-xs font-medium truncate flex items-center gap-1", c.text)}>
+        {format(start, "HH:mm")} {nome}
+        {e.prospects?.score ? <ScoreStars score={e.prospects.score} /> : null}
+      </p>
+      <p className="text-[10px] text-muted-foreground caps-tracking truncate">
+        {TIPO_LABEL[e.tipo] ?? e.tipo}
+        {e.joint?.nome ? ` · Joint c/ ${e.joint.nome}` : ""}
+      </p>
     </button>
   );
 }
