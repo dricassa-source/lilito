@@ -101,13 +101,14 @@ function MeuDia() {
     queryKey: ["meu-dia-agenda-semana", scopeKey],
     enabled: !!uid && scopeIds.length > 0,
     queryFn: async () => {
-      const end = addDays(today, 7).toISOString();
+      const weekStart = startOfDay(today);
+      const end = endOfDay(addDays(weekStart, 6)).toISOString();
       const { data } = await applyScope(
         supabase.from("agenda_eventos")
-          .select("id,titulo,tipo,inicio")
-          .gte("inicio", dayStart).lte("inicio", end),
+          .select("id,titulo,tipo,inicio,prospect_id,delay_em,delay_resolvido")
+          .gte("inicio", weekStart.toISOString()).lte("inicio", end),
         scopeIds,
-      ).order("inicio", { ascending: true }).limit(10);
+      ).order("inicio", { ascending: true });
       return data ?? [];
     },
   });
@@ -122,8 +123,38 @@ function MeuDia() {
           .lte("follow_up_em", new Date().toISOString())
           .not("follow_up_em", "is", null),
         scopeIds,
-      ).order("follow_up_em", { ascending: true }).limit(8);
-      return data ?? [];
+      ).order("follow_up_em", { ascending: true }).limit(50);
+      // Dedupe por prospect_id (mantém o mais antigo = mais atrasado)
+      const seen = new Set<string>();
+      const dedup: any[] = [];
+      for (const a of data ?? []) {
+        const key = a.prospect_id ?? a.id;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        dedup.push(a);
+      }
+      return dedup.slice(0, 8);
+    },
+  });
+
+  const { data: aniversariantes } = useQuery({
+    queryKey: ["meu-dia-aniversariantes", scopeKey],
+    enabled: !!uid && scopeIds.length > 0,
+    queryFn: async () => {
+      const { data } = await applyScope(
+        supabase.from("prospects")
+          .select("id,nome,data_nascimento,telefone,etapa_funil")
+          .not("data_nascimento", "is", null),
+        scopeIds,
+      );
+      const now = new Date();
+      const list = (data ?? []).map((p: any) => {
+        const dn = new Date(p.data_nascimento);
+        const proximo = new Date(now.getFullYear(), dn.getMonth(), dn.getDate());
+        if (proximo < startOfDay(now)) proximo.setFullYear(now.getFullYear() + 1);
+        return { ...p, proximo, diasFaltam: differenceInDays(startOfDay(proximo), startOfDay(now)) };
+      }).sort((a, b) => a.diasFaltam - b.diasFaltam);
+      return list;
     },
   });
 
