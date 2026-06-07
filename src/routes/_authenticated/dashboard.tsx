@@ -4,94 +4,311 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/lilito/PageHeader";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useState } from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { ScoreStars } from "@/components/lilito/ScoreStars";
+import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — LILITO" }] }),
   component: Dashboard,
 });
 
-function KPI({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+function brl(n: number | null | undefined) {
+  return `R$ ${Math.round(Number(n ?? 0)).toLocaleString("pt-BR")}`;
+}
+
+function KPI({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent?: boolean }) {
   return (
-    <Card className="p-5 bg-surface border-border">
-      <p className="caps-tracking text-muted-foreground">{label}</p>
-      <p className="font-display text-3xl text-foreground mt-2">{value}</p>
+    <Card className={`p-5 bg-surface ${accent ? "border-gold/40" : "border-border"}`}>
+      <p className="caps-tracking text-muted-foreground text-[0.6rem]">{label}</p>
+      <p className={`font-display text-3xl mt-2 ${accent ? "text-gold" : "text-foreground"}`}>{value}</p>
       {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
     </Card>
   );
 }
 
+function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <section className="mb-8">
+      <p className="caps-tracking text-gold mb-3 text-[0.65rem]">{titulo}</p>
+      {children}
+    </section>
+  );
+}
+
 function Dashboard() {
   const { auth } = useAuth();
-  const [scope, setScope] = useState<"individual" | "equipe">("individual");
   const isMaster = auth?.isMaster ?? false;
-  const onlyMine = scope === "individual" || !isMaster;
+  const [scope, setScope] = useState<"individual" | "equipe">(isMaster ? "equipe" : "individual");
+  const [consultorFiltro, setConsultorFiltro] = useState<string>("all");
+
+  const { data: consultores } = useQuery({
+    queryKey: ["dash-consultores"],
+    enabled: isMaster,
+    queryFn: async () => {
+      const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "consultor");
+      const ids = (roles ?? []).map((r) => r.user_id);
+      if (!ids.length) return [];
+      const { data } = await supabase.from("profiles").select("id,nome").in("id", ids).eq("ativo", true);
+      return data ?? [];
+    },
+  });
+
+  const consultorId = scope === "individual"
+    ? auth?.user.id
+    : consultorFiltro !== "all" ? consultorFiltro : null;
 
   const { data } = useQuery({
-    queryKey: ["dashboard", scope, auth?.user.id],
+    queryKey: ["dashboard-v2", scope, consultorId, auth?.user.id],
     enabled: !!auth,
     queryFn: async () => {
-      const base = (q: any) => (onlyMine && auth ? q.eq("consultor_id", auth.user.id) : q);
-      const [hot, ab, fech, clientes, prospects, ranking] = await Promise.all([
-        base(supabase.from("prospects").select("*", { count: "exact", head: true }).eq("etapa_funil", "hot")),
-        base(supabase.from("prospects").select("*", { count: "exact", head: true }).eq("etapa_funil", "ab")),
-        base(supabase.from("prospects").select("*", { count: "exact", head: true }).eq("etapa_funil", "fechamento")),
-        base(supabase.from("clientes").select("*", { count: "exact", head: true })),
-        base(supabase.from("prospects").select("pa_estimado")),
-        isMaster ? supabase.from("profiles").select("id,nome").eq("ativo", true) : Promise.resolve({ data: [] as any[] }),
+      const eqConsultor = <T extends { eq: any }>(q: T): T => (consultorId ? q.eq("consultor_id", consultorId) : q);
+
+      const [prospects, apolices, clientes, agenda, atividades] = await Promise.all([
+        eqConsultor(supabase.from("prospects").select("id,etapa_funil,pa_estimado,score,consultor_id"))
+          .then((r) => r.data ?? []),
+        eqConsultor(supabase.from("apolices").select("id,premio_atual,capital_segurado,status,consultor_id,onboarding_status"))
+          .then((r) => r.data ?? []),
+        eqConsultor(supabase.from("clientes").select("id,pa_total,capital_segurado,consultor_id"))
+          .then((r) => r.data ?? []),
+        eqConsultor(supabase.from("agenda_eventos").select("id,tipo,resultado,fim,delay_em,delay_resolvido,etapa_origem,consultor_id"))
+          .then((r) => r.data ?? []),
+        eqConsultor(supabase.from("atividades").select("id,tipo,prospect_id,consultor_id"))
+          .then((r) => r.data ?? []),
       ]);
-      const paTotal = (prospects.data ?? []).reduce((s: number, r: any) => s + Number(r.pa_estimado ?? 0), 0);
+
+      // Funil
+      const funil = {
+        recomendacao: 0, hot: 0, ab: 0, fechamento: 0, onboarding: 0, cliente: 0,
+      };
+      for (const p of prospects as any[]) {
+        switch (p.etapa_funil) {
+          case "recomendacao": funil.recomendacao++; break;
+          case "hot": funil.hot++; break;
+          case "ab": funil.ab++; break;
+          case "fechamento": funil.fechamento++; break;
+          case "implantacao": funil.onboarding++; break;
+          case "cliente":
+          case "pos_venda": funil.cliente++; break;
+        }
+      }
+
+      // Produção
+      const paFechado = (apolices as any[])
+        .filter((a) => ["fechado", "migrado", "emitido"].includes(a.status))
+        .reduce((s, a) => s + Number(a.premio_atual ?? 0), 0);
+      const paEmitido = (apolices as any[])
+        .filter((a) => a.status === "migrado" || a.status === "emitido")
+        .reduce((s, a) => s + Number(a.premio_atual ?? 0), 0);
+      const capitalSegurado = (apolices as any[])
+        .filter((a) => a.status === "migrado" || a.status === "emitido")
+        .reduce((s, a) => s + Number(a.capital_segurado ?? 0), 0);
+      const comissao = paEmitido * 0.6;
+
+      // Conversão (Funil)
+      const taxa = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
+      const conv = {
+        hotAb: taxa(funil.ab + funil.fechamento + funil.onboarding + funil.cliente, funil.hot + funil.ab + funil.fechamento + funil.onboarding + funil.cliente),
+        abFech: taxa(funil.fechamento + funil.onboarding + funil.cliente, funil.ab + funil.fechamento + funil.onboarding + funil.cliente),
+        fechOnb: taxa(funil.onboarding + funil.cliente, funil.fechamento + funil.onboarding + funil.cliente),
+        onbCli: taxa(funil.cliente, funil.onboarding + funil.cliente),
+      };
+
+      // Onboarding
+      const onbApolices = (apolices as any[]).filter((a) => a.onboarding_status && a.onboarding_status !== "concluido");
+      const onbPa = onbApolices.reduce((s, a) => s + Number(a.premio_atual ?? 0), 0);
+      const onbCap = onbApolices.reduce((s, a) => s + Number(a.capital_segurado ?? 0), 0);
+
+      // Delays por etapa de origem
+      const delaysAtivos = (agenda as any[]).filter((e) => e.delay_em && !e.delay_resolvido);
+      const delaysPorEtapa = {
+        ab: delaysAtivos.filter((e) => e.etapa_origem === "ab").length,
+        revisita: delaysAtivos.filter((e) => e.etapa_origem === "revisita").length,
+        fechamento: delaysAtivos.filter((e) => e.etapa_origem === "fechamento").length,
+        entrega: delaysAtivos.filter((e) => e.etapa_origem === "entrega_apolice").length,
+      };
+
+      // Qualidade
+      const eventosPassados = (agenda as any[]).filter((e) => new Date(e.fim) < new Date());
+      const semResultado = eventosPassados.filter((e) => !e.resultado).length;
+      const trintaDiasAtras = Date.now() - 30 * 86_400_000;
+      const delaysAbandonados = delaysAtivos.filter((e) => new Date(e.delay_em).getTime() < trintaDiasAtras).length;
+      const recoIncompletas = (prospects as any[]).filter((p) => !p.score || p.score < 2).length;
+      const scoreMedio = prospects.length > 0
+        ? (prospects as any[]).reduce((s, p) => s + (p.score ?? 1), 0) / prospects.length
+        : 0;
+
+      // Equipe (só faz sentido em scope=equipe sem filtro)
+      let equipe: { id: string; nome: string; pa: number; capital: number; recos: number; reunioes: number }[] = [];
+      if (scope === "equipe" && !consultorFiltro.includes("all") ? false : (scope === "equipe")) {
+        const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "consultor");
+        const ids = (roles ?? []).map((r) => r.user_id);
+        if (ids.length) {
+          const { data: perfis } = await supabase.from("profiles").select("id,nome").in("id", ids);
+          const nomes = new Map((perfis ?? []).map((p) => [p.id, p.nome]));
+
+          const byCons = new Map<string, { pa: number; capital: number; recos: number; reunioes: number }>();
+          for (const a of apolices as any[]) {
+            if (a.status !== "migrado" && a.status !== "emitido") continue;
+            const cur = byCons.get(a.consultor_id) ?? { pa: 0, capital: 0, recos: 0, reunioes: 0 };
+            cur.pa += Number(a.premio_atual ?? 0);
+            cur.capital += Number(a.capital_segurado ?? 0);
+            byCons.set(a.consultor_id, cur);
+          }
+          for (const p of prospects as any[]) {
+            const cur = byCons.get(p.consultor_id) ?? { pa: 0, capital: 0, recos: 0, reunioes: 0 };
+            cur.recos += 1;
+            byCons.set(p.consultor_id, cur);
+          }
+          for (const e of agenda as any[]) {
+            if (e.resultado) {
+              const cur = byCons.get(e.consultor_id) ?? { pa: 0, capital: 0, recos: 0, reunioes: 0 };
+              cur.reunioes += 1;
+              byCons.set(e.consultor_id, cur);
+            }
+          }
+          equipe = ids
+            .map((id) => ({ id, nome: nomes.get(id) ?? "—", ...(byCons.get(id) ?? { pa: 0, capital: 0, recos: 0, reunioes: 0 }) }))
+            .sort((a, b) => b.pa - a.pa);
+        }
+      }
+      void atividades;
+
       return {
-        hot: hot.count ?? 0,
-        ab: ab.count ?? 0,
-        fechamentos: fech.count ?? 0,
-        clientes: clientes.count ?? 0,
-        paTotal,
-        comissao: paTotal * 0.6,
-        equipe: ranking.data ?? [],
+        funil, paFechado, paEmitido, capitalSegurado, comissao, conv,
+        onb: { count: onbApolices.length, pa: onbPa, cap: onbCap },
+        delaysPorEtapa, qualidade: { semResultado, delaysAbandonados, recoIncompletas, scoreMedio },
+        equipe,
       };
     },
   });
 
+  const [rankBy, setRankBy] = useState<"pa" | "capital" | "recos" | "reunioes">("pa");
+  const rankingOrdenado = useMemo(() => {
+    if (!data?.equipe) return [];
+    return [...data.equipe].sort((a, b) => Number(b[rankBy]) - Number(a[rankBy]));
+  }, [data?.equipe, rankBy]);
+
   return (
     <div>
-      <PageHeader eyebrow="Indicadores" title="Dashboard" description="Visão consolidada de produção e conversão." />
+      <PageHeader eyebrow="Gestão" title="Dashboard" description="Visão executiva — produção, funil, conversão, equipe e qualidade." />
 
       {isMaster && (
-        <Tabs value={scope} onValueChange={(v) => setScope(v as any)} className="mb-6">
-          <TabsList className="bg-surface border border-border">
-            <TabsTrigger value="individual">Individual</TabsTrigger>
-            <TabsTrigger value="equipe">Equipe</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex flex-wrap gap-3 mb-6">
+          <Tabs value={scope} onValueChange={(v) => setScope(v as any)}>
+            <TabsList className="bg-surface border border-border">
+              <TabsTrigger value="individual">Individual</TabsTrigger>
+              <TabsTrigger value="equipe">Equipe</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {scope === "equipe" && (consultores ?? []).length > 0 && (
+            <Select value={consultorFiltro} onValueChange={setConsultorFiltro}>
+              <SelectTrigger className="w-56"><SelectValue placeholder="Filtrar consultor" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toda a equipe</SelectItem>
+                {(consultores ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <KPI label="HOTs" value={data?.hot ?? "—"} />
-        <KPI label="ABs" value={data?.ab ?? "—"} />
-        <KPI label="Fechamentos" value={data?.fechamentos ?? "—"} />
-        <KPI label="Clientes" value={data?.clientes ?? "—"} />
-        <KPI label="PA Estimado" value={data ? `R$ ${data.paTotal.toLocaleString("pt-BR")}` : "—"} />
-        <KPI label="Comissão" value={data ? `R$ ${Math.round(data.comissao).toLocaleString("pt-BR")}` : "—"} sub="projetada" />
-      </div>
+      <Bloco titulo="Produção">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KPI label="PA Fechado" value={data ? brl(data.paFechado) : "—"} />
+          <KPI label="PA Emitido" value={data ? brl(data.paEmitido) : "—"} accent />
+          <KPI label="Capital Segurado" value={data ? brl(data.capitalSegurado) : "—"} />
+          <KPI label="Comissão Projetada" value={data ? brl(data.comissao) : "—"} sub="60% do PA emitido" />
+        </div>
+      </Bloco>
+
+      <Bloco titulo="Funil">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+          <KPI label="Recomendações" value={data?.funil.recomendacao ?? "—"} />
+          <KPI label="HOT" value={data?.funil.hot ?? "—"} />
+          <KPI label="AB" value={data?.funil.ab ?? "—"} />
+          <KPI label="Fechamento" value={data?.funil.fechamento ?? "—"} />
+          <KPI label="Onboarding" value={data?.funil.onboarding ?? "—"} />
+          <KPI label="Clientes" value={data?.funil.cliente ?? "—"} accent />
+        </div>
+      </Bloco>
+
+      <Bloco titulo="Conversão">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KPI label="HOT → AB" value={data ? `${data.conv.hotAb}%` : "—"} />
+          <KPI label="AB → Fechamento" value={data ? `${data.conv.abFech}%` : "—"} />
+          <KPI label="Fech. → Onboarding" value={data ? `${data.conv.fechOnb}%` : "—"} />
+          <KPI label="Onboarding → Cliente" value={data ? `${data.conv.onbCli}%` : "—"} />
+        </div>
+      </Bloco>
+
+      <Bloco titulo="Onboarding">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <KPI label="Propostas em Onboarding" value={data?.onb.count ?? "—"} />
+          <KPI label="PA Pendente" value={data ? brl(data.onb.pa) : "—"} />
+          <KPI label="Capital Pendente" value={data ? brl(data.onb.cap) : "—"} />
+        </div>
+      </Bloco>
+
+      <Bloco titulo="Delays ativos">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KPI label="AB" value={data?.delaysPorEtapa.ab ?? "—"} />
+          <KPI label="Revisita" value={data?.delaysPorEtapa.revisita ?? "—"} />
+          <KPI label="Fechamento" value={data?.delaysPorEtapa.fechamento ?? "—"} />
+          <KPI label="Entrega de Apólice" value={data?.delaysPorEtapa.entrega ?? "—"} />
+        </div>
+      </Bloco>
+
+      <Bloco titulo="Qualidade">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KPI label="Eventos sem resultado" value={data?.qualidade.semResultado ?? "—"} />
+          <KPI label="Delays abandonados (>30d)" value={data?.qualidade.delaysAbandonados ?? "—"} />
+          <KPI label="Recomendações incompletas" value={data?.qualidade.recoIncompletas ?? "—"} />
+          <Card className="p-5 bg-surface border-border">
+            <p className="caps-tracking text-muted-foreground text-[0.6rem]">Score médio</p>
+            <div className="mt-2 flex items-center gap-2">
+              <p className="font-display text-3xl text-foreground">{data?.qualidade.scoreMedio.toFixed(1) ?? "—"}</p>
+              <ScoreStars score={Math.round(data?.qualidade.scoreMedio ?? 0) || 1} />
+            </div>
+          </Card>
+        </div>
+      </Bloco>
 
       {isMaster && scope === "equipe" && (
-        <Card className="mt-8 p-6 bg-surface border-border">
-          <p className="caps-tracking text-gold mb-4">Equipe ativa</p>
-          {(data?.equipe ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">Sem consultores cadastrados.</p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {(data?.equipe ?? []).map((c: any) => (
-                <li key={c.id} className="py-3 flex items-center justify-between">
-                  <span className="text-foreground">{c.nome}</span>
-                  <span className="text-xs text-muted-foreground">Consultor</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+        <Bloco titulo="Equipe — Ranking">
+          <Card className="p-6 bg-surface border-border">
+            <Tabs value={rankBy} onValueChange={(v) => setRankBy(v as any)} className="mb-4">
+              <TabsList className="bg-background border border-border">
+                <TabsTrigger value="pa">PA</TabsTrigger>
+                <TabsTrigger value="capital">Capital Segurado</TabsTrigger>
+                <TabsTrigger value="recos">Recomendações</TabsTrigger>
+                <TabsTrigger value="reunioes">Reuniões</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            {rankingOrdenado.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sem dados de equipe.</p>
+            ) : (
+              <ol className="divide-y divide-border">
+                {rankingOrdenado.map((c, idx) => (
+                  <li key={c.id} className="py-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <span className={`font-display text-2xl w-8 ${idx === 0 ? "text-gold" : "text-muted-foreground"}`}>
+                        {String(idx + 1).padStart(2, "0")}
+                      </span>
+                      <span className="text-foreground truncate">{c.nome}</span>
+                    </div>
+                    <span className="font-display text-lg text-foreground">
+                      {rankBy === "pa" || rankBy === "capital" ? brl(c[rankBy]) : c[rankBy]}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </Card>
+        </Bloco>
       )}
     </div>
   );
