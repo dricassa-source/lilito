@@ -20,11 +20,12 @@ function Auditoria() {
   const isMaster = auth?.isMaster ?? false;
 
   const { data: consultores } = useQuery({
-    queryKey: ["consultores-all"],
+    queryKey: ["consultores-all", auth?.user.id, isMaster],
     enabled: !!auth,
     queryFn: async () => {
+      if (!auth) return [] as Consultor[];
       if (!isMaster) {
-        const { data } = await supabase.from("profiles").select("id,nome").eq("id", auth!.user.id);
+        const { data } = await supabase.from("profiles").select("id,nome").eq("id", auth.user.id);
         return (data ?? []) as Consultor[];
       }
       const { data: roles } = await supabase.from("user_roles").select("user_id");
