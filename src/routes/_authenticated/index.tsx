@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/lilito/PageHeader";
 import { ScoreStars } from "@/components/lilito/ScoreStars";
 import { NovoLembrete } from "./lembretes";
 import {
-  Flame, CalendarDays, AlertTriangle, Users2, Cake, Bell, Check,
+  Flame, CalendarDays, AlertTriangle, Cake, Bell, Check,
   PhoneCall, Plus, Trash2, MessageCircle, Calendar as CalIcon,
   Target, Clock, AlertOctagon,
 } from "lucide-react";
