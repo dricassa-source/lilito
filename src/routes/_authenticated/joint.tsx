@@ -86,7 +86,7 @@ function JointPage() {
                   <div className="flex-1">
                     <p className="text-sm font-medium">{r.agenda_eventos?.titulo}</p>
                     <p className="text-xs text-muted-foreground">
-                      {r.profiles?.nome} ·{" "}
+                      {r.consultor_nome} ·{" "}
                       {r.agenda_eventos?.inicio && format(new Date(r.agenda_eventos.inicio), "dd MMM HH:mm", { locale: ptBR })}
                       {" · "}{r.agenda_eventos?.tipo}
                     </p>
@@ -115,7 +115,7 @@ function JointPage() {
             <div className="flex-1">
               <p className="text-sm font-medium">{r.agenda_eventos?.titulo}</p>
               <p className="text-xs text-muted-foreground">
-                {r.profiles?.nome} ·{" "}
+                {r.consultor_nome} ·{" "}
                 {r.agenda_eventos?.inicio && format(new Date(r.agenda_eventos.inicio), "dd MMM HH:mm", { locale: ptBR })}
               </p>
             </div>
