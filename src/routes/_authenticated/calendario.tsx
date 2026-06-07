@@ -34,10 +34,9 @@ export const Route = createFileRoute("/_authenticated/calendario")({
 // Compromissos que contam métricas e bloqueiam agenda
 const TIPOS_COMPROMISSO = [
   { v: "ab", l: "AB" },
-  { v: "fechamento", l: "Fechamento" },
   { v: "revisita", l: "Revisita" },
+  { v: "fechamento", l: "Fechamento" },
   { v: "entrega_apolice", l: "Entrega de Apólice" },
-  { v: "joint_work", l: "Joint Work" },
 ] as const;
 
 const TIPO_LABEL: Record<string, string> = {
@@ -48,7 +47,17 @@ const TIPO_LABEL: Record<string, string> = {
   joint_work: "Joint Work",
   review: "Review",
   bloqueio: "Bloqueio",
+  recorrente: "Recorrente",
 };
+
+const MOTIVOS_DELAY = [
+  "Não Compareceu",
+  "Vai Pensar",
+  "Não Atendeu",
+  "Sem Agenda",
+  "Retornar Futuramente",
+  "Outro",
+] as const;
 
 const NATUREZA_COLOR: Record<string, { bg: string; border: string; text: string; dot: string }> = {
   ab:              { bg: "bg-nat-ab/15",         border: "border-nat-ab/60",         text: "text-nat-ab",         dot: "bg-nat-ab" },
@@ -58,6 +67,7 @@ const NATUREZA_COLOR: Record<string, { bg: string; border: string; text: string;
   joint_work:      { bg: "bg-gold/10",           border: "border-gold/40",           text: "text-gold",           dot: "bg-gold" },
   review:          { bg: "bg-muted",             border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground" },
   bloqueio:        { bg: "bg-muted/60",          border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground" },
+  recorrente:      { bg: "bg-gold/5",            border: "border-gold/30 border-dashed", text: "text-gold/80",     dot: "bg-gold/70" },
 };
 
 type View = "dia" | "semana" | "mes";
