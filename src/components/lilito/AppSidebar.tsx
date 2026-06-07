@@ -145,7 +145,7 @@ export function AppSidebar({ isMaster }: { isMaster: boolean }) {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={isActive("/administracao")} tooltip="Administração"
                     className="data-[active=true]:bg-sidebar-accent data-[active=true]:text-gold data-[active=true]:border-l-2 data-[active=true]:border-gold rounded-none">
-                    <Link to="/administracao" className="flex items-center gap-3">
+                    <Link to="/administracao" onClick={closeIfMobile} className="flex items-center gap-3">
                       <Settings className="h-4 w-4" strokeWidth={1.5} />
                       <span className="text-sm">Administração</span>
                     </Link>
