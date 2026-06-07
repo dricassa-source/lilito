@@ -420,16 +420,18 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
   return (
     <button
       type="button"
-      onClick={() => !isRecorrente && onSelect(e)}
+      onClick={() => onSelect(e)}
       className={cn(
         "absolute inset-x-0 rounded-[3px] border px-1 py-0.5 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
         c.bg, c.border,
         delayAtivo && "border-destructive",
-        isRecorrente && "cursor-default",
       )}
       style={{ top, height }}
       title={`${nomeCompleto} — ${TIPO_LABEL[e.tipo] ?? e.tipo} · ${horario}${e.local ? ` · ${e.local}` : ""}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
     >
+      {isRecorrente && (
+        <span className="absolute top-0 right-0.5 z-10 text-[9px] leading-none select-none opacity-70" aria-label="Recorrente">🔁</span>
+      )}
       {delayAtivo && (
         <span className="absolute top-0 left-0.5 z-10 text-[9px] leading-none select-none" aria-label="Delay">🚩</span>
       )}
