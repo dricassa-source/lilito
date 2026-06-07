@@ -256,7 +256,7 @@ function Calendario() {
       <p className="caps-tracking text-gold mb-2 sm:hidden">{periodoLabel}</p>
 
       <div ref={containerRef} className="overflow-auto max-h-[calc(100vh-200px)]" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}>
-        {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} slotHeight={slotHeight} />}
+        {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} slotHeight={slotHeight} colWidth={colWidth} />}
         {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} slotHeight={slotHeight} />}
         {view === "mes" && <MonthGrid anchor={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
       </div>
