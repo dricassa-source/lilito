@@ -424,7 +424,7 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
       className={cn(
         "absolute inset-x-0 rounded-[3px] border px-1 py-0.5 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
         c.bg, c.border,
-        delayAtivo && "border-destructive",
+        hasDelay && "border-destructive",
       )}
       style={{ top, height }}
       title={`${nomeCompleto} — ${TIPO_LABEL[e.tipo] ?? e.tipo} · ${horario}${e.local ? ` · ${e.local}` : ""}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
@@ -433,9 +433,9 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
         <span className="absolute top-0 right-0.5 z-10 text-[9px] leading-none select-none opacity-70" aria-label="Recorrente">🔁</span>
       )}
       {delayAtivo && (
-        <span className="absolute top-0 left-0.5 z-10 text-[9px] leading-none select-none" aria-label="Delay">🚩</span>
+        <span className="absolute top-1 left-2 z-10 text-[10px] leading-none select-none drop-shadow-sm" aria-label="Delay">🚩</span>
       )}
-      <p className={cn("text-[11px] sm:text-[13px] font-medium leading-tight whitespace-normal [overflow-wrap:normal] [word-break:normal] line-clamp-2", c.text, delayAtivo && "pl-2.5")}>
+      <p className={cn("text-[11px] sm:text-[13px] font-medium leading-tight whitespace-normal [overflow-wrap:normal] [word-break:normal] line-clamp-2", c.text, delayAtivo && "pl-5")}>
         {nomeCompleto}
       </p>
       {showHorario && (
@@ -1132,8 +1132,11 @@ function DelayForm({ evento, onClose }: { evento: any; onClose: () => void }) {
     const motivoFinal = motivo === "Outro" ? outro.trim() : motivo;
     if (!motivoFinal) { toast.error("Informe o motivo do Delay."); return; }
 
-    // Buscar etapa atual do prospect para snapshot
-    let etapaOrigem: string | null = evento.prospects?.etapa_funil ?? evento.tipo ?? null;
+    // Snapshot da etapa de origem. Prioriza o `tipo` do evento (ab/revisita/
+    // fechamento/entrega_apolice) que é o critério usado pelas filas de Em
+    // Delay e Sininho. Cai para a etapa atual do prospect como fallback.
+    const ETAPAS_DELAY = new Set(["ab", "revisita", "fechamento", "entrega_apolice"]);
+    let etapaOrigem: string | null = ETAPAS_DELAY.has(evento.tipo) ? evento.tipo : (evento.prospects?.etapa_funil ?? evento.tipo ?? null);
     if (evento.prospect_id && !etapaOrigem) {
       const { data } = await supabase.from("prospects").select("etapa_funil").eq("id", evento.prospect_id).maybeSingle();
       etapaOrigem = data?.etapa_funil ?? null;
@@ -1265,6 +1268,8 @@ function PropostaFechadaForm({ evento, onClose }: { evento: any; onClose: () => 
 
 // ---------- Sheet para evento recorrente (instância virtual) ----------
 function RecorrenteSheet({ evento, onClose, onChanged }: { evento: any; onClose: () => void; onChanged: () => void }) {
+  const { auth } = useAuth();
+  const isMaster = auth?.isMaster ?? false;
   const inicio = new Date(evento.inicio);
   const fim = new Date(evento.fim);
   const recorrenciaId: string = evento.recorrencia_id;
@@ -1324,36 +1329,48 @@ function RecorrenteSheet({ evento, onClose, onChanged }: { evento: any; onClose:
         </SheetHeader>
 
         <div className="mt-4 space-y-3">
-          <p className="text-xs text-muted-foreground">
-            Este compromisso faz parte de uma série recorrente. Escolha o escopo
-            da alteração:
-          </p>
+          {isMaster ? (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Este compromisso faz parte de uma série recorrente. Escolha o escopo
+                da alteração:
+              </p>
 
-          <div className="space-y-2">
-            <p className="caps-tracking text-gold">Excluir</p>
-            <div className="grid grid-cols-1 gap-2">
-              <Button variant="outline" onClick={() => setConfirmEscopo("esta")}>
-                Apenas esta ocorrência
-              </Button>
-              <Button variant="outline" onClick={() => setConfirmEscopo("futuras")}>
-                Esta e as próximas
-              </Button>
-              <Button
-                variant="outline"
-                className="border-destructive/40 text-destructive hover:text-destructive"
-                onClick={() => setConfirmEscopo("serie")}
-              >
-                Toda a série
-              </Button>
+              <div className="space-y-2">
+                <p className="caps-tracking text-gold">Excluir</p>
+                <div className="grid grid-cols-1 gap-2">
+                  <Button variant="outline" onClick={() => setConfirmEscopo("esta")}>
+                    Apenas esta ocorrência
+                  </Button>
+                  <Button variant="outline" onClick={() => setConfirmEscopo("futuras")}>
+                    Esta e as próximas
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-destructive/40 text-destructive hover:text-destructive"
+                    onClick={() => setConfirmEscopo("serie")}
+                  >
+                    Toda a série
+                  </Button>
+                </div>
+              </div>
+
+              <Separator className="my-2" />
+
+              <p className="text-[11px] text-muted-foreground">
+                Para editar a série recorrente (título, horário, participantes), use
+                a área de configurações de Compromissos Recorrentes.
+              </p>
+            </>
+          ) : (
+            <div className="rounded-md border border-border bg-surface-elevated p-3">
+              <p className="text-sm text-foreground">Compromisso institucional VINCA.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Apenas usuários Master podem editar, cancelar ou alterar a recorrência.
+                Em caso de conflito, fale com a liderança da unidade.
+              </p>
             </div>
-          </div>
-
-          <Separator className="my-2" />
-
-          <p className="text-[11px] text-muted-foreground">
-            Para editar a série recorrente (título, horário, participantes), use
-            a área de configurações de Compromissos Recorrentes.
-          </p>
+          )}
         </div>
       </SheetContent>
 
