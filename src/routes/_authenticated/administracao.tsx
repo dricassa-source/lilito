@@ -62,6 +62,20 @@ function Admin() {
     qc.invalidateQueries();
   }
 
+  async function limparHomologacao() {
+    const ok = window.prompt(
+      'ATENÇÃO: esta ação apagará TODOS os prospects, clientes, eventos, atividades, apólices, lembretes, notificações, listas HOT e metas. Usuários, configurações e reuniões recorrentes serão preservados. Digite LIMPAR para confirmar.',
+    );
+    if (ok !== "LIMPAR") return;
+    const { data, error } = await supabase.rpc("reset_homologacao" as any);
+    if (error) return toast.error(error.message);
+    const counts = (data ?? {}) as Record<string, number>;
+    toast.success("Base de homologação limpa com sucesso.", {
+      description: Object.entries(counts).filter(([, n]) => n > 0).map(([k, n]) => `${k}: ${n}`).join(" · ") || "Nenhum registro a remover.",
+    });
+    qc.invalidateQueries();
+  }
+
   return (
     <div>
       <PageHeader
