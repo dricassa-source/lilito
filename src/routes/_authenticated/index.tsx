@@ -69,8 +69,9 @@ function MeuDia() {
           .eq("etapa_funil", "hot").eq("status_hot", "pendente"), scopeIds),
         applyScope(supabase.from("agenda_eventos").select("id", { count: "exact", head: true })
           .gte("inicio", dayStart).lte("inicio", dayEnd), scopeIds),
-        applyScope(supabase.from("atividades").select("id", { count: "exact", head: true })
-          .lte("follow_up_em", new Date().toISOString()).not("follow_up_em", "is", null), scopeIds),
+        applyScope(supabase.from("atividades").select("id,prospects!inner(etapa_funil)", { count: "exact", head: true })
+          .lte("follow_up_em", new Date().toISOString()).not("follow_up_em", "is", null)
+          .not("prospects.etapa_funil", "in", "(cliente,pos_venda,perdido)"), scopeIds),
         applyScope(supabase.from("agenda_eventos").select("id", { count: "exact", head: true })
           .eq("delay_resolvido", false).not("delay_em", "is", null), scopeIds),
       ]);
