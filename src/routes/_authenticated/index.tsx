@@ -119,9 +119,10 @@ function MeuDia() {
     queryFn: async () => {
       const { data } = await applyScope(
         supabase.from("atividades")
-          .select("id,prospect_id,follow_up_em,observacao,prospects(nome,telefone,score)")
+          .select("id,prospect_id,follow_up_em,observacao,prospects!inner(nome,telefone,score,etapa_funil)")
           .lte("follow_up_em", new Date().toISOString())
-          .not("follow_up_em", "is", null),
+          .not("follow_up_em", "is", null)
+          .not("prospects.etapa_funil", "in", "(cliente,pos_venda,perdido)"),
         scopeIds,
       ).order("follow_up_em", { ascending: true }).limit(50);
       // Dedupe por prospect_id (mantém o mais antigo = mais atrasado)
