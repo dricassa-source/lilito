@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Settings } from "lucide-react";
+import { Plus, Settings, RefreshCw } from "lucide-react";
 import { EmptyState } from "@/components/lilito/EmptyState";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -50,15 +50,32 @@ function Admin() {
     qc.invalidateQueries({ queryKey: ["admin-consultores"] });
   }
 
+  async function recalcular() {
+    if (!window.confirm("Limpar registros órfãos e recalcular métricas? Esta ação não pode ser desfeita.")) return;
+    const { data, error } = await supabase.rpc("cleanup_orphans");
+    if (error) return toast.error(error.message);
+    const counts = (data ?? {}) as Record<string, number>;
+    const total = Object.values(counts).reduce((s, n) => s + Number(n ?? 0), 0);
+    toast.success(`Limpeza concluída — ${total} registro(s) removido(s).`, {
+      description: Object.entries(counts).filter(([, n]) => n > 0).map(([k, n]) => `${k}: ${n}`).join(" · ") || "Sem registros órfãos.",
+    });
+    qc.invalidateQueries();
+  }
+
   return (
     <div>
       <PageHeader
         eyebrow="Master" title="Administração" description="Gestão de consultores e permissões."
         actions={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button className="gold-gradient text-background"><Plus className="h-4 w-4 mr-2" />Novo consultor</Button></DialogTrigger>
-            <NovoConsultor onClose={() => { setOpen(false); qc.invalidateQueries({ queryKey: ["admin-consultores"] }); }} />
-          </Dialog>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={recalcular} className="border-gold/40 hover:text-gold">
+              <RefreshCw className="h-4 w-4 mr-2" />Recalcular Métricas / Limpar Órfãos
+            </Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild><Button className="gold-gradient text-background"><Plus className="h-4 w-4 mr-2" />Novo consultor</Button></DialogTrigger>
+              <NovoConsultor onClose={() => { setOpen(false); qc.invalidateQueries({ queryKey: ["admin-consultores"] }); }} />
+            </Dialog>
+          </div>
         }
       />
 
