@@ -62,6 +62,20 @@ function Admin() {
     qc.invalidateQueries();
   }
 
+  async function limparHomologacao() {
+    const ok = window.prompt(
+      'ATENÇÃO: esta ação apagará TODOS os prospects, clientes, eventos, atividades, apólices, lembretes, notificações, listas HOT e metas. Usuários, configurações e reuniões recorrentes serão preservados. Digite LIMPAR para confirmar.',
+    );
+    if (ok !== "LIMPAR") return;
+    const { data, error } = await supabase.rpc("reset_homologacao" as any);
+    if (error) return toast.error(error.message);
+    const counts = (data ?? {}) as Record<string, number>;
+    toast.success("Base de homologação limpa com sucesso.", {
+      description: Object.entries(counts).filter(([, n]) => n > 0).map(([k, n]) => `${k}: ${n}`).join(" · ") || "Nenhum registro a remover.",
+    });
+    qc.invalidateQueries();
+  }
+
   return (
     <div>
       <PageHeader
@@ -70,6 +84,9 @@ function Admin() {
           <div className="flex gap-2">
             <Button variant="outline" onClick={recalcular} className="border-gold/40 hover:text-gold">
               <RefreshCw className="h-4 w-4 mr-2" />Recalcular Métricas / Limpar Órfãos
+            </Button>
+            <Button variant="outline" onClick={limparHomologacao} className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive">
+              🧹 Limpar Base de Homologação
             </Button>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild><Button className="gold-gradient text-background"><Plus className="h-4 w-4 mr-2" />Novo consultor</Button></DialogTrigger>
