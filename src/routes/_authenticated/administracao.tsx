@@ -85,6 +85,9 @@ function Admin() {
             <Button variant="outline" onClick={recalcular} className="border-gold/40 hover:text-gold">
               <RefreshCw className="h-4 w-4 mr-2" />Recalcular Métricas / Limpar Órfãos
             </Button>
+            <Button variant="outline" onClick={limparHomologacao} className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive">
+              🧹 Limpar Base de Homologação
+            </Button>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild><Button className="gold-gradient text-background"><Plus className="h-4 w-4 mr-2" />Novo consultor</Button></DialogTrigger>
               <NovoConsultor onClose={() => { setOpen(false); qc.invalidateQueries({ queryKey: ["admin-consultores"] }); }} />
