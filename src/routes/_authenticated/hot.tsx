@@ -707,8 +707,9 @@ function HotGestao() {
       const inicio = monday.toISOString();
 
       const [ativs, evs, prospects, roles] = await Promise.all([
-        applyScope(supabase.from("atividades").select("tipo,resultado,consultor_id,created_at").gte("created_at", inicio), scopeIds),
-        applyScope(supabase.from("agenda_eventos").select("tipo,inicio,consultor_id").gte("inicio", inicio), scopeIds),
+        // !inner garante que só conta atividades vinculadas a prospects existentes
+        applyScope(supabase.from("atividades").select("tipo,resultado,consultor_id,created_at,prospects!inner(id)").gte("created_at", inicio), scopeIds),
+        applyScope(supabase.from("agenda_eventos").select("tipo,inicio,consultor_id,prospects!inner(id)").gte("inicio", inicio), scopeIds),
         applyScope(supabase.from("prospects").select("id,etapa_funil,consultor_id,entrou_etapa_em,origem"), scopeIds),
         supabase.from("user_roles").select("user_id").eq("role", "consultor"),
       ]);

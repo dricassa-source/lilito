@@ -141,8 +141,12 @@ function Dashboard() {
         onbCli: taxa(funil.cliente, funil.onboarding + funil.cliente),
       };
 
-      // Onboarding
-      const onbApolices = (apolices as any[]).filter((a) => a.onboarding_status && a.onboarding_status !== "concluido");
+      // Onboarding — apenas apólices realmente pendentes
+      const ONB_PENDENTE = new Set([
+        "documentacao_pendente", "exames_pendentes", "entrevista_pendente",
+        "pagamento_pendente", "em_underwriting", "outras_pendencias",
+      ]);
+      const onbApolices = (apolices as any[]).filter((a) => ONB_PENDENTE.has(a.onboarding_status));
       const onbPa = onbApolices.reduce((s, a) => s + Number(a.premio_atual ?? 0), 0);
       const onbCap = onbApolices.reduce((s, a) => s + Number(a.capital_segurado ?? 0), 0);
 
