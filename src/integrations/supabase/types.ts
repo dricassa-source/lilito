@@ -770,7 +770,7 @@ export type Database = {
           nome: string
           nota_qualificacao: number | null
           observacoes: string | null
-          origem: Database["public"]["Enums"]["origem_prospect"]
+          origem: Database["public"]["Enums"]["origem_prospect"] | null
           pa_estimado: number | null
           patrimonio_estimado: number | null
           profissao_conjuge: string | null
@@ -805,7 +805,7 @@ export type Database = {
           nome: string
           nota_qualificacao?: number | null
           observacoes?: string | null
-          origem?: Database["public"]["Enums"]["origem_prospect"]
+          origem?: Database["public"]["Enums"]["origem_prospect"] | null
           pa_estimado?: number | null
           patrimonio_estimado?: number | null
           profissao_conjuge?: string | null
@@ -840,7 +840,7 @@ export type Database = {
           nome?: string
           nota_qualificacao?: number | null
           observacoes?: string | null
-          origem?: Database["public"]["Enums"]["origem_prospect"]
+          origem?: Database["public"]["Enums"]["origem_prospect"] | null
           pa_estimado?: number | null
           patrimonio_estimado?: number | null
           profissao_conjuge?: string | null
