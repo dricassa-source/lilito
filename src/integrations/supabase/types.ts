@@ -758,6 +758,8 @@ export type Database = {
           consultor_id: string
           created_at: string
           data_nascimento: string | null
+          data_nascimento_conjuge: string | null
+          email: string | null
           entrou_etapa_em: string
           especialidade_medica: string | null
           estado_civil: string | null
@@ -771,6 +773,7 @@ export type Database = {
           origem: Database["public"]["Enums"]["origem_prospect"]
           pa_estimado: number | null
           patrimonio_estimado: number | null
+          profissao_conjuge: string | null
           quem_recomendou: string | null
           renda_estimada: number | null
           score: number | null
@@ -780,6 +783,7 @@ export type Database = {
           score_renda: number | null
           status_hot: Database["public"]["Enums"]["status_hot"] | null
           telefone: string | null
+          telefone_conjuge: string | null
           ultima_interacao: string | null
           updated_at: string
         }
@@ -789,6 +793,8 @@ export type Database = {
           consultor_id: string
           created_at?: string
           data_nascimento?: string | null
+          data_nascimento_conjuge?: string | null
+          email?: string | null
           entrou_etapa_em?: string
           especialidade_medica?: string | null
           estado_civil?: string | null
@@ -802,6 +808,7 @@ export type Database = {
           origem?: Database["public"]["Enums"]["origem_prospect"]
           pa_estimado?: number | null
           patrimonio_estimado?: number | null
+          profissao_conjuge?: string | null
           quem_recomendou?: string | null
           renda_estimada?: number | null
           score?: number | null
@@ -811,6 +818,7 @@ export type Database = {
           score_renda?: number | null
           status_hot?: Database["public"]["Enums"]["status_hot"] | null
           telefone?: string | null
+          telefone_conjuge?: string | null
           ultima_interacao?: string | null
           updated_at?: string
         }
@@ -820,6 +828,8 @@ export type Database = {
           consultor_id?: string
           created_at?: string
           data_nascimento?: string | null
+          data_nascimento_conjuge?: string | null
+          email?: string | null
           entrou_etapa_em?: string
           especialidade_medica?: string | null
           estado_civil?: string | null
@@ -833,6 +843,7 @@ export type Database = {
           origem?: Database["public"]["Enums"]["origem_prospect"]
           pa_estimado?: number | null
           patrimonio_estimado?: number | null
+          profissao_conjuge?: string | null
           quem_recomendou?: string | null
           renda_estimada?: number | null
           score?: number | null
@@ -842,6 +853,7 @@ export type Database = {
           score_renda?: number | null
           status_hot?: Database["public"]["Enums"]["status_hot"] | null
           telefone?: string | null
+          telefone_conjuge?: string | null
           ultima_interacao?: string | null
           updated_at?: string
         }
