@@ -1,0 +1,1 @@
+ALTER TABLE public.prospects ALTER COLUMN origem DROP NOT NULL;
