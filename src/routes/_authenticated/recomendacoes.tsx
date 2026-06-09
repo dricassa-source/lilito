@@ -80,14 +80,28 @@ const ETAPA_BADGE_CLASS: Record<string, string> = {
 
 const ESTADO_CIVIL = ["Solteiro(a)", "Casado(a)", "União estável", "Divorciado(a)", "Viúvo(a)"];
 
-const ORIGENS = ["Recomendação", "Indicação", "Prospecção Ativa", "Parceria", "Evento", "Reativação", "Outros"];
+// Mapeamento label → valor do ENUM no banco (origem_prospect)
+const ORIGENS: { label: string; value: string }[] = [
+  { label: "Recomendação", value: "recomendacao" },
+  { label: "Prospecção Ativa", value: "prospeccao_ativa" },
+  { label: "Hospital", value: "hospital" },
+  { label: "Evento", value: "evento" },
+  { label: "Redes Sociais", value: "redes_sociais" },
+  { label: "Parceria", value: "parceria" },
+  { label: "Reativação", value: "reativacao" },
+];
+
+function origemLabel(value: string | null) {
+  if (!value) return "—";
+  return ORIGENS.find((o) => o.value === value)?.label ?? value;
+}
 
 // ─── page ────────────────────────────────────────────────────────────────────
 
 function Recomendacoes() {
   const { auth } = useAuth();
   const qc = useQueryClient();
-  const isMaster = (auth?.user as any)?.perfil === "master";
+  const isMaster = auth?.isMaster ?? false;
 
   const [open, setOpen] = useState(false);
   const [perfil, setPerfil] = useState<any>(null);
@@ -225,23 +239,14 @@ function Recomendacoes() {
         title="Prospects da unidade"
         actions={
           <div className="flex gap-2 flex-wrap">
-            {/* Ranking */}
             <Button variant="outline" onClick={() => setRankingOpen(true)}>
               <Trophy className="h-4 w-4 mr-2" />
               Ranking de Recomendantes
             </Button>
-
-            {/* Mostrar / Ocultar perdidos */}
-            <Button
-              variant={mostrarPerdidos ? "default" : "outline"}
-              onClick={() => setMostrarPerdidos((v) => !v)}
-              title="Incluir prospects marcados como perdidos"
-            >
+            <Button variant={mostrarPerdidos ? "default" : "outline"} onClick={() => setMostrarPerdidos((v) => !v)}>
               <XCircle className="h-4 w-4 mr-2" />
               {mostrarPerdidos ? "Ocultar perdidos" : "Mostrar perdidos"}
             </Button>
-
-            {/* Novo prospect */}
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button className="gold-gradient text-background">
@@ -381,18 +386,18 @@ function Recomendacoes() {
           description="Ajuste os filtros ou cadastre um novo prospect para começar."
         />
       ) : (
-        <Card className="bg-surface border-border overflow-hidden">
+        <Card className="bg-surface border-border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Profissão</TableHead>
-                <TableHead>Etapa</TableHead>
-                <TableHead className="text-right">ORNE</TableHead>
-                <TableHead className="text-right">Tempo na Etapa</TableHead>
-                <TableHead className="text-right">Renda Estimada</TableHead>
-                <TableHead>Recomendante</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead className="min-w-[140px]">Nome</TableHead>
+                <TableHead className="min-w-[120px]">Profissão</TableHead>
+                <TableHead className="min-w-[120px]">Etapa</TableHead>
+                <TableHead className="text-right min-w-[90px]">ORNE</TableHead>
+                <TableHead className="text-right min-w-[110px]">Tempo na Etapa</TableHead>
+                <TableHead className="text-right min-w-[120px]">Renda Estimada</TableHead>
+                <TableHead className="min-w-[130px]">Recomendante</TableHead>
+                <TableHead className="text-right min-w-[130px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -410,7 +415,7 @@ function Recomendacoes() {
                         {p.nome}
                       </button>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{p.especialidade_medica ?? "—"}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{p.especialidade_medica ?? "—"}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={ETAPA_BADGE_CLASS[p.etapa_funil] ?? ""}>
                         {ETAPA_LABEL[p.etapa_funil] ?? p.etapa_funil}
@@ -423,12 +428,12 @@ function Recomendacoes() {
                     </TableCell>
                     <TableCell className="text-right">
                       <span className="inline-flex items-center gap-1.5 text-muted-foreground" title={dot.label}>
-                        <span className={`h-2 w-2 rounded-full ${dot.cor}`} />
+                        <span className={`h-2 w-2 rounded-full flex-shrink-0 ${dot.cor}`} />
                         {dias}d
                       </span>
                     </TableCell>
                     <TableCell className="text-right">{brl(p.renda_estimada)}</TableCell>
-                    <TableCell className="text-muted-foreground">{p.quem_recomendou ?? "—"}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{p.quem_recomendou ?? "—"}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         {p.etapa_funil !== "hot" && p.etapa_funil !== "perdido" && (
@@ -482,7 +487,6 @@ function Recomendacoes() {
         {perfil && (
           <PerfilDialog
             prospect={perfil}
-            isMaster={isMaster}
             onEdit={() => {
               setEditar(perfil);
               setPerfil(null);
@@ -510,17 +514,7 @@ function Recomendacoes() {
 
 // ─── Perfil Dialog ────────────────────────────────────────────────────────────
 
-function PerfilDialog({
-  prospect,
-  isMaster,
-  onEdit,
-  onClose,
-}: {
-  prospect: any;
-  isMaster: boolean;
-  onEdit: () => void;
-  onClose: () => void;
-}) {
+function PerfilDialog({ prospect, onEdit, onClose }: { prospect: any; onEdit: () => void; onClose: () => void }) {
   const p = prospect;
   const score = orneScore(p);
   return (
@@ -534,44 +528,31 @@ function PerfilDialog({
           </Badge>
         </DialogTitle>
       </DialogHeader>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-        {/* Contato */}
         <Field label="Celular" value={p.telefone} />
         <Field label="E-mail" value={p.email} />
         <Field label="Cidade" value={p.cidade} />
         <Field label="Data de nascimento" value={p.data_nascimento} />
-
-        {/* Perfil */}
         <Field label="Profissão / Especialidade" value={p.especialidade_medica} />
         <Field label="Estado civil" value={p.estado_civil} />
         <Field label="Dependentes" value={p.filhos ? String(p.filhos) : "Sem dependentes"} />
-
-        {/* Cônjuge */}
         <Field label="Nome do cônjuge" value={p.conjuge} />
         <Field label="Nasc. cônjuge" value={p.data_nascimento_conjuge} />
         <Field label="Telefone do cônjuge" value={p.telefone_conjuge} />
         <Field label="Profissão do cônjuge" value={p.profissao_conjuge} />
-
-        {/* Financeiro */}
         <Field label="Renda estimada" value={brl(p.renda_estimada)} />
         <Field label="Patrimônio estimado" value={brl(p.patrimonio_estimado)} />
         <Field label="PA estimado" value={brl(p.pa_estimado)} />
-
-        {/* Score */}
         <div>
           <div className="caps-tracking text-[0.65rem] text-muted-foreground mb-1">ORNE (score)</div>
           <ScoreStars score={score} className="text-sm" />
         </div>
-
-        {/* Origem */}
-        <Field label="Origem" value={p.origem} />
+        <Field label="Origem" value={origemLabel(p.origem)} />
         <Field label="Recomendante" value={p.quem_recomendou} />
         <Field
           label="Última interação"
           value={p.ultima_interacao ? new Date(p.ultima_interacao).toLocaleString("pt-BR") : null}
         />
-
         {p.observacoes && (
           <div className="md:col-span-2">
             <div className="caps-tracking text-[0.65rem] text-muted-foreground mb-1">Observações</div>
@@ -585,7 +566,6 @@ function PerfilDialog({
           </div>
         )}
       </div>
-
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>
           Fechar
@@ -614,7 +594,7 @@ function Field({ label, value }: { label: string; value: any }) {
 
 const EMPTY_FORM = {
   nome: "",
-  telefone: "", // celular
+  telefone: "",
   email: "",
   cidade: "",
   data_nascimento: "",
@@ -663,7 +643,6 @@ function ProspectDialog({ onClose, prospect }: { onClose: () => void; prospect?:
   const [saving, setSaving] = useState(false);
 
   const set = (key: string, val: any) => setF((prev: any) => ({ ...prev, [key]: val }));
-
   const temConjuge = f.estado_civil === "Casado(a)" || f.estado_civil === "União estável";
 
   async function save() {
@@ -712,7 +691,6 @@ function ProspectDialog({ onClose, prospect }: { onClose: () => void; prospect?:
       </DialogHeader>
 
       <div className="space-y-5">
-        {/* ── Obrigatórios ── */}
         <Section title="Dados obrigatórios">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5 md:col-span-2">
@@ -734,7 +712,6 @@ function ProspectDialog({ onClose, prospect }: { onClose: () => void; prospect?:
           </div>
         </Section>
 
-        {/* ── Dados pessoais ── */}
         <Section title="Dados pessoais">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -790,7 +767,6 @@ function ProspectDialog({ onClose, prospect }: { onClose: () => void; prospect?:
           </div>
         </Section>
 
-        {/* ── Cônjuge (exibe se casado / união estável) ── */}
         {temConjuge && (
           <Section title="Dados do cônjuge">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -822,7 +798,6 @@ function ProspectDialog({ onClose, prospect }: { onClose: () => void; prospect?:
           </Section>
         )}
 
-        {/* ── Financeiro ── */}
         <Section title="Financeiro">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -840,7 +815,6 @@ function ProspectDialog({ onClose, prospect }: { onClose: () => void; prospect?:
           </div>
         </Section>
 
-        {/* ── Origem ── */}
         <Section title="Origem">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -851,8 +825,8 @@ function ProspectDialog({ onClose, prospect }: { onClose: () => void; prospect?:
                 </SelectTrigger>
                 <SelectContent>
                   {ORIGENS.map((o) => (
-                    <SelectItem key={o} value={o}>
-                      {o}
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -865,7 +839,6 @@ function ProspectDialog({ onClose, prospect }: { onClose: () => void; prospect?:
           </div>
         </Section>
 
-        {/* ── Observações ── */}
         <Section title="Observações">
           <div className="space-y-1.5">
             <Input
@@ -886,7 +859,6 @@ function ProspectDialog({ onClose, prospect }: { onClose: () => void; prospect?:
   );
 }
 
-// ── Section wrapper (título leve para separar grupos no formulário) ──────────
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-3">
