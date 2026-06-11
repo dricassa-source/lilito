@@ -1121,16 +1121,29 @@ async function marcarSemInteresse(evento: any) {
 }
 
 async function marcarF2(evento: any) {
-  await marcarResultado(evento, "f2_vai_pensar", { status: "realizado" });
+  const { error } = await supabase.from("agenda_eventos").update({
+    resultado: "f2_vai_pensar",
+    status: "realizado",
+    pendencia_tipo: "f2",
+    delay_em: new Date().toISOString(),
+    delay_resolvido: false,
+    delay_motivo: null,
+    etapa_origem: "fechamento",
+  }).eq("id", evento.id);
+  if (error) { toast.error(error.message); return; }
   if (evento.prospect_id) {
     await supabase.from("atividades").insert({
       consultor_id: evento.consultor_id,
       prospect_id: evento.prospect_id,
       tipo: "fechamento" as any,
       resultado: "f2_vai_pensar",
-      observacao: "Cliente quer pensar (F2).",
+      observacao: "Cliente quer pensar (F2). Aguardando decisão.",
     });
+    await supabase.from("prospects").update({
+      ultima_interacao: new Date().toISOString(),
+    }).eq("id", evento.prospect_id);
   }
+  toast.success("F2 registrado. Aguardando decisão na aba Em Delay.");
 }
 
 async function marcarEntregue(evento: any) {
