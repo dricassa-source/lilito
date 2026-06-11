@@ -311,9 +311,9 @@ function Calendario() {
 
 function MetricCard({ label, value, dot }: { label: string; value: number; dot: string }) {
   return (
-    <Card className="p-4 bg-surface border-border">
-      <div className="flex items-center gap-2">
-        <span className={cn("inline-block w-2 h-2 rounded-full", dot)} />
+    <Card className="p-5 bg-surface border-border">
+      <div className="flex items-center gap-4">
+        <span className={cn("inline-block w-2.5 h-2.5 rounded-full", dot)} />
         <p className="caps-tracking text-muted-foreground">{label}</p>
       </div>
       <p className="font-display text-3xl text-foreground mt-2">{value}</p>
