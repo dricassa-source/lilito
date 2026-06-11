@@ -31,6 +31,7 @@ export type Database = {
           joint_status: Database["public"]["Enums"]["joint_status"]
           local: string | null
           observacao: string | null
+          pendencia_tipo: string | null
           prospect_id: string | null
           recorrencia_id: string | null
           resultado: string | null
@@ -55,6 +56,7 @@ export type Database = {
           joint_status?: Database["public"]["Enums"]["joint_status"]
           local?: string | null
           observacao?: string | null
+          pendencia_tipo?: string | null
           prospect_id?: string | null
           recorrencia_id?: string | null
           resultado?: string | null
@@ -79,6 +81,7 @@ export type Database = {
           joint_status?: Database["public"]["Enums"]["joint_status"]
           local?: string | null
           observacao?: string | null
+          pendencia_tipo?: string | null
           prospect_id?: string | null
           recorrencia_id?: string | null
           resultado?: string | null
