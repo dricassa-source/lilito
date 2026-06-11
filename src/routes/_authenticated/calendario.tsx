@@ -64,15 +64,15 @@ const MOTIVOS_DELAY = [
   "Outro",
 ] as const;
 
-const NATUREZA_COLOR: Record<string, { bg: string; border: string; text: string; dot: string }> = {
-  ab:              { bg: "bg-nat-ab/15",         border: "border-nat-ab/60",         text: "text-nat-ab",         dot: "bg-nat-ab" },
-  revisita:        { bg: "bg-nat-revisita/15",   border: "border-nat-revisita/60",   text: "text-nat-revisita",   dot: "bg-nat-revisita" },
-  fechamento:      { bg: "bg-nat-fechamento/15", border: "border-nat-fechamento/60", text: "text-nat-fechamento", dot: "bg-nat-fechamento" },
-  entrega_apolice: { bg: "bg-nat-entrega/15",    border: "border-nat-entrega/60",    text: "text-nat-entrega",    dot: "bg-nat-entrega" },
-  joint_work:      { bg: "bg-gold/10",           border: "border-gold/40",           text: "text-gold",           dot: "bg-gold" },
-  review:          { bg: "bg-muted",             border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground" },
-  bloqueio:        { bg: "bg-muted/60",          border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground" },
-  recorrente:      { bg: "bg-nat-vinca/15",      border: "border-nat-vinca/60 border-dashed", text: "text-nat-vinca",   dot: "bg-nat-vinca" },
+const NATUREZA_COLOR: Record<string, { bg: string; border: string; text: string; dot: string; bar: string }> = {
+  ab:              { bg: "bg-nat-ab/25",         border: "border-nat-ab/60",         text: "text-nat-ab",         dot: "bg-nat-ab",            bar: "border-l-nat-ab" },
+  revisita:        { bg: "bg-nat-revisita/25",   border: "border-nat-revisita/60",   text: "text-nat-revisita",   dot: "bg-nat-revisita",      bar: "border-l-nat-revisita" },
+  fechamento:      { bg: "bg-nat-fechamento/25", border: "border-nat-fechamento/60", text: "text-nat-fechamento", dot: "bg-nat-fechamento",    bar: "border-l-nat-fechamento" },
+  entrega_apolice: { bg: "bg-nat-entrega/25",    border: "border-nat-entrega/60",    text: "text-nat-entrega",    dot: "bg-nat-entrega",       bar: "border-l-nat-entrega" },
+  joint_work:      { bg: "bg-gold/20",           border: "border-gold/40",           text: "text-gold",           dot: "bg-gold",              bar: "border-l-gold" },
+  review:          { bg: "bg-muted",             border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground", bar: "border-l-border" },
+  bloqueio:        { bg: "bg-muted/60",          border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground", bar: "border-l-border" },
+  recorrente:      { bg: "bg-nat-vinca/25",      border: "border-nat-vinca/60 border-dashed", text: "text-nat-vinca",   dot: "bg-nat-vinca",    bar: "border-l-nat-vinca" },
 };
 
 type View = "dia" | "semana" | "mes";
@@ -84,10 +84,10 @@ function Calendario() {
   const qc = useQueryClient();
   const [dialog, setDialog] = useState<DialogKind>(null);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
-  const [view, setView] = useState<View>("semana");
-  const [anchor, setAnchor] = useState<Date>(new Date());
   const isMobile = useIsMobile();
-  const baseSlot = isMobile ? 22 : 48;
+  const [view, setView] = useState<View>(isMobile ? "dia" : "semana");
+  const [anchor, setAnchor] = useState<Date>(new Date());
+  const baseSlot = isMobile ? 30 : 48;
   const { slotHeight, containerRef } = useCalendarZoom(baseSlot);
   const scale = slotHeight / baseSlot;
   const [baseCol, setBaseCol] = useState<number>(48);
@@ -223,51 +223,54 @@ function Calendario() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-        <h1 className="font-display text-2xl text-foreground">Calendário</h1>
-        <div className="flex flex-wrap gap-1.5">
-          <Button size="sm" onClick={() => setDialog("agendamento")} className="gold-gradient text-background h-8 px-3">
-            <CalendarPlus className="h-3.5 w-3.5 mr-1" />Agendar
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setDialog("lembrete")} className="h-8 px-3">
-            <BellPlus className="h-3.5 w-3.5 mr-1" />Lembrete
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setDialog("bloqueio")} className="h-8 px-3">
-            <Ban className="h-3.5 w-3.5 mr-1" />Bloquear
-          </Button>
-          {auth?.isMaster && (
-            <Button size="sm" variant="outline" onClick={() => setDialog("recorrente")} className="h-8 px-3 border-gold/40">
-              <Repeat className="h-3.5 w-3.5 mr-1" />Recorrente
+      <div className="sticky top-0 z-20 bg-surface/95 backdrop-blur -mx-3 px-3 pb-3 pt-3 mb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h1 className="font-display text-2xl text-foreground">Calendário</h1>
+          <div className="flex flex-wrap gap-1.5">
+            <Button size="sm" onClick={() => setDialog("agendamento")} className="gold-gradient text-background h-11 sm:h-8 px-3">
+              <CalendarPlus className="h-3.5 w-3.5 mr-1" />Agendar
             </Button>
-          )}
+            <Button size="sm" variant="outline" onClick={() => setDialog("lembrete")} className="h-11 sm:h-8 px-3">
+              <BellPlus className="h-3.5 w-3.5 mr-1" />Lembrete
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setDialog("bloqueio")} className="h-11 sm:h-8 px-3">
+              <Ban className="h-3.5 w-3.5 mr-1" />Bloquear
+            </Button>
+            {auth?.isMaster && (
+              <Button size="sm" variant="outline" onClick={() => setDialog("recorrente")} className="h-11 sm:h-8 px-3 border-gold/40">
+                <Repeat className="h-3.5 w-3.5 mr-1" />Recorrente
+              </Button>
+            )}
+          </div>
         </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
+            <Button variant="outline" size="icon" className="h-11 w-11 sm:h-8 sm:w-8" onClick={() => shift(-1)}><ChevronLeft className="h-4 w-4" /></Button>
+            <Button variant="outline" size="sm" className="h-11 sm:h-8" onClick={() => setAnchor(new Date())}>Hoje</Button>
+            <Button variant="outline" size="icon" className="h-11 w-11 sm:h-8 sm:w-8" onClick={() => shift(1)}><ChevronRight className="h-4 w-4" /></Button>
+            <p className="caps-tracking text-gold ml-2 hidden sm:block">{periodoLabel}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <ConsultorFilter className="flex items-center gap-2" />
+            <Tabs value={view} onValueChange={(v) => setView(v as View)}>
+              <TabsList className="h-11 sm:h-8">
+                <TabsTrigger value="dia" className="h-9 sm:h-6 text-xs">Dia</TabsTrigger>
+                <TabsTrigger value="semana" className="h-9 sm:h-6 text-xs">Semana</TabsTrigger>
+                <TabsTrigger value="mes" className="h-9 sm:h-6 text-xs">Mês</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
+        <p className="caps-tracking text-gold mt-2 sm:hidden">{periodoLabel}</p>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-1.5">
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => shift(-1)}><ChevronLeft className="h-4 w-4" /></Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={() => setAnchor(new Date())}>Hoje</Button>
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => shift(1)}><ChevronRight className="h-4 w-4" /></Button>
-          <p className="caps-tracking text-gold ml-2 hidden sm:block">{periodoLabel}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <ConsultorFilter className="flex items-center gap-2" />
-          <Tabs value={view} onValueChange={(v) => setView(v as View)}>
-            <TabsList className="h-8">
-              <TabsTrigger value="dia" className="h-6 text-xs">Dia</TabsTrigger>
-              <TabsTrigger value="semana" className="h-6 text-xs">Semana</TabsTrigger>
-              <TabsTrigger value="mes" className="h-6 text-xs">Mês</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-      </div>
-      <p className="caps-tracking text-gold mb-2 sm:hidden">{periodoLabel}</p>
-
-      <div ref={containerRef} className="overflow-auto max-h-[calc(100vh-200px)]" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}>
+      <div ref={containerRef} className="overflow-auto max-h-[calc(100vh-260px)]" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}>
         {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} slotHeight={slotHeight} colWidth={colWidth} />}
         {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} slotHeight={slotHeight} />}
         {view === "mes" && <MonthGrid anchor={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
       </div>
+
 
       <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
         <MetricCard label="ABs da semana" value={counts.ab} dot={NATUREZA_COLOR.ab.dot} />
@@ -308,9 +311,9 @@ function Calendario() {
 
 function MetricCard({ label, value, dot }: { label: string; value: number; dot: string }) {
   return (
-    <Card className="p-4 bg-surface border-border">
-      <div className="flex items-center gap-2">
-        <span className={cn("inline-block w-2 h-2 rounded-full", dot)} />
+    <Card className="p-5 bg-surface border-border">
+      <div className="flex items-center gap-4">
+        <span className={cn("inline-block w-2.5 h-2.5 rounded-full", dot)} />
         <p className="caps-tracking text-muted-foreground">{label}</p>
       </div>
       <p className="font-display text-3xl text-foreground mt-2">{value}</p>
@@ -340,27 +343,27 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight, colWidth }: 
   return (
     <Card className="bg-surface border-border overflow-hidden">
       <div className={useFixed ? "" : "min-w-[640px] sm:min-w-0"} style={useFixed ? { width: gutter + 7 * colWidth } : undefined}>
-      <div className={gridClass} style={gridStyle}>
-        <div />
+      <div className={cn(gridClass, "sticky top-0 z-10 bg-surface")} style={gridStyle}>
+        <div className="bg-surface" />
         {days.map((d) => {
           const today = isSameDay(d, new Date());
           const letra = format(d, "EEEEE", { locale: ptBR }).toUpperCase();
           return (
-            <div key={d.toISOString()} className={cn("py-1 px-0 text-center border-l border-border", today && "bg-surface-elevated")}>
+            <div key={d.toISOString()} className={cn("py-1 px-0 text-center border-l border-border bg-surface", today && "bg-gold/5")}>
               <p className="font-sans text-[9px] sm:text-[10px] text-muted-foreground leading-none uppercase">
                 <span className="sm:hidden">{letra}</span>
                 <span className="hidden sm:inline">{format(d, "EEE", { locale: ptBR })}</span>
               </p>
-              <p className={cn("font-sans text-[13px] sm:text-base font-semibold mt-0.5 leading-none", today ? "text-gold" : "text-foreground")}>{format(d, "dd")}</p>
+              <p className={cn("font-sans text-[13px] sm:text-base font-semibold mt-0.5 leading-none tabular-nums", today ? "text-gold" : "text-foreground")}>{format(d, "dd")}</p>
               <DayLembretes lembretes={lembretes.filter((l) => isSameDay(new Date(l.data + "T00:00"), d))} />
             </div>
           );
         })}
       </div>
       <div className={bodyClass} style={gridStyle}>
-        <div>
+        <div className="sticky left-0 z-10 bg-surface">
           {HOURS.map((h) => (
-            <div key={h} className="border-b border-border text-right pr-0.5 sm:pr-1 text-[9px] sm:text-[10px] text-muted-foreground leading-none pt-0.5" style={{ height: slotHeight }}>
+            <div key={h} className="border-b border-border/20 text-right pr-0.5 sm:pr-1 text-[10px] sm:text-xs text-foreground/70 tabular-nums font-medium leading-none pt-0.5" style={{ height: slotHeight }}>
               {`${String(h).padStart(2, "0")}:00`}
             </div>
           ))}
@@ -376,11 +379,19 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight, colWidth }: 
 
 
 function DayColumn({ day, eventos, onSelect, slotHeight }: { day: Date; eventos: any[]; onSelect: (e: any) => void; slotHeight: number }) {
+  const today = isSameDay(day, new Date());
+  const now = new Date();
+  const showNow = today && now.getHours() >= START_HOUR && now.getHours() <= END_HOUR;
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const nowTop = ((nowMin - START_HOUR * 60) / 60) * slotHeight;
   return (
-    <div className="relative border-l border-border" style={{ height: HOURS.length * slotHeight }}>
-      {HOURS.map((h) => (
-        <div key={h} className="border-b border-border" style={{ height: slotHeight }} />
+    <div className={cn("relative border-l border-border", today && "bg-gold/5")} style={{ height: HOURS.length * slotHeight }}>
+      {HOURS.map((h, i) => (
+        <div key={h} className={cn("border-b border-border/20", i % 2 === 0 && "bg-foreground/[0.02]")} style={{ height: slotHeight }} />
       ))}
+      {showNow && (
+        <div className="absolute inset-x-0 h-px bg-gold/80 z-20 pointer-events-none" style={{ top: nowTop }} />
+      )}
       {eventos.map((e) => <EventBlock key={e.id} e={e} day={day} onSelect={onSelect} slotHeight={slotHeight} />)}
     </div>
   );
@@ -412,6 +423,9 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
   const nomeCompleto = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
   const hasDelay = !!e.delay_em;
   const delayAtivo = hasDelay && !e.delay_resolvido;
+  const f2Ativo = e.pendencia_tipo === "f2" && !e.delay_resolvido;
+  const delayVermelho = delayAtivo && !f2Ativo;
+  const barCor = delayVermelho ? "border-l-destructive" : f2Ativo ? "border-l-amber-400" : c.bar;
   const isRecorrente = e.__recorrente === true;
   const horario = `${format(start, "HH:mm")}–${format(end, "HH:mm")}`;
   const localAbr = abreviarLocal(e.local);
@@ -422,9 +436,8 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
       type="button"
       onClick={() => onSelect(e)}
       className={cn(
-        "absolute inset-x-0 rounded-[3px] border px-1 py-0.5 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
-        c.bg, c.border,
-        hasDelay && "border-destructive",
+        "absolute inset-x-0 rounded-md border border-border/30 border-l-4 shadow-sm px-1.5 py-1 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
+        c.bg, barCor,
       )}
       style={{ top, height }}
       title={`${nomeCompleto} — ${TIPO_LABEL[e.tipo] ?? e.tipo} · ${horario}${e.local ? ` · ${e.local}` : ""}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
@@ -432,14 +445,17 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
       {isRecorrente && (
         <span className="absolute top-0 right-0.5 z-10 text-[9px] leading-none select-none opacity-70" aria-label="Recorrente">🔁</span>
       )}
-      {delayAtivo && (
+      {delayVermelho && (
         <span className="absolute top-1 left-2 z-10 text-[10px] leading-none select-none drop-shadow-sm" aria-label="Delay">🚩</span>
       )}
-      <p className={cn("text-[11px] sm:text-[13px] font-medium leading-tight whitespace-normal [overflow-wrap:normal] [word-break:normal] line-clamp-2", c.text, delayAtivo && "pl-5")}>
+      {f2Ativo && (
+        <span className="absolute top-1 left-2 z-10 text-[10px] leading-none select-none drop-shadow-sm" aria-label="F2">F2</span>
+      )}
+      <p className={cn("text-[11px] sm:text-[13px] font-medium leading-tight whitespace-normal [overflow-wrap:normal] [word-break:normal] line-clamp-2", c.text, (delayVermelho || f2Ativo) && "pl-5")}>
         {nomeCompleto}
       </p>
       {showHorario && (
-        <p className={cn("text-[10px] sm:text-[11px] leading-tight opacity-80 tabular-nums", c.text)}>
+        <p className={cn("text-[10px] sm:text-[11px] leading-tight tabular-nums opacity-70", c.text)}>
           {horario}
         </p>
       )}
@@ -484,9 +500,9 @@ function DayGrid({ day, eventos, lembretes, onSelect, slotHeight }: { day: Date;
         </div>
       )}
       <div className="grid grid-cols-[36px_minmax(0,1fr)] sm:grid-cols-[60px_minmax(0,1fr)]">
-        <div>
+        <div className="sticky left-0 z-10 bg-surface">
           {HOURS.map((h) => (
-            <div key={h} className="border-b border-border text-right pr-1 sm:pr-2 text-[10px] sm:text-xs text-muted-foreground" style={{ height: slotHeight }}>
+            <div key={h} className="border-b border-border/20 text-right pr-1 sm:pr-2 text-[10px] sm:text-xs text-foreground/70 tabular-nums font-medium" style={{ height: slotHeight }}>
               {String(h).padStart(2, "0")}:00
             </div>
           ))}
@@ -523,13 +539,17 @@ function MonthGrid({ anchor, eventos, lembretes, onSelect }: { anchor: Date; eve
                   const c = NATUREZA_COLOR[e.tipo] ?? NATUREZA_COLOR.review;
                   const nomeCompleto = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
                   const delayAtivo = !!e.delay_em && !e.delay_resolvido;
+                  const f2Ativo = e.pendencia_tipo === "f2" && !e.delay_resolvido;
+                  const delayVermelho = delayAtivo && !f2Ativo;
+                  const barCor = delayVermelho ? "border-l-destructive" : f2Ativo ? "border-l-amber-400" : c.bar;
                   return (
                     <button
                       key={e.id} type="button" onClick={() => onSelect(e)}
-                      className={cn("w-full text-left text-[11px] font-sans px-1 py-0.5 rounded border truncate hover:ring-1 hover:ring-gold/40", c.bg, c.border, c.text, delayAtivo && "border-destructive")}
+                      className={cn("w-full text-left text-[11px] font-sans px-1 py-0.5 rounded-md border-l-2 truncate hover:ring-1 hover:ring-gold/40", c.bg, barCor, c.text)}
                       title={nomeCompleto}
                     >
-                      {delayAtivo && <span className="mr-0.5">🚩</span>}
+                      {delayVermelho && <span className="mr-0.5">🚩</span>}
+                      {f2Ativo && <span className="mr-0.5 text-amber-400">F2</span>}
                       {nomeCompleto}
                     </button>
                   );
