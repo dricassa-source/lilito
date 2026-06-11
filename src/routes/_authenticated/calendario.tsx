@@ -223,51 +223,54 @@ function Calendario() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-        <h1 className="font-display text-2xl text-foreground">Calendário</h1>
-        <div className="flex flex-wrap gap-1.5">
-          <Button size="sm" onClick={() => setDialog("agendamento")} className="gold-gradient text-background h-8 px-3">
-            <CalendarPlus className="h-3.5 w-3.5 mr-1" />Agendar
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setDialog("lembrete")} className="h-8 px-3">
-            <BellPlus className="h-3.5 w-3.5 mr-1" />Lembrete
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setDialog("bloqueio")} className="h-8 px-3">
-            <Ban className="h-3.5 w-3.5 mr-1" />Bloquear
-          </Button>
-          {auth?.isMaster && (
-            <Button size="sm" variant="outline" onClick={() => setDialog("recorrente")} className="h-8 px-3 border-gold/40">
-              <Repeat className="h-3.5 w-3.5 mr-1" />Recorrente
+      <div className="sticky top-0 z-20 bg-surface/95 backdrop-blur -mx-3 px-3 pb-3 pt-3 mb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h1 className="font-display text-2xl text-foreground">Calendário</h1>
+          <div className="flex flex-wrap gap-1.5">
+            <Button size="sm" onClick={() => setDialog("agendamento")} className="gold-gradient text-background h-11 sm:h-8 px-3">
+              <CalendarPlus className="h-3.5 w-3.5 mr-1" />Agendar
             </Button>
-          )}
+            <Button size="sm" variant="outline" onClick={() => setDialog("lembrete")} className="h-11 sm:h-8 px-3">
+              <BellPlus className="h-3.5 w-3.5 mr-1" />Lembrete
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setDialog("bloqueio")} className="h-11 sm:h-8 px-3">
+              <Ban className="h-3.5 w-3.5 mr-1" />Bloquear
+            </Button>
+            {auth?.isMaster && (
+              <Button size="sm" variant="outline" onClick={() => setDialog("recorrente")} className="h-11 sm:h-8 px-3 border-gold/40">
+                <Repeat className="h-3.5 w-3.5 mr-1" />Recorrente
+              </Button>
+            )}
+          </div>
         </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
+            <Button variant="outline" size="icon" className="h-11 w-11 sm:h-8 sm:w-8" onClick={() => shift(-1)}><ChevronLeft className="h-4 w-4" /></Button>
+            <Button variant="outline" size="sm" className="h-11 sm:h-8" onClick={() => setAnchor(new Date())}>Hoje</Button>
+            <Button variant="outline" size="icon" className="h-11 w-11 sm:h-8 sm:w-8" onClick={() => shift(1)}><ChevronRight className="h-4 w-4" /></Button>
+            <p className="caps-tracking text-gold ml-2 hidden sm:block">{periodoLabel}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <ConsultorFilter className="flex items-center gap-2" />
+            <Tabs value={view} onValueChange={(v) => setView(v as View)}>
+              <TabsList className="h-11 sm:h-8">
+                <TabsTrigger value="dia" className="h-9 sm:h-6 text-xs">Dia</TabsTrigger>
+                <TabsTrigger value="semana" className="h-9 sm:h-6 text-xs">Semana</TabsTrigger>
+                <TabsTrigger value="mes" className="h-9 sm:h-6 text-xs">Mês</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
+        <p className="caps-tracking text-gold mt-2 sm:hidden">{periodoLabel}</p>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-1.5">
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => shift(-1)}><ChevronLeft className="h-4 w-4" /></Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={() => setAnchor(new Date())}>Hoje</Button>
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => shift(1)}><ChevronRight className="h-4 w-4" /></Button>
-          <p className="caps-tracking text-gold ml-2 hidden sm:block">{periodoLabel}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <ConsultorFilter className="flex items-center gap-2" />
-          <Tabs value={view} onValueChange={(v) => setView(v as View)}>
-            <TabsList className="h-8">
-              <TabsTrigger value="dia" className="h-6 text-xs">Dia</TabsTrigger>
-              <TabsTrigger value="semana" className="h-6 text-xs">Semana</TabsTrigger>
-              <TabsTrigger value="mes" className="h-6 text-xs">Mês</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-      </div>
-      <p className="caps-tracking text-gold mb-2 sm:hidden">{periodoLabel}</p>
-
-      <div ref={containerRef} className="overflow-auto max-h-[calc(100vh-200px)]" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}>
+      <div ref={containerRef} className="overflow-auto max-h-[calc(100vh-260px)]" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}>
         {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} slotHeight={slotHeight} colWidth={colWidth} />}
         {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} slotHeight={slotHeight} />}
         {view === "mes" && <MonthGrid anchor={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
       </div>
+
 
       <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
         <MetricCard label="ABs da semana" value={counts.ab} dot={NATUREZA_COLOR.ab.dot} />
