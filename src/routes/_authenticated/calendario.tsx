@@ -64,6 +64,15 @@ const MOTIVOS_DELAY = [
   "Outro",
 ] as const;
 
+const DURACOES = [
+  { l: "30 minutos", min: 30 },
+  { l: "45 minutos", min: 45 },
+  { l: "1 hora", min: 60 },
+  { l: "1 hora e 30 minutos", min: 90 },
+  { l: "2 horas", min: 120 },
+  { l: "3 horas", min: 180 },
+] as const;
+
 const NATUREZA_COLOR: Record<string, { bg: string; border: string; text: string; dot: string; bar: string }> = {
   ab:              { bg: "bg-nat-ab/25",         border: "border-nat-ab/60",         text: "text-nat-ab",         dot: "bg-nat-ab",            bar: "border-l-nat-ab" },
   revisita:        { bg: "bg-nat-revisita/25",   border: "border-nat-revisita/60",   text: "text-nat-revisita",   dot: "bg-nat-revisita",      bar: "border-l-nat-revisita" },
@@ -753,8 +762,9 @@ function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?
     tipo: defaults?.tipo ?? "ab",
     prospect_id: defaults?.prospect_id ?? "",
     consultor_id: defaults?.consultor_id ?? auth?.user.id ?? "",
-    inicio: defaults?.inicio ?? "",
-    fim: defaults?.fim ?? "",
+    data: "",
+    hora: "09:00",
+    dur: 60,
     local: "",
     observacao: "",
     is_joint: false,
@@ -772,11 +782,12 @@ function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?
 
   async function save() {
     if (!auth) return;
-    if (!f.inicio || !f.fim) { toast.error("Informe início e fim."); return; }
+    if (!f.data || !f.hora) { toast.error("Informe data e horário de início."); return; }
     if (!f.prospect_id) { toast.error("Selecione o prospect."); return; }
-    const inicio = new Date(f.inicio).toISOString();
-    const fim = new Date(f.fim).toISOString();
-    if (new Date(fim) <= new Date(inicio)) { toast.error("Fim deve ser após o início."); return; }
+    const iniDate = new Date(`${f.data}T${f.hora}:00`);
+    const fimDate = new Date(iniDate.getTime() + f.dur * 60000);
+    const inicio = iniDate.toISOString();
+    const fim = fimDate.toISOString();
     const consultorId = f.consultor_id || auth.user.id;
     if (await temConflito(consultorId, inicio, fim)) {
       toast.error("Conflito de agenda: já existe compromisso ou bloqueio neste horário.");
@@ -826,8 +837,14 @@ function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?
           </div>
         )}
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5"><Label>Início</Label><Input type="datetime-local" value={f.inicio} onChange={(e) => setF({ ...f, inicio: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>Fim</Label><Input type="datetime-local" value={f.fim} onChange={(e) => setF({ ...f, fim: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>Data</Label><Input type="date" value={f.data} onChange={(e) => setF({ ...f, data: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>Horário de início</Label><Input type="time" value={f.hora} onChange={(e) => setF({ ...f, hora: e.target.value })} /></div>
+        </div>
+        <div className="space-y-1.5"><Label>Duração</Label>
+          <Select value={String(f.dur)} onValueChange={(v) => setF({ ...f, dur: Number(v) })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{DURACOES.map((d) => <SelectItem key={d.min} value={String(d.min)}>{d.l}</SelectItem>)}</SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5"><Label>Local</Label><Input value={f.local} onChange={(e) => setF({ ...f, local: e.target.value })} /></div>
         <div className="space-y-1.5"><Label>Observações</Label><Textarea rows={2} value={f.observacao} onChange={(e) => setF({ ...f, observacao: e.target.value })} /></div>
@@ -907,14 +924,15 @@ function NovoLembrete({ onClose }: { onClose: () => void }) {
 // ---------- Bloquear Horário ----------
 function NovoBloqueio({ onClose }: { onClose: () => void }) {
   const { auth } = useAuth();
-  const [f, setF] = useState({ motivo: "", inicio: "", fim: "" });
+  const [f, setF] = useState({ motivo: "", data: "", hora: "09:00", dur: 60 });
 
   async function save() {
     if (!auth) return;
-    if (!f.motivo || !f.inicio || !f.fim) { toast.error("Preencha motivo, início e fim."); return; }
-    const inicio = new Date(f.inicio).toISOString();
-    const fim = new Date(f.fim).toISOString();
-    if (new Date(fim) <= new Date(inicio)) { toast.error("Fim deve ser após o início."); return; }
+    if (!f.motivo || !f.data || !f.hora) { toast.error("Preencha motivo, data e horário de início."); return; }
+    const iniDate = new Date(`${f.data}T${f.hora}:00`);
+    const fimDate = new Date(iniDate.getTime() + f.dur * 60000);
+    const inicio = iniDate.toISOString();
+    const fim = fimDate.toISOString();
     if (await temConflito(auth.user.id, inicio, fim)) {
       toast.error("Conflito: já existe compromisso ou bloqueio neste horário.");
       return;
@@ -939,8 +957,14 @@ function NovoBloqueio({ onClose }: { onClose: () => void }) {
       <div className="space-y-3">
         <div className="space-y-1.5"><Label>Motivo</Label><Input value={f.motivo} onChange={(e) => setF({ ...f, motivo: e.target.value })} placeholder="Ex.: Reunião interna" /></div>
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5"><Label>Início</Label><Input type="datetime-local" value={f.inicio} onChange={(e) => setF({ ...f, inicio: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>Fim</Label><Input type="datetime-local" value={f.fim} onChange={(e) => setF({ ...f, fim: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>Data</Label><Input type="date" value={f.data} onChange={(e) => setF({ ...f, data: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>Horário de início</Label><Input type="time" value={f.hora} onChange={(e) => setF({ ...f, hora: e.target.value })} /></div>
+        </div>
+        <div className="space-y-1.5"><Label>Duração</Label>
+          <Select value={String(f.dur)} onValueChange={(v) => setF({ ...f, dur: Number(v) })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{DURACOES.map((d) => <SelectItem key={d.min} value={String(d.min)}>{d.l}</SelectItem>)}</SelectContent>
+          </Select>
         </div>
       </div>
       <DialogFooter><Button onClick={save} className="gold-gradient text-background">Salvar</Button></DialogFooter>
