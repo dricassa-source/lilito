@@ -500,9 +500,9 @@ function DayGrid({ day, eventos, lembretes, onSelect, slotHeight }: { day: Date;
         </div>
       )}
       <div className="grid grid-cols-[36px_minmax(0,1fr)] sm:grid-cols-[60px_minmax(0,1fr)]">
-        <div>
+        <div className="sticky left-0 z-10 bg-surface">
           {HOURS.map((h) => (
-            <div key={h} className="border-b border-border text-right pr-1 sm:pr-2 text-[10px] sm:text-xs text-muted-foreground" style={{ height: slotHeight }}>
+            <div key={h} className="border-b border-border/20 text-right pr-1 sm:pr-2 text-[10px] sm:text-xs text-foreground/70 tabular-nums font-medium" style={{ height: slotHeight }}>
               {String(h).padStart(2, "0")}:00
             </div>
           ))}
