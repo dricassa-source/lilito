@@ -528,13 +528,17 @@ function MonthGrid({ anchor, eventos, lembretes, onSelect }: { anchor: Date; eve
                   const c = NATUREZA_COLOR[e.tipo] ?? NATUREZA_COLOR.review;
                   const nomeCompleto = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
                   const delayAtivo = !!e.delay_em && !e.delay_resolvido;
+                  const f2Ativo = e.pendencia_tipo === "f2" && !e.delay_resolvido;
+                  const delayVermelho = delayAtivo && !f2Ativo;
+                  const barCor = delayVermelho ? "border-l-destructive" : f2Ativo ? "border-l-amber-400" : c.bar;
                   return (
                     <button
                       key={e.id} type="button" onClick={() => onSelect(e)}
-                      className={cn("w-full text-left text-[11px] font-sans px-1 py-0.5 rounded border truncate hover:ring-1 hover:ring-gold/40", c.bg, c.border, c.text, delayAtivo && "border-destructive")}
+                      className={cn("w-full text-left text-[11px] font-sans px-1 py-0.5 rounded-md border-l-2 truncate hover:ring-1 hover:ring-gold/40", c.bg, barCor, c.text)}
                       title={nomeCompleto}
                     >
-                      {delayAtivo && <span className="mr-0.5">🚩</span>}
+                      {delayVermelho && <span className="mr-0.5">🚩</span>}
+                      {f2Ativo && <span className="mr-0.5 text-amber-400">F2</span>}
                       {nomeCompleto}
                     </button>
                   );
