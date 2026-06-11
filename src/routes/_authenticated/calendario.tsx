@@ -64,6 +64,15 @@ const MOTIVOS_DELAY = [
   "Outro",
 ] as const;
 
+const DURACOES = [
+  { l: "30 minutos", min: 30 },
+  { l: "45 minutos", min: 45 },
+  { l: "1 hora", min: 60 },
+  { l: "1 hora e 30 minutos", min: 90 },
+  { l: "2 horas", min: 120 },
+  { l: "3 horas", min: 180 },
+] as const;
+
 const NATUREZA_COLOR: Record<string, { bg: string; border: string; text: string; dot: string; bar: string }> = {
   ab:              { bg: "bg-nat-ab/25",         border: "border-nat-ab/60",         text: "text-nat-ab",         dot: "bg-nat-ab",            bar: "border-l-nat-ab" },
   revisita:        { bg: "bg-nat-revisita/25",   border: "border-nat-revisita/60",   text: "text-nat-revisita",   dot: "bg-nat-revisita",      bar: "border-l-nat-revisita" },
