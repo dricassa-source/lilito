@@ -412,6 +412,9 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
   const nomeCompleto = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
   const hasDelay = !!e.delay_em;
   const delayAtivo = hasDelay && !e.delay_resolvido;
+  const f2Ativo = e.pendencia_tipo === "f2" && !e.delay_resolvido;
+  const delayVermelho = delayAtivo && !f2Ativo;
+  const barCor = delayVermelho ? "border-l-destructive" : f2Ativo ? "border-l-amber-400" : c.bar;
   const isRecorrente = e.__recorrente === true;
   const horario = `${format(start, "HH:mm")}–${format(end, "HH:mm")}`;
   const localAbr = abreviarLocal(e.local);
@@ -422,9 +425,8 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
       type="button"
       onClick={() => onSelect(e)}
       className={cn(
-        "absolute inset-x-0 rounded-[3px] border px-1 py-0.5 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
-        c.bg, c.border,
-        hasDelay && "border-destructive",
+        "absolute inset-x-0 rounded-md border border-border/30 border-l-4 shadow-sm px-1.5 py-1 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
+        c.bg, barCor,
       )}
       style={{ top, height }}
       title={`${nomeCompleto} — ${TIPO_LABEL[e.tipo] ?? e.tipo} · ${horario}${e.local ? ` · ${e.local}` : ""}${e.delay_motivo ? ` (Delay: ${e.delay_motivo})` : ""}`}
@@ -432,14 +434,17 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
       {isRecorrente && (
         <span className="absolute top-0 right-0.5 z-10 text-[9px] leading-none select-none opacity-70" aria-label="Recorrente">🔁</span>
       )}
-      {delayAtivo && (
+      {delayVermelho && (
         <span className="absolute top-1 left-2 z-10 text-[10px] leading-none select-none drop-shadow-sm" aria-label="Delay">🚩</span>
       )}
-      <p className={cn("text-[11px] sm:text-[13px] font-medium leading-tight whitespace-normal [overflow-wrap:normal] [word-break:normal] line-clamp-2", c.text, delayAtivo && "pl-5")}>
+      {f2Ativo && (
+        <span className="absolute top-1 left-2 z-10 text-[10px] leading-none select-none drop-shadow-sm" aria-label="F2">F2</span>
+      )}
+      <p className={cn("text-[11px] sm:text-[13px] font-medium leading-tight whitespace-normal [overflow-wrap:normal] [word-break:normal] line-clamp-2", c.text, (delayVermelho || f2Ativo) && "pl-5")}>
         {nomeCompleto}
       </p>
       {showHorario && (
-        <p className={cn("text-[10px] sm:text-[11px] leading-tight opacity-80 tabular-nums", c.text)}>
+        <p className={cn("text-[10px] sm:text-[11px] leading-tight tabular-nums opacity-70", c.text)}>
           {horario}
         </p>
       )}
