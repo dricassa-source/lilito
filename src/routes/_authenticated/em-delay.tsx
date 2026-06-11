@@ -11,9 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/lilito/EmptyState";
 import { ScoreStars } from "@/components/lilito/ScoreStars";
-import { AlertTriangle, Phone, MessageCircle, CalendarClock, Clock3, XCircle, Unplug } from "lucide-react";
+import { AlertTriangle, Phone, MessageCircle, CalendarClock, Clock3, XCircle, Unplug, HelpCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -23,7 +24,6 @@ export const Route = createFileRoute("/_authenticated/em-delay")({
   component: EmDelay,
 });
 
-// Todo evento marcado como Delay no calendário entra nesta fila.
 const ETAPAS_ELEGIVEIS = ["ab", "revisita", "fechamento", "entrega_apolice"];
 
 const ETAPA_LABEL: Record<string, string> = {
@@ -44,6 +44,7 @@ function EmDelay() {
   const [perdaOpen, setPerdaOpen] = useState<any | null>(null);
   const [motivo, setMotivo] = useState("");
   const [reagendar, setReagendar] = useState<any | null>(null);
+  const [reagendarF2, setReagendarF2] = useState<any | null>(null);
 
   const { data: delays } = useQuery({
     queryKey: ["em-delay", scopeIds.join(",")],
@@ -69,14 +70,11 @@ function EmDelay() {
     },
   });
 
-
-
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["em-delay"] });
     qc.invalidateQueries({ queryKey: ["em-delay-count"] });
     qc.invalidateQueries({ queryKey: ["agenda"] });
   };
-
 
   async function destravar(d: any) {
     await supabase.from("agenda_eventos").update({ delay_resolvido: true }).eq("id", d.id);
@@ -129,62 +127,127 @@ function EmDelay() {
     return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
   }
 
+  const f2s = (delays ?? []).filter((d: any) => d.pendencia_tipo === "f2");
+  const comuns = (delays ?? []).filter((d: any) => d.pendencia_tipo !== "f2");
+
   return (
     <div>
       <PageHeader eyebrow="Resgate" title="Em Delay" description="Compromissos travados aguardando ação. Onboarding não entra nesta fila." />
       <ConsultorFilter />
-      {!delays || delays.length === 0 ? (
 
+      {f2s.length === 0 && comuns.length === 0 ? (
         <EmptyState icon={AlertTriangle} title="Nada travado" description="Sua operação está fluindo bem." />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-          {delays.map((d: any) => {
-            const etapa = etapaDelay(d);
-            const nome = d.prospects?.nome ?? d.titulo ?? "—";
-            const tel = d.prospects?.telefone;
-            const dias = diasParado(d.delay_em);
-            return (
-              <Card key={d.id} className="bg-surface border-border border-l-4 border-l-destructive p-4 flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-display text-lg truncate">{nome}</p>
-                      <ScoreStars score={d.prospects?.score} />
-                    </div>
-                    <p className="caps-tracking text-gold text-[0.65rem] mt-1">{ETAPA_LABEL[etapa] ?? etapa}</p>
-                  </div>
-                  <span className="shrink-0 text-right">
-                    <span className="font-display text-2xl text-destructive leading-none">{dias}d</span>
-                    <span className="block text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">parado</span>
-                  </span>
-                </div>
-                <div className="text-sm space-y-1">
-                  <p><span className="text-muted-foreground text-xs">Motivo: </span><span className="text-destructive">{d.delay_motivo ?? "—"}</span></p>
-                  <p className="text-xs text-muted-foreground">Consultor: {d.consultor?.nome ?? "—"}</p>
-                </div>
-                <div className="grid grid-cols-3 gap-2 mt-auto pt-2">
-                  <Button size="sm" variant="outline" onClick={() => setReagendar(d)} className="h-10">
-                    <CalendarClock className="h-4 w-4 mr-1" />Reagendar
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => adiar7(d)} className="h-10">
-                    <Clock3 className="h-4 w-4 mr-1" />+7d
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => ligar(tel)} disabled={!tel} className="h-10">
-                    <Phone className="h-4 w-4 mr-1" />Ligar
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => whatsapp(tel)} disabled={!tel} className="h-10 text-emerald-500 hover:text-emerald-500">
-                    <MessageCircle className="h-4 w-4 mr-1" />WhatsApp
-                  </Button>
-                  <Button size="sm" onClick={() => destravar(d)} className="h-10 gold-gradient text-background">
-                    <Unplug className="h-4 w-4 mr-1" />Destravar
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => setPerdaOpen(d)} className="h-10">
-                    <XCircle className="h-4 w-4 mr-1" />Perdido
-                  </Button>
-                </div>
-              </Card>
-            );
-          })}
+        <div className="space-y-6">
+          {f2s.length > 0 && (
+            <section>
+              <h2 className="font-display text-xl mb-3 flex items-center gap-2">
+                <HelpCircle className="h-5 w-5 text-amber-400" />
+                F2 — Pensando Fechamento
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {f2s.map((d: any) => {
+                  const nome = d.prospects?.nome ?? d.titulo ?? "—";
+                  const tel = d.prospects?.telefone;
+                  const dias = diasParado(d.delay_em);
+                  return (
+                    <Card key={d.id} className="bg-surface border-border border-l-4 border-amber-400 p-4 flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-display text-lg truncate">{nome}</p>
+                            <ScoreStars score={d.prospects?.score} />
+                          </div>
+                          <p className="caps-tracking text-amber-400 text-[0.65rem] mt-1">F2 — aguardando decisão</p>
+                        </div>
+                        <span className="shrink-0 text-right">
+                          <span className="font-display text-2xl text-amber-400 leading-none">{dias}d</span>
+                          <span className="block text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">parado</span>
+                        </span>
+                      </div>
+                      <div className="text-sm">
+                        <p className="text-xs text-muted-foreground">Consultor: {d.consultor?.nome ?? "—"}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 mt-auto pt-2">
+                        <Button size="sm" variant="outline" onClick={() => setReagendarF2(d)} className="h-10">
+                          <CalendarClock className="h-4 w-4 mr-1" />Reagendar
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => ligar(tel)} disabled={!tel} className="h-10">
+                          <Phone className="h-4 w-4 mr-1" />Ligar
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => whatsapp(tel)} disabled={!tel} className="h-10 text-emerald-500 hover:text-emerald-500">
+                          <MessageCircle className="h-4 w-4 mr-1" />WhatsApp
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => setPerdaOpen(d)} className="h-10">
+                          <XCircle className="h-4 w-4 mr-1" />Perdido
+                        </Button>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {comuns.length > 0 && (
+            <section>
+              {f2s.length > 0 && (
+                <h2 className="font-display text-xl mb-3 flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                  Delays
+                </h2>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {comuns.map((d: any) => {
+                  const etapa = etapaDelay(d);
+                  const nome = d.prospects?.nome ?? d.titulo ?? "—";
+                  const tel = d.prospects?.telefone;
+                  const dias = diasParado(d.delay_em);
+                  return (
+                    <Card key={d.id} className="bg-surface border-border border-l-4 border-l-destructive p-4 flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-display text-lg truncate">{nome}</p>
+                            <ScoreStars score={d.prospects?.score} />
+                          </div>
+                          <p className="caps-tracking text-gold text-[0.65rem] mt-1">{ETAPA_LABEL[etapa] ?? etapa}</p>
+                        </div>
+                        <span className="shrink-0 text-right">
+                          <span className="font-display text-2xl text-destructive leading-none">{dias}d</span>
+                          <span className="block text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">parado</span>
+                        </span>
+                      </div>
+                      <div className="text-sm space-y-1">
+                        <p><span className="text-muted-foreground text-xs">Motivo: </span><span className="text-destructive">{d.delay_motivo ?? "—"}</span></p>
+                        <p className="text-xs text-muted-foreground">Consultor: {d.consultor?.nome ?? "—"}</p>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 mt-auto pt-2">
+                        <Button size="sm" variant="outline" onClick={() => setReagendar(d)} className="h-10">
+                          <CalendarClock className="h-4 w-4 mr-1" />Reagendar
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => adiar7(d)} className="h-10">
+                          <Clock3 className="h-4 w-4 mr-1" />+7d
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => ligar(tel)} disabled={!tel} className="h-10">
+                          <Phone className="h-4 w-4 mr-1" />Ligar
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => whatsapp(tel)} disabled={!tel} className="h-10 text-emerald-500 hover:text-emerald-500">
+                          <MessageCircle className="h-4 w-4 mr-1" />WhatsApp
+                        </Button>
+                        <Button size="sm" onClick={() => destravar(d)} className="h-10 gold-gradient text-background">
+                          <Unplug className="h-4 w-4 mr-1" />Destravar
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => setPerdaOpen(d)} className="h-10">
+                          <XCircle className="h-4 w-4 mr-1" />Perdido
+                        </Button>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </section>
+          )}
         </div>
       )}
 
@@ -204,6 +267,13 @@ function EmDelay() {
         delay={reagendar}
         onDone={() => { setReagendar(null); invalidate(); }}
       />
+
+      <ReagendarF2Dialog
+        open={!!reagendarF2}
+        onOpenChange={(o) => !o && setReagendarF2(null)}
+        f2={reagendarF2}
+        onDone={() => { setReagendarF2(null); invalidate(); }}
+      />
     </div>
   );
 }
@@ -219,9 +289,7 @@ function ReagendarDialog({ open, onOpenChange, delay, onDone }: { open: boolean;
     const fimISO = new Date(fim).toISOString();
     if (new Date(fimISO) <= new Date(iniISO)) { toast.error("Fim deve ser após o início."); return; }
 
-    // 1. Marca delay como resolvido (evento original permanece com borda vermelha)
     await supabase.from("agenda_eventos").update({ delay_resolvido: true }).eq("id", delay.id);
-    // 2. Cria novo compromisso
     const { error } = await supabase.from("agenda_eventos").insert({
       consultor_id: delay.consultor_id,
       prospect_id: delay.prospect_id,
@@ -254,6 +322,97 @@ function ReagendarDialog({ open, onOpenChange, delay, onDone }: { open: boolean;
           </div>
         </div>
         <DialogFooter><Button onClick={save} className="gold-gradient text-background">Reagendar</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const DURACOES = [
+  { l: "30 minutos", min: 30 },
+  { l: "45 minutos", min: 45 },
+  { l: "1 hora", min: 60 },
+  { l: "1 hora e 30 minutos", min: 90 },
+  { l: "2 horas", min: 120 },
+  { l: "3 horas", min: 180 },
+] as const;
+
+function ReagendarF2Dialog({ open, onOpenChange, f2, onDone }:
+  { open: boolean; onOpenChange: (o: boolean) => void; f2: any | null; onDone: () => void }) {
+  const [data, setData] = useState("");
+  const [hora, setHora] = useState("09:00");
+  const [dur, setDur] = useState(60);
+
+  const fimPreview = (() => {
+    if (!data || !hora) return null;
+    const ini = new Date(`${data}T${hora}:00`);
+    return new Date(ini.getTime() + dur * 60000);
+  })();
+
+  async function save() {
+    if (!f2) return;
+    if (!data || !hora) { toast.error("Informe data e horário inicial."); return; }
+    const ini = new Date(`${data}T${hora}:00`);
+    const fim = new Date(ini.getTime() + dur * 60000);
+
+    const { error } = await supabase.from("agenda_eventos").insert({
+      consultor_id: f2.consultor_id,
+      prospect_id: f2.prospect_id,
+      tipo: "fechamento" as any,
+      titulo: f2.titulo,
+      inicio: ini.toISOString(),
+      fim: fim.toISOString(),
+    });
+    if (error) { toast.error(error.message); return; }
+
+    await supabase.from("agenda_eventos").update({ delay_resolvido: true }).eq("id", f2.id);
+    if (f2.prospect_id) {
+      await supabase.from("prospects").update({
+        ultima_interacao: new Date().toISOString(),
+      }).eq("id", f2.prospect_id);
+    }
+    toast.success("Fechamento reagendado. F2 concluído.");
+    setData(""); setHora("09:00"); setDur(60);
+    onDone();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="bg-surface border-border max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl">Reagendar Fechamento (F2)</DialogTitle>
+          <p className="text-xs text-muted-foreground">Informe apenas data, horário inicial e duração. O término é calculado automaticamente.</p>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Data</Label>
+              <Input type="date" value={data} onChange={(e) => setData(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Horário inicial</Label>
+              <Input type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Duração</Label>
+            <Select value={String(dur)} onValueChange={(v) => setDur(Number(v))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {DURACOES.map((d) => (
+                  <SelectItem key={d.min} value={String(d.min)}>{d.l}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {fimPreview && (
+            <p className="text-xs text-muted-foreground">
+              Término: {fimPreview.toLocaleString("pt-BR")}
+            </p>
+          )}
+        </div>
+        <DialogFooter>
+          <Button onClick={save} className="gold-gradient text-background">Reagendar</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
