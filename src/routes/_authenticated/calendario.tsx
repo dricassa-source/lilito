@@ -84,10 +84,10 @@ function Calendario() {
   const qc = useQueryClient();
   const [dialog, setDialog] = useState<DialogKind>(null);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
-  const [view, setView] = useState<View>("semana");
-  const [anchor, setAnchor] = useState<Date>(new Date());
   const isMobile = useIsMobile();
-  const baseSlot = isMobile ? 22 : 48;
+  const [view, setView] = useState<View>(isMobile ? "dia" : "semana");
+  const [anchor, setAnchor] = useState<Date>(new Date());
+  const baseSlot = isMobile ? 30 : 48;
   const { slotHeight, containerRef } = useCalendarZoom(baseSlot);
   const scale = slotHeight / baseSlot;
   const [baseCol, setBaseCol] = useState<number>(48);
