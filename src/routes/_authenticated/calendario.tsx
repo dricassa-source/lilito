@@ -64,15 +64,15 @@ const MOTIVOS_DELAY = [
   "Outro",
 ] as const;
 
-const NATUREZA_COLOR: Record<string, { bg: string; border: string; text: string; dot: string }> = {
-  ab:              { bg: "bg-nat-ab/15",         border: "border-nat-ab/60",         text: "text-nat-ab",         dot: "bg-nat-ab" },
-  revisita:        { bg: "bg-nat-revisita/15",   border: "border-nat-revisita/60",   text: "text-nat-revisita",   dot: "bg-nat-revisita" },
-  fechamento:      { bg: "bg-nat-fechamento/15", border: "border-nat-fechamento/60", text: "text-nat-fechamento", dot: "bg-nat-fechamento" },
-  entrega_apolice: { bg: "bg-nat-entrega/15",    border: "border-nat-entrega/60",    text: "text-nat-entrega",    dot: "bg-nat-entrega" },
-  joint_work:      { bg: "bg-gold/10",           border: "border-gold/40",           text: "text-gold",           dot: "bg-gold" },
-  review:          { bg: "bg-muted",             border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground" },
-  bloqueio:        { bg: "bg-muted/60",          border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground" },
-  recorrente:      { bg: "bg-nat-vinca/15",      border: "border-nat-vinca/60 border-dashed", text: "text-nat-vinca",   dot: "bg-nat-vinca" },
+const NATUREZA_COLOR: Record<string, { bg: string; border: string; text: string; dot: string; bar: string }> = {
+  ab:              { bg: "bg-nat-ab/25",         border: "border-nat-ab/60",         text: "text-nat-ab",         dot: "bg-nat-ab",            bar: "border-l-nat-ab" },
+  revisita:        { bg: "bg-nat-revisita/25",   border: "border-nat-revisita/60",   text: "text-nat-revisita",   dot: "bg-nat-revisita",      bar: "border-l-nat-revisita" },
+  fechamento:      { bg: "bg-nat-fechamento/25", border: "border-nat-fechamento/60", text: "text-nat-fechamento", dot: "bg-nat-fechamento",    bar: "border-l-nat-fechamento" },
+  entrega_apolice: { bg: "bg-nat-entrega/25",    border: "border-nat-entrega/60",    text: "text-nat-entrega",    dot: "bg-nat-entrega",       bar: "border-l-nat-entrega" },
+  joint_work:      { bg: "bg-gold/20",           border: "border-gold/40",           text: "text-gold",           dot: "bg-gold",              bar: "border-l-gold" },
+  review:          { bg: "bg-muted",             border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground", bar: "border-l-border" },
+  bloqueio:        { bg: "bg-muted/60",          border: "border-border",            text: "text-muted-foreground", dot: "bg-muted-foreground", bar: "border-l-border" },
+  recorrente:      { bg: "bg-nat-vinca/25",      border: "border-nat-vinca/60 border-dashed", text: "text-nat-vinca",   dot: "bg-nat-vinca",    bar: "border-l-nat-vinca" },
 };
 
 type View = "dia" | "semana" | "mes";
