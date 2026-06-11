@@ -279,15 +279,21 @@ function EmDelay() {
 }
 
 function ReagendarDialog({ open, onOpenChange, delay, onDone }: { open: boolean; onOpenChange: (o: boolean) => void; delay: any | null; onDone: () => void }) {
-  const [inicio, setInicio] = useState("");
-  const [fim, setFim] = useState("");
+  const [data, setData] = useState("");
+  const [hora, setHora] = useState("09:00");
+  const [dur, setDur] = useState(60);
+
+  const fimPreview = (() => {
+    if (!data || !hora) return null;
+    const ini = new Date(`${data}T${hora}:00`);
+    return new Date(ini.getTime() + dur * 60000);
+  })();
 
   async function save() {
     if (!delay) return;
-    if (!inicio || !fim) { toast.error("Informe início e fim."); return; }
-    const iniISO = new Date(inicio).toISOString();
-    const fimISO = new Date(fim).toISOString();
-    if (new Date(fimISO) <= new Date(iniISO)) { toast.error("Fim deve ser após o início."); return; }
+    if (!data || !hora) { toast.error("Informe data e horário de início."); return; }
+    const ini = new Date(`${data}T${hora}:00`);
+    const fim = new Date(ini.getTime() + dur * 60000);
 
     await supabase.from("agenda_eventos").update({ delay_resolvido: true }).eq("id", delay.id);
     const { error } = await supabase.from("agenda_eventos").insert({
@@ -295,7 +301,7 @@ function ReagendarDialog({ open, onOpenChange, delay, onDone }: { open: boolean;
       prospect_id: delay.prospect_id,
       tipo: (delay.etapa_origem ?? delay.tipo) as any,
       titulo: delay.titulo,
-      inicio: iniISO, fim: fimISO,
+      inicio: ini.toISOString(), fim: fim.toISOString(),
     });
     if (error) { toast.error(error.message); return; }
     if (delay.prospect_id) {
@@ -304,7 +310,7 @@ function ReagendarDialog({ open, onOpenChange, delay, onDone }: { open: boolean;
       }).eq("id", delay.prospect_id);
     }
     toast.success("Reagendado.");
-    setInicio(""); setFim("");
+    setData(""); setHora("09:00"); setDur(60);
     onDone();
   }
 
@@ -317,9 +323,20 @@ function ReagendarDialog({ open, onOpenChange, delay, onDone }: { open: boolean;
         </DialogHeader>
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5"><Label>Início</Label><Input type="datetime-local" value={inicio} onChange={(e) => setInicio(e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>Fim</Label><Input type="datetime-local" value={fim} onChange={(e) => setFim(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label>Data</Label><Input type="date" value={data} onChange={(e) => setData(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label>Horário de início</Label><Input type="time" value={hora} onChange={(e) => setHora(e.target.value)} /></div>
           </div>
+          <div className="space-y-1.5"><Label>Duração</Label>
+            <Select value={String(dur)} onValueChange={(v) => setDur(Number(v))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {DURACOES.map((d) => <SelectItem key={d.min} value={String(d.min)}>{d.l}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          {fimPreview && (
+            <p className="text-xs text-muted-foreground">Término: {fimPreview.toLocaleString("pt-BR")}</p>
+          )}
         </div>
         <DialogFooter><Button onClick={save} className="gold-gradient text-background">Reagendar</Button></DialogFooter>
       </DialogContent>
