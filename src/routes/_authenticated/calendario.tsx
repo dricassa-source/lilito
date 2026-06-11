@@ -924,14 +924,15 @@ function NovoLembrete({ onClose }: { onClose: () => void }) {
 // ---------- Bloquear Horário ----------
 function NovoBloqueio({ onClose }: { onClose: () => void }) {
   const { auth } = useAuth();
-  const [f, setF] = useState({ motivo: "", inicio: "", fim: "" });
+  const [f, setF] = useState({ motivo: "", data: "", hora: "09:00", dur: 60 });
 
   async function save() {
     if (!auth) return;
-    if (!f.motivo || !f.inicio || !f.fim) { toast.error("Preencha motivo, início e fim."); return; }
-    const inicio = new Date(f.inicio).toISOString();
-    const fim = new Date(f.fim).toISOString();
-    if (new Date(fim) <= new Date(inicio)) { toast.error("Fim deve ser após o início."); return; }
+    if (!f.motivo || !f.data || !f.hora) { toast.error("Preencha motivo, data e horário de início."); return; }
+    const iniDate = new Date(`${f.data}T${f.hora}:00`);
+    const fimDate = new Date(iniDate.getTime() + f.dur * 60000);
+    const inicio = iniDate.toISOString();
+    const fim = fimDate.toISOString();
     if (await temConflito(auth.user.id, inicio, fim)) {
       toast.error("Conflito: já existe compromisso ou bloqueio neste horário.");
       return;
