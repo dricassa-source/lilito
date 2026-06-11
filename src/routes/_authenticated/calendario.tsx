@@ -782,11 +782,12 @@ function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?
 
   async function save() {
     if (!auth) return;
-    if (!f.inicio || !f.fim) { toast.error("Informe início e fim."); return; }
+    if (!f.data || !f.hora) { toast.error("Informe data e horário de início."); return; }
     if (!f.prospect_id) { toast.error("Selecione o prospect."); return; }
-    const inicio = new Date(f.inicio).toISOString();
-    const fim = new Date(f.fim).toISOString();
-    if (new Date(fim) <= new Date(inicio)) { toast.error("Fim deve ser após o início."); return; }
+    const iniDate = new Date(`${f.data}T${f.hora}:00`);
+    const fimDate = new Date(iniDate.getTime() + f.dur * 60000);
+    const inicio = iniDate.toISOString();
+    const fim = fimDate.toISOString();
     const consultorId = f.consultor_id || auth.user.id;
     if (await temConflito(consultorId, inicio, fim)) {
       toast.error("Conflito de agenda: já existe compromisso ou bloqueio neste horário.");
