@@ -957,8 +957,14 @@ function NovoBloqueio({ onClose }: { onClose: () => void }) {
       <div className="space-y-3">
         <div className="space-y-1.5"><Label>Motivo</Label><Input value={f.motivo} onChange={(e) => setF({ ...f, motivo: e.target.value })} placeholder="Ex.: Reunião interna" /></div>
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5"><Label>Início</Label><Input type="datetime-local" value={f.inicio} onChange={(e) => setF({ ...f, inicio: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>Fim</Label><Input type="datetime-local" value={f.fim} onChange={(e) => setF({ ...f, fim: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>Data</Label><Input type="date" value={f.data} onChange={(e) => setF({ ...f, data: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>Horário de início</Label><Input type="time" value={f.hora} onChange={(e) => setF({ ...f, hora: e.target.value })} /></div>
+        </div>
+        <div className="space-y-1.5"><Label>Duração</Label>
+          <Select value={String(f.dur)} onValueChange={(v) => setF({ ...f, dur: Number(v) })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{DURACOES.map((d) => <SelectItem key={d.min} value={String(d.min)}>{d.l}</SelectItem>)}</SelectContent>
+          </Select>
         </div>
       </div>
       <DialogFooter><Button onClick={save} className="gold-gradient text-background">Salvar</Button></DialogFooter>
