@@ -343,27 +343,27 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight, colWidth }: 
   return (
     <Card className="bg-surface border-border overflow-hidden">
       <div className={useFixed ? "" : "min-w-[640px] sm:min-w-0"} style={useFixed ? { width: gutter + 7 * colWidth } : undefined}>
-      <div className={gridClass} style={gridStyle}>
-        <div />
+      <div className={cn(gridClass, "sticky top-0 z-10 bg-surface")} style={gridStyle}>
+        <div className="bg-surface" />
         {days.map((d) => {
           const today = isSameDay(d, new Date());
           const letra = format(d, "EEEEE", { locale: ptBR }).toUpperCase();
           return (
-            <div key={d.toISOString()} className={cn("py-1 px-0 text-center border-l border-border", today && "bg-surface-elevated")}>
+            <div key={d.toISOString()} className={cn("py-1 px-0 text-center border-l border-border bg-surface", today && "bg-gold/5")}>
               <p className="font-sans text-[9px] sm:text-[10px] text-muted-foreground leading-none uppercase">
                 <span className="sm:hidden">{letra}</span>
                 <span className="hidden sm:inline">{format(d, "EEE", { locale: ptBR })}</span>
               </p>
-              <p className={cn("font-sans text-[13px] sm:text-base font-semibold mt-0.5 leading-none", today ? "text-gold" : "text-foreground")}>{format(d, "dd")}</p>
+              <p className={cn("font-sans text-[13px] sm:text-base font-semibold mt-0.5 leading-none tabular-nums", today ? "text-gold" : "text-foreground")}>{format(d, "dd")}</p>
               <DayLembretes lembretes={lembretes.filter((l) => isSameDay(new Date(l.data + "T00:00"), d))} />
             </div>
           );
         })}
       </div>
       <div className={bodyClass} style={gridStyle}>
-        <div>
+        <div className="sticky left-0 z-10 bg-surface">
           {HOURS.map((h) => (
-            <div key={h} className="border-b border-border text-right pr-0.5 sm:pr-1 text-[9px] sm:text-[10px] text-muted-foreground leading-none pt-0.5" style={{ height: slotHeight }}>
+            <div key={h} className="border-b border-border/20 text-right pr-0.5 sm:pr-1 text-[10px] sm:text-xs text-foreground/70 tabular-nums font-medium leading-none pt-0.5" style={{ height: slotHeight }}>
               {`${String(h).padStart(2, "0")}:00`}
             </div>
           ))}
@@ -379,11 +379,19 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight, colWidth }: 
 
 
 function DayColumn({ day, eventos, onSelect, slotHeight }: { day: Date; eventos: any[]; onSelect: (e: any) => void; slotHeight: number }) {
+  const today = isSameDay(day, new Date());
+  const now = new Date();
+  const showNow = today && now.getHours() >= START_HOUR && now.getHours() <= END_HOUR;
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const nowTop = ((nowMin - START_HOUR * 60) / 60) * slotHeight;
   return (
-    <div className="relative border-l border-border" style={{ height: HOURS.length * slotHeight }}>
-      {HOURS.map((h) => (
-        <div key={h} className="border-b border-border" style={{ height: slotHeight }} />
+    <div className={cn("relative border-l border-border", today && "bg-gold/5")} style={{ height: HOURS.length * slotHeight }}>
+      {HOURS.map((h, i) => (
+        <div key={h} className={cn("border-b border-border/20", i % 2 === 0 && "bg-foreground/[0.02]")} style={{ height: slotHeight }} />
       ))}
+      {showNow && (
+        <div className="absolute inset-x-0 h-px bg-gold/80 z-20 pointer-events-none" style={{ top: nowTop }} />
+      )}
       {eventos.map((e) => <EventBlock key={e.id} e={e} day={day} onSelect={onSelect} slotHeight={slotHeight} />)}
     </div>
   );
