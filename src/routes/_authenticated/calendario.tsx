@@ -837,8 +837,14 @@ function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?
           </div>
         )}
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5"><Label>Início</Label><Input type="datetime-local" value={f.inicio} onChange={(e) => setF({ ...f, inicio: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>Fim</Label><Input type="datetime-local" value={f.fim} onChange={(e) => setF({ ...f, fim: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>Data</Label><Input type="date" value={f.data} onChange={(e) => setF({ ...f, data: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>Horário de início</Label><Input type="time" value={f.hora} onChange={(e) => setF({ ...f, hora: e.target.value })} /></div>
+        </div>
+        <div className="space-y-1.5"><Label>Duração</Label>
+          <Select value={String(f.dur)} onValueChange={(v) => setF({ ...f, dur: Number(v) })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{DURACOES.map((d) => <SelectItem key={d.min} value={String(d.min)}>{d.l}</SelectItem>)}</SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5"><Label>Local</Label><Input value={f.local} onChange={(e) => setF({ ...f, local: e.target.value })} /></div>
         <div className="space-y-1.5"><Label>Observações</Label><Textarea rows={2} value={f.observacao} onChange={(e) => setF({ ...f, observacao: e.target.value })} /></div>
