@@ -183,14 +183,15 @@ function MeuDia() {
   });
 
 
+  const primeiroNome = auth?.profile?.nome?.split(" ")[0] ?? "";
+  const hora = today.getHours();
+  const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
+
   return (
     <div>
-      <PageHeader
-        eyebrow={isMaster ? "Painel da Unidade" : "Hoje"}
-        title={`Bom dia, ${auth?.profile?.nome?.split(" ")[0] ?? ""}`}
-        description="Sua tela de execução da operação VINCA."
-      />
+      <HomeHeader saudacao={saudacao} nome={primeiroNome} />
       <ConsultorFilter />
+
 
       <LembretesHoje />
 
