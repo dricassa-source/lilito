@@ -52,7 +52,7 @@ function whatsappLink(tel?: string | null) {
 function MeuDia() {
   const { auth } = useAuth();
   const uid = auth?.user.id;
-  const isMaster = auth?.isMaster ?? false;
+  
   const { scopeIds } = useConsultorScope();
   const scopeKey = scopeIds.join(",");
 
