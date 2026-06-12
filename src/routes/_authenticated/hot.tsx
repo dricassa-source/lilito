@@ -329,6 +329,8 @@ function Hot() {
           if (id) setListaId(id);
         }}
       />
+
+      <HotGestao />
     </div>
   );
 }
