@@ -100,11 +100,14 @@ function Hot() {
   const atual = fila?.[currentIndex];
 
   function ligar(tel?: string | null) {
-    const t = tel ?? atual?.telefone;
-    if (t) window.open(`tel:${t}`);
+    const t = (tel ?? atual?.telefone)?.replace(/[^\d+]/g, "");
+    if (t) window.location.href = `tel:${t}`;
   }
   function whatsapp() {
-    if (atual?.telefone) window.open(`https://wa.me/${atual.telefone.replace(/\D/g, "")}`, "_blank");
+    if (!atual?.telefone) return;
+    const clean = atual.telefone.replace(/\D/g, "");
+    const withCc = (clean.length === 12 || clean.length === 13) ? clean : `55${clean}`;
+    window.open(`https://wa.me/${withCc}`, "_blank");
   }
 
   async function removerDaHot(prospect: any) {
@@ -142,11 +145,6 @@ function Hot() {
     <div>
       <PageHeader eyebrow="Fila diária" title="HOT" description="Ligações priorizadas por qualificação." />
       <ConsultorFilter />
-
-      <HotGestao />
-
-
-
 
       {/* Listas HOT */}
       <div className="max-w-2xl mx-auto mb-6">
@@ -331,6 +329,8 @@ function Hot() {
           if (id) setListaId(id);
         }}
       />
+
+      <HotGestao />
     </div>
   );
 }
