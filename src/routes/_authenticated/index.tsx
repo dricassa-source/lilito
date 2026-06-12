@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PageHeader } from "@/components/lilito/PageHeader";
+
 import { ScoreStars } from "@/components/lilito/ScoreStars";
 import { NovoLembrete } from "./lembretes";
 import {
