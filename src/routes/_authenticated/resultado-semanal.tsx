@@ -97,12 +97,11 @@ function ResultadoSemanal() {
 
   const alerts: string[] = [];
   if (data) {
-    if (data.abs < 10) alerts.push(`🔴 Menos de 10 ABs na semana (${data.abs}).`);
-    if (data.ab_fone < 20) alerts.push(`🔴 Menos de 20 contatos HOT/Ligações (${data.ab_fone}).`);
+    if (data.absRea < 10) alerts.push(`🔴 Menos de 10 ABs realizadas na semana (${data.absRea}).`);
     if (data.recsCount < 50) alerts.push(`🟡 Apenas ${data.recsCount} recomendações captadas.`);
     if (data.propostas === 0) alerts.push("🔴 Nenhuma proposta fechada nesta semana.");
     if (data.recsCount > data.recsComplete)
-      alerts.push(`⚠️ ${data.recsCount - data.recsComplete} recomendações incompletas (sem telefone/recomendante).`);
+      alerts.push(`⚠️ ${data.recsCount - data.recsComplete} recomendações sem recomendante informado.`);
   }
 
   return (
@@ -128,15 +127,14 @@ function ResultadoSemanal() {
       <Card className="p-5 bg-surface border-border mb-6">
         <p className="caps-tracking text-gold mb-3">📊 Produção da semana</p>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          <Stat label="📞 AB Fone" value={data?.ab_fone ?? "—"} />
-          <Stat label="📅 ABs Agendadas" value={data?.previsao ? "—" : "—"} sub="(agenda atual)" />
-          <Stat label="🤝 ABs Realizadas" value={data?.abs ?? "—"} />
+          <Stat label="📅 ABs Agendadas" value={data?.absAg ?? "—"} />
+          <Stat label="🤝 ABs Realizadas" value={data?.absRea ?? "—"} />
           <Stat label="💰 Fechamentos Agendados" value={data?.fechAg ?? "—"} />
           <Stat label="🏆 Fechamentos Realizados" value={data?.fechRea ?? "—"} />
           <Stat label="📄 Propostas Fechadas" value={data?.propostas ?? "—"} />
           <Stat label="💵 PA Fechado" value={data ? formatBRL(data.pa) : "—"} />
           <Stat label="🛡️ Capital Segurado" value={data ? formatBRL(data.cs) : "—"} />
-          <Stat label="👥 Recomendações Captadas" value={data?.recsCount ?? "—"} sub={data ? `${data.recsComplete} completas` : ""} />
+          <Stat label="👥 Recomendações Captadas" value={data?.recsCount ?? "—"} sub={data ? `${data.recsComplete} com recomendante` : ""} />
           <Stat label="📦 Entregas de Apólice" value={data?.entregas ?? "—"} />
         </div>
       </Card>
