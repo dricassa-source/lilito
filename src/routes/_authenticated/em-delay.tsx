@@ -142,7 +142,7 @@ function EmDelay() {
           {f2s.length > 0 && (
             <section>
               <h2 className="font-display text-xl mb-3 flex items-center gap-2">
-                <HelpCircle className="h-5 w-5 text-amber-400" />
+                <HelpCircle className="h-5 w-5 text-[color:var(--f2)]" />
                 F2 — Pensando Fechamento
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -151,17 +151,17 @@ function EmDelay() {
                   const tel = d.prospects?.telefone;
                   const dias = diasParado(d.delay_em);
                   return (
-                    <Card key={d.id} className="bg-surface border-border border-l-4 border-amber-400 p-4 flex flex-col gap-3">
+                    <Card key={d.id} className="bg-surface border-border border-l-4 border-[color:var(--f2)] p-4 flex flex-col gap-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-display text-lg truncate">{nome}</p>
                             <ScoreStars score={d.prospects?.score} />
                           </div>
-                          <p className="caps-tracking text-amber-400 text-[0.65rem] mt-1">F2 — aguardando decisão</p>
+                          <p className="caps-tracking text-[color:var(--f2)] text-[0.65rem] mt-1">F2 — aguardando decisão</p>
                         </div>
                         <span className="shrink-0 text-right">
-                          <span className="font-display text-2xl text-amber-400 leading-none">{dias}d</span>
+                          <span className="font-display text-2xl text-[color:var(--f2)] leading-none">{dias}d</span>
                           <span className="block text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">parado</span>
                         </span>
                       </div>
