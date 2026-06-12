@@ -232,6 +232,34 @@ function MeuDia() {
   );
 }
 
+function HomeHeader({ saudacao, nome }: { saudacao: string; nome: string }) {
+  const { data: frases } = useQuery({
+    queryKey: ["frases-ativas-header"],
+    queryFn: async () => {
+      const { data } = await supabase.from("frases_cultura").select("texto").eq("ativo", true).order("ordem");
+      return (data ?? []).map((f) => f.texto);
+    },
+  });
+  const frase = frases && frases.length > 0
+    ? frases[Math.floor(Date.now() / (1000 * 60 * 60 * 6)) % frases.length]
+    : null;
+
+  return (
+    <div className="mb-8">
+      <h1 className="font-display text-3xl md:text-4xl font-semibold text-foreground">
+        {saudacao}{nome ? `, ${nome}` : ""} <span className="opacity-80">☕</span>
+      </h1>
+      {frase && (
+        <p className="mt-2 text-sm md:text-base text-muted-foreground italic">
+          <span className="text-gold/70 mr-1">“</span>{frase}<span className="text-gold/70 ml-1">”</span>
+        </p>
+      )}
+      <div className="hairline-gold mt-5 opacity-30" />
+    </div>
+  );
+}
+
+
 function Aniversariantes({ items }: { items: any[] }) {
   const hoje = items.filter((p) => p.diasFaltam === 0);
   const proximo = items.find((p) => p.diasFaltam > 0);
