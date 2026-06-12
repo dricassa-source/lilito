@@ -574,21 +574,40 @@ function MonthGrid({ anchor, eventos, lembretes, onSelect }: { anchor: Date; eve
                 {dayEvts.slice(0, 3).map((e) => {
                   const c = NATUREZA_COLOR[e.tipo] ?? NATUREZA_COLOR.review;
                   const nomeCompleto = e.prospects?.nome ?? e.clientes?.nome ?? e.titulo ?? "Evento";
-                  const delayAtivo = !!e.delay_em && !e.delay_resolvido;
+                  const hasDelay = !!e.delay_em;
+                  const eraF2 = e.pendencia_tipo === "f2" || e.resultado === "f2_vai_pensar";
                   const f2Ativo = e.pendencia_tipo === "f2" && !e.delay_resolvido;
-                  const delayVermelho = delayAtivo && !f2Ativo;
-                  const barCor = delayVermelho ? "border-l-destructive" : f2Ativo ? "border-l-amber-400" : c.bar;
+                  const delayAtivo = hasDelay && !e.delay_resolvido && !f2Ativo;
+                  const delayCicatriz = hasDelay && e.delay_resolvido && !eraF2;
+                  const f2Cicatriz = eraF2 && e.delay_resolvido;
+                  const barCor = delayAtivo
+                    ? "border-l-destructive border-l-2"
+                    : f2Ativo
+                    ? "border-l-[color:var(--f2)] border-l-2"
+                    : delayCicatriz
+                    ? "border-l-destructive/70 border-l-2"
+                    : f2Cicatriz
+                    ? "border-l-[color:var(--f2)]/70 border-l-2"
+                    : cn(c.bar, "border-l-2");
+                  const ringCicatriz = delayCicatriz
+                    ? "ring-1 ring-inset ring-destructive/40"
+                    : f2Cicatriz
+                    ? "ring-1 ring-inset ring-[color:var(--f2)]/45"
+                    : "";
                   return (
                     <button
                       key={e.id} type="button" onClick={() => onSelect(e)}
-                      className={cn("w-full text-left text-[11px] font-sans px-1 py-0.5 rounded-md border-l-2 truncate hover:ring-1 hover:ring-gold/40", c.bg, barCor, c.text)}
-                      title={nomeCompleto}
+                      className={cn("w-full text-left text-[11px] font-sans px-1 py-0.5 rounded-md truncate hover:ring-1 hover:ring-gold/40", c.bg, barCor, ringCicatriz, c.text)}
+                      title={`${nomeCompleto}${delayCicatriz ? " · já atrasou" : ""}${f2Cicatriz ? " · já foi F2" : ""}`}
                     >
-                      {delayVermelho && <span className="mr-0.5">🚩</span>}
-                      {f2Ativo && <span className="mr-0.5 text-amber-400">F2</span>}
+                      {delayAtivo && <span className="mr-0.5">🚩</span>}
+                      {f2Ativo && <span className="mr-0.5 text-[color:var(--f2)] font-semibold">F2</span>}
+                      {!delayAtivo && delayCicatriz && <span className="mr-0.5 text-destructive/70">•</span>}
+                      {!f2Ativo && f2Cicatriz && <span className="mr-0.5 text-[color:var(--f2)]/80">•</span>}
                       {nomeCompleto}
                     </button>
                   );
+
                 })}
                 {dayEvts.length > 3 && <p className="text-[10px] text-muted-foreground">+{dayEvts.length - 3} mais</p>}
                 {dayLemb.slice(0, 2).map((l) => (
