@@ -146,11 +146,6 @@ function Hot() {
       <PageHeader eyebrow="Fila diária" title="HOT" description="Ligações priorizadas por qualificação." />
       <ConsultorFilter />
 
-      <HotGestao />
-
-
-
-
       {/* Listas HOT */}
       <div className="max-w-2xl mx-auto mb-6">
         <div className="flex items-center gap-2 mb-3">
