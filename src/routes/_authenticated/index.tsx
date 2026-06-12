@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PageHeader } from "@/components/lilito/PageHeader";
+
 import { ScoreStars } from "@/components/lilito/ScoreStars";
 import { NovoLembrete } from "./lembretes";
 import {
@@ -52,7 +52,7 @@ function whatsappLink(tel?: string | null) {
 function MeuDia() {
   const { auth } = useAuth();
   const uid = auth?.user.id;
-  const isMaster = auth?.isMaster ?? false;
+  
   const { scopeIds } = useConsultorScope();
   const scopeKey = scopeIds.join(",");
 
@@ -183,14 +183,15 @@ function MeuDia() {
   });
 
 
+  const primeiroNome = auth?.profile?.nome?.split(" ")[0] ?? "";
+  const hora = today.getHours();
+  const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
+
   return (
     <div>
-      <PageHeader
-        eyebrow={isMaster ? "Painel da Unidade" : "Hoje"}
-        title={`Bom dia, ${auth?.profile?.nome?.split(" ")[0] ?? ""}`}
-        description="Sua tela de execução da operação VINCA."
-      />
+      <HomeHeader saudacao={saudacao} nome={primeiroNome} />
       <ConsultorFilter />
+
 
       <LembretesHoje />
 
@@ -230,6 +231,34 @@ function MeuDia() {
     </div>
   );
 }
+
+function HomeHeader({ saudacao, nome }: { saudacao: string; nome: string }) {
+  const { data: frases } = useQuery({
+    queryKey: ["frases-ativas-header"],
+    queryFn: async () => {
+      const { data } = await supabase.from("frases_cultura").select("texto").eq("ativo", true).order("ordem");
+      return (data ?? []).map((f) => f.texto);
+    },
+  });
+  const frase = frases && frases.length > 0
+    ? frases[Math.floor(Date.now() / (1000 * 60 * 60 * 6)) % frases.length]
+    : null;
+
+  return (
+    <div className="mb-8">
+      <h1 className="font-display text-3xl md:text-4xl font-semibold text-foreground">
+        {saudacao}{nome ? `, ${nome}` : ""} <span className="opacity-80">☕</span>
+      </h1>
+      {frase && (
+        <p className="mt-2 text-sm md:text-base text-muted-foreground italic">
+          <span className="text-gold/70 mr-1">“</span>{frase}<span className="text-gold/70 ml-1">”</span>
+        </p>
+      )}
+      <div className="hairline-gold mt-5 opacity-30" />
+    </div>
+  );
+}
+
 
 function Aniversariantes({ items }: { items: any[] }) {
   const hoje = items.filter((p) => p.diasFaltam === 0);
