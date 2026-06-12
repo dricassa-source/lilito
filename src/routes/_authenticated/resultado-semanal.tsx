@@ -43,51 +43,54 @@ function ResultadoSemanal() {
       const nextStartISO = nextStart.toISOString(), nextEndISO = nextEnd.toISOString();
       const ids = scopeIds;
 
-      const [eventos, ativ, apolices, recs, eventosProx] = await Promise.all([
-        supabase.from("agenda_eventos").select("tipo,resultado,inicio,consultor_id")
+      const [eventos, apolices, recs, eventosProx] = await Promise.all([
+        supabase.from("agenda_eventos")
+          .select("tipo,inicio,consultor_id,delay_em,delay_resolvido,pendencia_tipo")
           .in("consultor_id", ids).gte("inicio", startISO).lte("inicio", endISO),
-        supabase.from("atividades").select("tipo,created_at,consultor_id")
-          .in("consultor_id", ids).gte("created_at", startISO).lte("created_at", endISO),
-        supabase.from("apolices").select("premio_atual,capital_segurado,data_fechamento,data_emissao,consultor_id,onboarding_status")
+        supabase.from("apolices").select("premio_atual,capital_segurado,data_fechamento,consultor_id")
           .in("consultor_id", ids)
-          .or(`data_fechamento.gte.${startISO},data_emissao.gte.${startISO}`),
-        supabase.from("prospects").select("id,created_at,consultor_id,telefone,quem_recomendou")
+          .gte("data_fechamento", startISO).lte("data_fechamento", endISO),
+        supabase.from("prospects").select("id,created_at,consultor_id,telefone,nome,quem_recomendou")
           .in("consultor_id", ids).gte("created_at", startISO).lte("created_at", endISO)
           .eq("origem", "recomendacao"),
         supabase.from("agenda_eventos").select("tipo,inicio,consultor_id")
           .in("consultor_id", ids).gte("inicio", nextStartISO).lte("inicio", nextEndISO),
       ]);
 
-
       const ev = eventos.data ?? [];
-      const ab_fone = (ativ.data ?? []).filter((a) => a.tipo === "ligacao").length;
-      const abs = ev.filter((e) => e.tipo === "ab").length;
-      const fechAg = ev.filter((e) => e.tipo === "fechamento").length;
-      const fechRea = ev.filter((e) => e.tipo === "fechamento" && e.resultado).length;
-      const revisitas = ev.filter((e) => e.tipo === "revisita").length;
-      const entregas = ev.filter((e) => e.tipo === "entrega_apolice").length;
+      // delay genérico (cicatriz vermelha) = qualquer evento que entrou em Delay (ativo ou resolvido), exceto F2
+      const temDelay = (e: any) => e.delay_em != null && e.pendencia_tipo !== "f2";
+      // F2 travado = pendência F2 ainda não resolvida
+      const f2Travado = (e: any) => e.pendencia_tipo === "f2" && !e.delay_resolvido;
+
+      const abs = ev.filter((e) => e.tipo === "ab");
+      const fechs = ev.filter((e) => e.tipo === "fechamento");
+      const ents = ev.filter((e) => e.tipo === "entrega_apolice");
+
+      const absAg = abs.length;
+      const absRea = abs.filter((e) => !temDelay(e)).length;
+      const fechAg = fechs.length;
+      const fechRea = fechs.filter((e) => !temDelay(e) && !f2Travado(e)).length;
+      const entregas = ents.filter((e) => !temDelay(e)).length;
 
       const ap = apolices.data ?? [];
-      const inWeek = (iso?: string | null) => iso && new Date(iso) >= start && new Date(iso) <= end;
-      const fechWeek = ap.filter((a) => inWeek(a.data_fechamento));
-      const emWeek = ap.filter((a) => inWeek(a.data_emissao));
-      const propostas = fechWeek.length;
-      const pa = fechWeek.reduce((s, a) => s + Number(a.premio_atual ?? 0), 0);
-      const cs = fechWeek.reduce((s, a) => s + Number(a.capital_segurado ?? 0), 0);
+      const propostas = ap.length;
+      const pa = ap.reduce((s, a) => s + Number(a.premio_atual ?? 0), 0);
+      const cs = ap.reduce((s, a) => s + Number(a.capital_segurado ?? 0), 0);
 
-      const recsCount = (recs.data ?? []).length;
-      const recsComplete = (recs.data ?? []).filter((r) => r.telefone && r.quem_recomendou).length;
+      const recsList = (recs.data ?? []).filter((r) => r.nome && r.telefone);
+      const recsCount = recsList.length;
+      const recsComplete = recsList.filter((r) => r.quem_recomendou).length;
 
       const evP = eventosProx.data ?? [];
       const previsao = {
         abs: evP.filter((e) => e.tipo === "ab").length,
         fech: evP.filter((e) => e.tipo === "fechamento").length,
-        revisitas: evP.filter((e) => e.tipo === "revisita").length,
       };
 
       return {
-        ab_fone, abs, fechAg, fechRea, propostas, pa, cs, recsCount, recsComplete,
-        revisitas, entregas, emWeek: emWeek.length, previsao,
+        absAg, absRea, fechAg, fechRea, propostas, pa, cs,
+        recsCount, recsComplete, entregas, previsao,
       };
     },
   });
