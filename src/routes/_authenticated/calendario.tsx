@@ -1182,9 +1182,13 @@ function EventoSheet({ evento, onClose, onChanged }: { evento: any | null; onClo
             </>
           )}
 
-          <SheetFooter className="mt-6">
+          <SheetFooter className="mt-6 flex-row justify-between gap-2">
             <Button variant="ghost" onClick={excluir} className="text-destructive">Excluir</Button>
+            {!isBloqueio && (
+              <Button variant="outline" onClick={() => setMode("editar")}>Editar</Button>
+            )}
           </SheetFooter>
+
         </SheetContent>
       </Sheet>
 
