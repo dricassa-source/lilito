@@ -92,7 +92,12 @@ function Calendario() {
   const { scopeIds, meuId } = useConsultorScope();
   const qc = useQueryClient();
   const [dialog, setDialog] = useState<DialogKind>(null);
+  const [agendaPrefill, setAgendaPrefill] = useState<{ data?: string; hora?: string } | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const openSlot = (day: Date, hora?: string) => {
+    setAgendaPrefill({ data: format(day, "yyyy-MM-dd"), hora });
+    setDialog("agendamento");
+  };
   const isMobile = useIsMobile();
   const [view, setView] = useState<View>(isMobile ? "dia" : "semana");
   const [anchor, setAnchor] = useState<Date>(new Date());
