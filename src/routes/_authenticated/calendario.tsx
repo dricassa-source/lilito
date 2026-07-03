@@ -94,6 +94,9 @@ function Calendario() {
   const [dialog, setDialog] = useState<DialogKind>(null);
   const [agendaPrefill, setAgendaPrefill] = useState<{ data?: string; hora?: string } | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [selectedLembrete, setSelectedLembrete] = useState<any | null>(null);
+  const [editLembrete, setEditLembrete] = useState<any | null>(null);
+
   const openSlot = (day: Date, hora?: string) => {
     setAgendaPrefill({ data: format(day, "yyyy-MM-dd"), hora });
     setDialog("agendamento");
@@ -280,9 +283,10 @@ function Calendario() {
       </div>
 
       <div ref={containerRef} className="overflow-auto max-h-[calc(100vh-260px)]" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}>
-        {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSlotClick={openSlot} slotHeight={slotHeight} colWidth={colWidth} />}
-        {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSlotClick={openSlot} slotHeight={slotHeight} />}
-        {view === "mes" && <MonthGrid anchor={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSlotClick={openSlot} />}
+        {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSelectLembrete={setSelectedLembrete} onSlotClick={openSlot} slotHeight={slotHeight} colWidth={colWidth} />}
+        {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSelectLembrete={setSelectedLembrete} onSlotClick={openSlot} slotHeight={slotHeight} />}
+        {view === "mes" && <MonthGrid anchor={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSelectLembrete={setSelectedLembrete} onSlotClick={openSlot} />}
+
       </div>
 
 
@@ -319,9 +323,57 @@ function Calendario() {
         onClose={() => setSelectedEvent(null)}
         onChanged={() => { setSelectedEvent(null); invalidateAll(); }}
       />
+
+      {selectedLembrete && !editLembrete && (
+        <Dialog open onOpenChange={(o) => !o && setSelectedLembrete(null)}>
+          <DialogContent className="bg-surface border-border max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-display text-2xl inline-flex items-center gap-2">
+                <Bell className="h-5 w-5 text-gold" />
+                {selectedLembrete.titulo}
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                {format(new Date(selectedLembrete.data + "T00:00"), "EEEE, dd 'de' MMMM yyyy", { locale: ptBR })}
+                {selectedLembrete.hora ? ` · ${selectedLembrete.hora.slice(0, 5)}` : ""}
+              </p>
+            </DialogHeader>
+            {selectedLembrete.observacao && (
+              <p className="text-sm">{selectedLembrete.observacao}</p>
+            )}
+            <DialogFooter className="flex-row justify-between gap-2">
+              <Button
+                variant="ghost"
+                className="text-destructive"
+                onClick={async () => {
+                  const { error } = await supabase.from("lembretes").delete().eq("id", selectedLembrete.id);
+                  if (error) { toast.error(error.message); return; }
+                  toast.success("Lembrete removido.");
+                  setSelectedLembrete(null); invalidateAll();
+                }}
+              >
+                Excluir
+              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setSelectedLembrete(null)}>Fechar</Button>
+                <Button className="gold-gradient text-background" onClick={() => setEditLembrete(selectedLembrete)}>Editar</Button>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {editLembrete && (
+        <Dialog open onOpenChange={(o) => { if (!o) { setEditLembrete(null); } }}>
+          <NovoLembrete
+            lembrete={editLembrete}
+            onClose={() => { setEditLembrete(null); setSelectedLembrete(null); invalidateAll(); }}
+          />
+        </Dialog>
+      )}
     </div>
   );
 }
+
 
 function MetricCard({ label, value, dot }: { label: string; value: number; dot: string }) {
   return (
@@ -341,7 +393,7 @@ const START_HOUR = 5;
 const END_HOUR = 21;
 const HOURS = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => i + START_HOUR);
 
-function WeekGrid({ from, eventos, lembretes, onSelect, onSlotClick, slotHeight, colWidth }: { from: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number; colWidth: number }) {
+function WeekGrid({ from, eventos, lembretes, onSelect, onSelectLembrete, onSlotClick, slotHeight, colWidth }: { from: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSelectLembrete: (l: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number; colWidth: number }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i));
   const useFixed = colWidth > 0;
   const gutter = useFixed ? 26 : 0;
@@ -369,9 +421,9 @@ function WeekGrid({ from, eventos, lembretes, onSelect, onSlotClick, slotHeight,
                 <span className="hidden sm:inline">{format(d, "EEE", { locale: ptBR })}</span>
               </p>
               <p className={cn("font-sans text-[13px] sm:text-base font-semibold mt-0.5 leading-none tabular-nums", today ? "text-gold" : "text-foreground")}>{format(d, "dd")}</p>
-              <DayLembretes lembretes={lembretes.filter((l) => isSameDay(new Date(l.data + "T00:00"), d))} />
             </div>
           );
+
         })}
       </div>
       <div className={bodyClass} style={gridStyle}>
@@ -383,8 +435,9 @@ function WeekGrid({ from, eventos, lembretes, onSelect, onSlotClick, slotHeight,
           ))}
         </div>
         {days.map((d) => (
-          <DayColumn key={d.toISOString()} day={d} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), d))} onSelect={onSelect} onSlotClick={onSlotClick} slotHeight={slotHeight} />
+          <DayColumn key={d.toISOString()} day={d} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), d))} lembretes={lembretes.filter((l) => isSameDay(new Date(l.data + "T00:00"), d))} onSelect={onSelect} onSelectLembrete={onSelectLembrete} onSlotClick={onSlotClick} slotHeight={slotHeight} />
         ))}
+
       </div>
       </div>
     </Card>
@@ -392,7 +445,7 @@ function WeekGrid({ from, eventos, lembretes, onSelect, onSlotClick, slotHeight,
 }
 
 
-function DayColumn({ day, eventos, onSelect, onSlotClick, slotHeight }: { day: Date; eventos: any[]; onSelect: (e: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number }) {
+function DayColumn({ day, eventos, lembretes = [], onSelect, onSelectLembrete, onSlotClick, slotHeight }: { day: Date; eventos: any[]; lembretes?: any[]; onSelect: (e: any) => void; onSelectLembrete?: (l: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number }) {
   const today = isSameDay(day, new Date());
   const now = new Date();
   const showNow = today && now.getHours() >= START_HOUR && now.getHours() <= END_HOUR;
@@ -421,9 +474,28 @@ function DayColumn({ day, eventos, onSelect, onSlotClick, slotHeight }: { day: D
         <div className="absolute inset-x-0 h-px bg-gold/80 z-20 pointer-events-none" style={{ top: nowTop }} />
       )}
       {eventos.map((e) => <EventBlock key={e.id} e={e} day={day} onSelect={onSelect} slotHeight={slotHeight} />)}
+      {lembretes.map((l) => <LembreteBell key={l.id} l={l} onSelect={onSelectLembrete} slotHeight={slotHeight} />)}
     </div>
   );
 }
+
+function LembreteBell({ l, onSelect, slotHeight }: { l: any; onSelect?: (l: any) => void; slotHeight: number }) {
+  const [hh, mm] = (l.hora ?? "09:00").slice(0, 5).split(":").map(Number);
+  const minutes = (hh || START_HOUR) * 60 + (mm || 0);
+  const top = ((minutes - START_HOUR * 60) / 60) * slotHeight;
+  return (
+    <button
+      type="button"
+      onClick={(ev) => { ev.stopPropagation(); onSelect?.(l); }}
+      className="absolute right-1 z-10 h-5 w-5 flex items-center justify-center rounded-full bg-gold/15 border border-gold/40 text-gold hover:bg-gold/25 cursor-pointer shadow-sm"
+      style={{ top: Math.max(0, top - 10) }}
+      title={`${l.hora ? l.hora.slice(0, 5) + " · " : ""}${l.titulo}`}
+    >
+      <Bell className="h-3 w-3" />
+    </button>
+  );
+}
+
 
 function abreviarLocal(raw?: string | null): string | null {
   if (!raw) return null;
@@ -538,22 +610,9 @@ function DayLembretes({ lembretes }: { lembretes: any[] }) {
   );
 }
 
-function DayGrid({ day, eventos, lembretes, onSelect, onSlotClick, slotHeight }: { day: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number }) {
-  const dayLembretes = lembretes.filter((l) => isSameDay(new Date(l.data + "T00:00"), day));
+function DayGrid({ day, eventos, lembretes, onSelect, onSelectLembrete, onSlotClick, slotHeight }: { day: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSelectLembrete: (l: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number }) {
   return (
     <Card className="bg-surface border-border overflow-hidden">
-      {dayLembretes.length > 0 && (
-        <div className="border-b border-border bg-surface-elevated px-3 py-2">
-          <p className="caps-tracking text-muted-foreground mb-1">Lembretes</p>
-          <div className="flex flex-wrap gap-2">
-            {dayLembretes.map((l) => (
-              <span key={l.id} className="text-xs text-gold/90 border border-gold/30 rounded px-2 py-0.5">
-                {l.hora ? l.hora.slice(0, 5) + " " : ""}{l.titulo}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
       <div className="grid grid-cols-[36px_minmax(0,1fr)] sm:grid-cols-[60px_minmax(0,1fr)]">
         <div className="sticky left-0 z-10 bg-surface">
           {HOURS.map((h) => (
@@ -562,14 +621,22 @@ function DayGrid({ day, eventos, lembretes, onSelect, onSlotClick, slotHeight }:
             </div>
           ))}
         </div>
-        <DayColumn day={day} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), day))} onSelect={onSelect} onSlotClick={onSlotClick} slotHeight={slotHeight} />
+        <DayColumn
+          day={day}
+          eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), day))}
+          lembretes={lembretes.filter((l) => isSameDay(new Date(l.data + "T00:00"), day))}
+          onSelect={onSelect}
+          onSelectLembrete={onSelectLembrete}
+          onSlotClick={onSlotClick}
+          slotHeight={slotHeight}
+        />
       </div>
-
     </Card>
   );
 }
 
-function MonthGrid({ anchor, eventos, lembretes, onSelect, onSlotClick }: { anchor: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSlotClick?: (day: Date, hora?: string) => void }) {
+function MonthGrid({ anchor, eventos, lembretes, onSelect, onSelectLembrete, onSlotClick }: { anchor: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSelectLembrete: (l: any) => void; onSlotClick?: (day: Date, hora?: string) => void }) {
+
   const monthStart = startOfMonth(anchor);
   const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const cells = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
@@ -634,8 +701,18 @@ function MonthGrid({ anchor, eventos, lembretes, onSelect, onSlotClick }: { anch
                 })}
                 {dayEvts.length > 3 && <p className="text-[10px] text-muted-foreground">+{dayEvts.length - 3} mais</p>}
                 {dayLemb.slice(0, 2).map((l) => (
-                  <p key={l.id} className="text-[10px] text-gold/80 truncate" title={l.titulo}>• {l.titulo}</p>
+                  <button
+                    key={l.id}
+                    type="button"
+                    onClick={(ev) => { ev.stopPropagation(); onSelectLembrete(l); }}
+                    className="w-full text-left text-[10px] text-gold/80 truncate inline-flex items-center gap-1 hover:text-gold"
+                    title={l.titulo}
+                  >
+                    <Bell className="h-2.5 w-2.5 shrink-0" />
+                    <span className="truncate">{l.hora ? l.hora.slice(0, 5) + " " : ""}{l.titulo}</span>
+                  </button>
                 ))}
+
               </div>
             </div>
           );
@@ -964,9 +1041,16 @@ function NovoAgendamento({ onClose, defaults, evento }: { onClose: () => void; d
 }
 
 // ---------- Novo Lembrete ----------
-function NovoLembrete({ onClose }: { onClose: () => void }) {
+function NovoLembrete({ onClose, lembrete }: { onClose: () => void; lembrete?: any }) {
   const { auth } = useAuth();
-  const [f, setF] = useState({ titulo: "", data: "", hora: "", observacao: "", prospect_id: "" });
+  const isEdit = !!lembrete;
+  const [f, setF] = useState({
+    titulo: lembrete?.titulo ?? "",
+    data: lembrete?.data ?? "",
+    hora: lembrete?.hora ? String(lembrete.hora).slice(0, 5) : "",
+    observacao: lembrete?.observacao ?? "",
+    prospect_id: lembrete?.prospect_id ?? "",
+  });
   const { data: prospects } = useQuery({
     queryKey: ["prospects-min-all"], enabled: !!auth,
     queryFn: async () => (await supabase.from("prospects").select("id,nome").order("nome")).data ?? [],
@@ -975,25 +1059,28 @@ function NovoLembrete({ onClose }: { onClose: () => void }) {
   async function save() {
     if (!auth) return;
     if (!f.titulo || !f.data) { toast.error("Título e data são obrigatórios."); return; }
-    const { error } = await supabase.from("lembretes").insert({
-      consultor_id: auth.user.id,
+    const payload = {
       titulo: f.titulo,
       data: f.data,
       hora: f.hora || null,
       observacao: f.observacao || null,
       prospect_id: f.prospect_id || null,
-    });
+    };
+    const { error } = isEdit
+      ? await supabase.from("lembretes").update(payload).eq("id", lembrete.id)
+      : await supabase.from("lembretes").insert({ ...payload, consultor_id: auth.user.id });
     if (error) { toast.error(error.message); return; }
-    toast.success("Lembrete criado.");
+    toast.success(isEdit ? "Lembrete atualizado." : "Lembrete criado.");
     onClose();
   }
 
   return (
     <DialogContent className="bg-surface border-border max-w-md">
       <DialogHeader>
-        <DialogTitle className="font-display text-2xl">Novo Lembrete</DialogTitle>
+        <DialogTitle className="font-display text-2xl">{isEdit ? "Editar Lembrete" : "Novo Lembrete"}</DialogTitle>
         <p className="text-xs text-muted-foreground">Lembretes não ocupam horário nem entram em métricas.</p>
       </DialogHeader>
+
       <div className="space-y-3">
         <div className="space-y-1.5"><Label>Título</Label><Input value={f.titulo} onChange={(e) => setF({ ...f, titulo: e.target.value })} /></div>
         <div className="grid grid-cols-2 gap-3">
