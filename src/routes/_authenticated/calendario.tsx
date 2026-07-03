@@ -94,6 +94,9 @@ function Calendario() {
   const [dialog, setDialog] = useState<DialogKind>(null);
   const [agendaPrefill, setAgendaPrefill] = useState<{ data?: string; hora?: string } | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [selectedLembrete, setSelectedLembrete] = useState<any | null>(null);
+  const [editLembrete, setEditLembrete] = useState<any | null>(null);
+
   const openSlot = (day: Date, hora?: string) => {
     setAgendaPrefill({ data: format(day, "yyyy-MM-dd"), hora });
     setDialog("agendamento");
