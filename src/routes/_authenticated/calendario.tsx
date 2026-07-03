@@ -538,7 +538,7 @@ function DayLembretes({ lembretes }: { lembretes: any[] }) {
   );
 }
 
-function DayGrid({ day, eventos, lembretes, onSelect, slotHeight }: { day: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; slotHeight: number }) {
+function DayGrid({ day, eventos, lembretes, onSelect, onSlotClick, slotHeight }: { day: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number }) {
   const dayLembretes = lembretes.filter((l) => isSameDay(new Date(l.data + "T00:00"), day));
   return (
     <Card className="bg-surface border-border overflow-hidden">
@@ -562,14 +562,14 @@ function DayGrid({ day, eventos, lembretes, onSelect, slotHeight }: { day: Date;
             </div>
           ))}
         </div>
-        <DayColumn day={day} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), day))} onSelect={onSelect} slotHeight={slotHeight} />
+        <DayColumn day={day} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), day))} onSelect={onSelect} onSlotClick={onSlotClick} slotHeight={slotHeight} />
       </div>
 
     </Card>
   );
 }
 
-function MonthGrid({ anchor, eventos, lembretes, onSelect }: { anchor: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void }) {
+function MonthGrid({ anchor, eventos, lembretes, onSelect, onSlotClick }: { anchor: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSlotClick?: (day: Date, hora?: string) => void }) {
   const monthStart = startOfMonth(anchor);
   const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const cells = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
