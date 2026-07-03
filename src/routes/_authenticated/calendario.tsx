@@ -907,7 +907,7 @@ function NovoAgendamento({ onClose, defaults, evento }: { onClose: () => void; d
   return (
     <DialogContent className="bg-surface border-border max-w-lg">
 
-      <DialogHeader><DialogTitle className="font-display text-2xl">Novo Agendamento</DialogTitle></DialogHeader>
+      <DialogHeader><DialogTitle className="font-display text-2xl">{isEdit ? "Editar Agendamento" : "Novo Agendamento"}</DialogTitle></DialogHeader>
       <div className="space-y-3">
         <div className="space-y-1.5"><Label>Tipo de compromisso</Label>
           <Select value={f.tipo} onValueChange={(v) => setF({ ...f, tipo: v })}>
