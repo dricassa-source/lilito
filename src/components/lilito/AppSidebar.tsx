@@ -14,7 +14,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+
+const THEME_KEY = "lilito-theme";
+type Theme = "dark" | "light";
+function applyTheme(t: Theme) {
+  const root = document.documentElement;
+  root.classList.remove("dark", "light");
+  root.classList.add(t);
+}
+function useTheme(): [Theme, () => void] {
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "dark";
+    return (localStorage.getItem(THEME_KEY) as Theme) || "dark";
+  });
+  useEffect(() => {
+    applyTheme(theme);
+    try { localStorage.setItem(THEME_KEY, theme); } catch {}
+  }, [theme]);
+  return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))];
+}
 
 function useDelaysCount() {
   const { auth } = useAuth();
