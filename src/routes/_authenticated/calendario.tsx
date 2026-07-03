@@ -1068,7 +1068,7 @@ function NovoBloqueio({ onClose }: { onClose: () => void }) {
 }
 
 // ---------- Sheet com detalhes + resultados ----------
-type ResultMode = null | "agendar_fechamento" | "agendar_revisita" | "proposta_fechada" | "delay";
+type ResultMode = null | "agendar_fechamento" | "agendar_revisita" | "proposta_fechada" | "delay" | "editar";
 
 function EventoSheet({ evento, onClose, onChanged }: { evento: any | null; onClose: () => void; onChanged: () => void }) {
   const [mode, setMode] = useState<ResultMode>(null);
