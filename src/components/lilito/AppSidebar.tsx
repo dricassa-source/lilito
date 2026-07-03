@@ -101,6 +101,7 @@ export function AppSidebar({ isMaster }: { isMaster: boolean }) {
   const navigate = useNavigate();
   const isActive = (url: string) => path === url || (url !== "/" && path.startsWith(url));
   const delaysCount = useDelaysCount();
+  const [theme, toggleTheme] = useTheme();
   const closeIfMobile = () => { if (isMobile) setOpenMobile(false); };
 
   async function signOut() {
