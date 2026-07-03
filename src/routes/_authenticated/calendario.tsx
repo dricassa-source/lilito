@@ -482,7 +482,7 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
   return (
     <button
       type="button"
-      onClick={() => onSelect(e)}
+      onClick={(ev) => { ev.stopPropagation(); onSelect(e); }}
       className={cn(
         "absolute inset-x-0 rounded-md border border-border/30 shadow-sm px-1.5 py-1 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
         c.bg, barCor, ringCicatriz,
