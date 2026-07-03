@@ -880,12 +880,12 @@ function NovoAgendamento({ onClose, defaults, evento }: { onClose: () => void; d
     const inicio = iniDate.toISOString();
     const fim = fimDate.toISOString();
     const consultorId = f.consultor_id || auth.user.id;
-    if (await temConflito(consultorId, inicio, fim)) {
+    if (await temConflito(consultorId, inicio, fim, isEdit ? evento.id : undefined)) {
       toast.error("Conflito de agenda: já existe compromisso ou bloqueio neste horário.");
       return;
     }
     const nome = (prospects ?? []).find((p: any) => p.id === f.prospect_id)?.nome ?? "Compromisso";
-    const { error } = await supabase.from("agenda_eventos").insert({
+    const payload = {
       consultor_id: consultorId,
       prospect_id: f.prospect_id,
       tipo: f.tipo as any,
@@ -895,14 +895,18 @@ function NovoAgendamento({ onClose, defaults, evento }: { onClose: () => void; d
       observacao: f.observacao || null,
       joint_consultor_id: f.is_joint && f.joint_consultor_id ? f.joint_consultor_id : null,
       joint_status: f.is_joint && f.joint_consultor_id ? "pendente" as any : "nenhum" as any,
-    });
+    };
+    const { error } = isEdit
+      ? await supabase.from("agenda_eventos").update(payload).eq("id", evento.id)
+      : await supabase.from("agenda_eventos").insert(payload);
     if (error) { toast.error(error.message); return; }
-    toast.success("Agendamento criado.");
+    toast.success(isEdit ? "Agendamento atualizado." : "Agendamento criado.");
     onClose();
   }
 
   return (
     <DialogContent className="bg-surface border-border max-w-lg">
+
       <DialogHeader><DialogTitle className="font-display text-2xl">Novo Agendamento</DialogTitle></DialogHeader>
       <div className="space-y-3">
         <div className="space-y-1.5"><Label>Tipo de compromisso</Label>
