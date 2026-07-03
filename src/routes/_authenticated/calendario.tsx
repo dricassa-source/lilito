@@ -280,9 +280,9 @@ function Calendario() {
       </div>
 
       <div ref={containerRef} className="overflow-auto max-h-[calc(100vh-260px)]" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}>
-        {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} slotHeight={slotHeight} colWidth={colWidth} />}
-        {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} slotHeight={slotHeight} />}
-        {view === "mes" && <MonthGrid anchor={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
+        {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSlotClick={openSlot} slotHeight={slotHeight} colWidth={colWidth} />}
+        {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSlotClick={openSlot} slotHeight={slotHeight} />}
+        {view === "mes" && <MonthGrid anchor={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSlotClick={openSlot} />}
       </div>
 
 
@@ -294,8 +294,8 @@ function Calendario() {
       </div>
 
       {dialog === "agendamento" && (
-        <Dialog open onOpenChange={(o) => !o && setDialog(null)}>
-          <NovoAgendamento onClose={() => { setDialog(null); invalidateAll(); }} />
+        <Dialog open onOpenChange={(o) => !o && { setDialog(null); setAgendaPrefill(null); }}>
+          <NovoAgendamento defaults={agendaPrefill ?? undefined} onClose={() => { setDialog(null); setAgendaPrefill(null); invalidateAll(); }} />
         </Dialog>
       )}
       {dialog === "lembrete" && (
