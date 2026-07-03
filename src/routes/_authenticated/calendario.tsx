@@ -587,7 +587,11 @@ function MonthGrid({ anchor, eventos, lembretes, onSelect, onSlotClick }: { anch
           const inMonth = isSameMonth(d, anchor);
           const today = isSameDay(d, new Date());
           return (
-            <div key={d.toISOString()} className={cn("min-h-[110px] p-1.5 border-l border-t border-border first:border-l-0", !inMonth && "opacity-40", today && "bg-surface-elevated")}>
+            <div
+              key={d.toISOString()}
+              className={cn("min-h-[110px] p-1.5 border-l border-t border-border first:border-l-0", !inMonth && "opacity-40", today && "bg-surface-elevated", onSlotClick && "cursor-pointer")}
+              onClick={() => onSlotClick?.(d)}
+            >
               <p className={cn("text-xs font-medium mb-1", today ? "text-gold" : "text-muted-foreground")}>{format(d, "dd")}</p>
               <div className="space-y-1">
                 {dayEvts.slice(0, 3).map((e) => {
