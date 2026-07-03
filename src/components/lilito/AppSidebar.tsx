@@ -7,14 +7,33 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sun, LayoutDashboard, Users2, Flame, CalendarDays, Target, AlertTriangle,
   ListChecks, Users, FileText, Trophy, Settings, LogOut,
-  TrendingUp, CircleDot, ShieldCheck, Handshake,
+  TrendingUp, CircleDot, ShieldCheck, Handshake, Moon,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+
+const THEME_KEY = "lilito-theme";
+type Theme = "dark" | "light";
+function applyTheme(t: Theme) {
+  const root = document.documentElement;
+  root.classList.remove("dark", "light");
+  root.classList.add(t);
+}
+function useTheme(): [Theme, () => void] {
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "dark";
+    return (localStorage.getItem(THEME_KEY) as Theme) || "dark";
+  });
+  useEffect(() => {
+    applyTheme(theme);
+    try { localStorage.setItem(THEME_KEY, theme); } catch {}
+  }, [theme]);
+  return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))];
+}
 
 function useDelaysCount() {
   const { auth } = useAuth();
@@ -82,6 +101,7 @@ export function AppSidebar({ isMaster }: { isMaster: boolean }) {
   const navigate = useNavigate();
   const isActive = (url: string) => path === url || (url !== "/" && path.startsWith(url));
   const delaysCount = useDelaysCount();
+  const [theme, toggleTheme] = useTheme();
   const closeIfMobile = () => { if (isMobile) setOpenMobile(false); };
 
   async function signOut() {
@@ -158,6 +178,12 @@ export function AppSidebar({ isMaster }: { isMaster: boolean }) {
 
       <SidebarFooter className="border-t border-sidebar-border p-2">
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={toggleTheme} tooltip={theme === "dark" ? "Modo claro" : "Modo escuro"}>
+              {theme === "dark" ? <Sun className="h-4 w-4" strokeWidth={1.5} /> : <Moon className="h-4 w-4" strokeWidth={1.5} />}
+              <span className="text-sm">{theme === "dark" ? "Modo claro" : "Modo escuro"}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={signOut} tooltip="Sair">
               <LogOut className="h-4 w-4" strokeWidth={1.5} />
