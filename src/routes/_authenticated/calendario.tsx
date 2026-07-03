@@ -1041,9 +1041,16 @@ function NovoAgendamento({ onClose, defaults, evento }: { onClose: () => void; d
 }
 
 // ---------- Novo Lembrete ----------
-function NovoLembrete({ onClose }: { onClose: () => void }) {
+function NovoLembrete({ onClose, lembrete }: { onClose: () => void; lembrete?: any }) {
   const { auth } = useAuth();
-  const [f, setF] = useState({ titulo: "", data: "", hora: "", observacao: "", prospect_id: "" });
+  const isEdit = !!lembrete;
+  const [f, setF] = useState({
+    titulo: lembrete?.titulo ?? "",
+    data: lembrete?.data ?? "",
+    hora: lembrete?.hora ? String(lembrete.hora).slice(0, 5) : "",
+    observacao: lembrete?.observacao ?? "",
+    prospect_id: lembrete?.prospect_id ?? "",
+  });
   const { data: prospects } = useQuery({
     queryKey: ["prospects-min-all"], enabled: !!auth,
     queryFn: async () => (await supabase.from("prospects").select("id,nome").order("nome")).data ?? [],
@@ -1052,25 +1059,28 @@ function NovoLembrete({ onClose }: { onClose: () => void }) {
   async function save() {
     if (!auth) return;
     if (!f.titulo || !f.data) { toast.error("Título e data são obrigatórios."); return; }
-    const { error } = await supabase.from("lembretes").insert({
-      consultor_id: auth.user.id,
+    const payload = {
       titulo: f.titulo,
       data: f.data,
       hora: f.hora || null,
       observacao: f.observacao || null,
       prospect_id: f.prospect_id || null,
-    });
+    };
+    const { error } = isEdit
+      ? await supabase.from("lembretes").update(payload).eq("id", lembrete.id)
+      : await supabase.from("lembretes").insert({ ...payload, consultor_id: auth.user.id });
     if (error) { toast.error(error.message); return; }
-    toast.success("Lembrete criado.");
+    toast.success(isEdit ? "Lembrete atualizado." : "Lembrete criado.");
     onClose();
   }
 
   return (
     <DialogContent className="bg-surface border-border max-w-md">
       <DialogHeader>
-        <DialogTitle className="font-display text-2xl">Novo Lembrete</DialogTitle>
+        <DialogTitle className="font-display text-2xl">{isEdit ? "Editar Lembrete" : "Novo Lembrete"}</DialogTitle>
         <p className="text-xs text-muted-foreground">Lembretes não ocupam horário nem entram em métricas.</p>
       </DialogHeader>
+
       <div className="space-y-3">
         <div className="space-y-1.5"><Label>Título</Label><Input value={f.titulo} onChange={(e) => setF({ ...f, titulo: e.target.value })} /></div>
         <div className="grid grid-cols-2 gap-3">
