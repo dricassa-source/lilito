@@ -825,20 +825,42 @@ function NovoRecorrente({ onClose }: { onClose: () => void }) {
   );
 }
 
-function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?: Partial<any> }) {
+function NovoAgendamento({ onClose, defaults, evento }: { onClose: () => void; defaults?: Partial<any>; evento?: any }) {
   const { auth } = useAuth();
-  const [f, setF] = useState({
-    tipo: defaults?.tipo ?? "ab",
-    prospect_id: defaults?.prospect_id ?? "",
-    consultor_id: defaults?.consultor_id ?? auth?.user.id ?? "",
-    data: "",
-    hora: "09:00",
-    dur: 60,
-    local: "",
-    observacao: "",
-    is_joint: false,
-    joint_consultor_id: "",
-  });
+  const isEdit = !!evento;
+  const initial = (() => {
+    if (evento) {
+      const ini = new Date(evento.inicio);
+      const fim = new Date(evento.fim);
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return {
+        tipo: evento.tipo ?? "ab",
+        prospect_id: evento.prospect_id ?? "",
+        consultor_id: evento.consultor_id ?? auth?.user.id ?? "",
+        data: `${ini.getFullYear()}-${pad(ini.getMonth() + 1)}-${pad(ini.getDate())}`,
+        hora: `${pad(ini.getHours())}:${pad(ini.getMinutes())}`,
+        dur: Math.max(15, Math.round((fim.getTime() - ini.getTime()) / 60000)),
+        local: evento.local ?? "",
+        observacao: evento.observacao ?? "",
+        is_joint: !!evento.joint_consultor_id,
+        joint_consultor_id: evento.joint_consultor_id ?? "",
+      };
+    }
+    return {
+      tipo: defaults?.tipo ?? "ab",
+      prospect_id: defaults?.prospect_id ?? "",
+      consultor_id: defaults?.consultor_id ?? auth?.user.id ?? "",
+      data: defaults?.data ?? "",
+      hora: defaults?.hora ?? "09:00",
+      dur: 60,
+      local: "",
+      observacao: "",
+      is_joint: false,
+      joint_consultor_id: "",
+    };
+  })();
+  const [f, setF] = useState(initial);
+
 
   const { data: prospects } = useQuery({
     queryKey: ["prospects-min-all"], enabled: !!auth,
