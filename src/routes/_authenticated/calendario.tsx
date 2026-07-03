@@ -562,22 +562,9 @@ function DayLembretes({ lembretes }: { lembretes: any[] }) {
   );
 }
 
-function DayGrid({ day, eventos, lembretes, onSelect, onSlotClick, slotHeight }: { day: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number }) {
-  const dayLembretes = lembretes.filter((l) => isSameDay(new Date(l.data + "T00:00"), day));
+function DayGrid({ day, eventos, lembretes, onSelect, onSelectLembrete, onSlotClick, slotHeight }: { day: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSelectLembrete: (l: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number }) {
   return (
     <Card className="bg-surface border-border overflow-hidden">
-      {dayLembretes.length > 0 && (
-        <div className="border-b border-border bg-surface-elevated px-3 py-2">
-          <p className="caps-tracking text-muted-foreground mb-1">Lembretes</p>
-          <div className="flex flex-wrap gap-2">
-            {dayLembretes.map((l) => (
-              <span key={l.id} className="text-xs text-gold/90 border border-gold/30 rounded px-2 py-0.5">
-                {l.hora ? l.hora.slice(0, 5) + " " : ""}{l.titulo}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
       <div className="grid grid-cols-[36px_minmax(0,1fr)] sm:grid-cols-[60px_minmax(0,1fr)]">
         <div className="sticky left-0 z-10 bg-surface">
           {HOURS.map((h) => (
@@ -586,14 +573,22 @@ function DayGrid({ day, eventos, lembretes, onSelect, onSlotClick, slotHeight }:
             </div>
           ))}
         </div>
-        <DayColumn day={day} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), day))} onSelect={onSelect} onSlotClick={onSlotClick} slotHeight={slotHeight} />
+        <DayColumn
+          day={day}
+          eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), day))}
+          lembretes={lembretes.filter((l) => isSameDay(new Date(l.data + "T00:00"), day))}
+          onSelect={onSelect}
+          onSelectLembrete={onSelectLembrete}
+          onSlotClick={onSlotClick}
+          slotHeight={slotHeight}
+        />
       </div>
-
     </Card>
   );
 }
 
-function MonthGrid({ anchor, eventos, lembretes, onSelect, onSlotClick }: { anchor: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSlotClick?: (day: Date, hora?: string) => void }) {
+function MonthGrid({ anchor, eventos, lembretes, onSelect, onSelectLembrete, onSlotClick }: { anchor: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSelectLembrete: (l: any) => void; onSlotClick?: (day: Date, hora?: string) => void }) {
+
   const monthStart = startOfMonth(anchor);
   const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const cells = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
