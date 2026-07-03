@@ -392,14 +392,28 @@ function WeekGrid({ from, eventos, lembretes, onSelect, onSlotClick, slotHeight,
 }
 
 
-function DayColumn({ day, eventos, onSelect, slotHeight }: { day: Date; eventos: any[]; onSelect: (e: any) => void; slotHeight: number }) {
+function DayColumn({ day, eventos, onSelect, onSlotClick, slotHeight }: { day: Date; eventos: any[]; onSelect: (e: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number }) {
   const today = isSameDay(day, new Date());
   const now = new Date();
   const showNow = today && now.getHours() >= START_HOUR && now.getHours() <= END_HOUR;
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const nowTop = ((nowMin - START_HOUR * 60) / 60) * slotHeight;
+  const handleClick = (ev: React.MouseEvent<HTMLDivElement>) => {
+    if (!onSlotClick) return;
+    const rect = ev.currentTarget.getBoundingClientRect();
+    const y = ev.clientY - rect.top;
+    const totalMin = (y / slotHeight) * 60 + START_HOUR * 60;
+    const snapped = Math.max(START_HOUR * 60, Math.min(END_HOUR * 60, Math.round(totalMin / 15) * 15));
+    const hh = String(Math.floor(snapped / 60)).padStart(2, "0");
+    const mm = String(snapped % 60).padStart(2, "0");
+    onSlotClick(day, `${hh}:${mm}`);
+  };
   return (
-    <div className={cn("relative border-l border-border", today && "bg-gold/5")} style={{ height: HOURS.length * slotHeight }}>
+    <div
+      className={cn("relative border-l border-border", today && "bg-gold/5", onSlotClick && "cursor-pointer")}
+      style={{ height: HOURS.length * slotHeight }}
+      onClick={handleClick}
+    >
       {HOURS.map((h, i) => (
         <div key={h} className={cn("border-b border-border/20", i % 2 === 0 && "bg-foreground/[0.02]")} style={{ height: slotHeight }} />
       ))}
