@@ -323,9 +323,57 @@ function Calendario() {
         onClose={() => setSelectedEvent(null)}
         onChanged={() => { setSelectedEvent(null); invalidateAll(); }}
       />
+
+      {selectedLembrete && !editLembrete && (
+        <Dialog open onOpenChange={(o) => !o && setSelectedLembrete(null)}>
+          <DialogContent className="bg-surface border-border max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-display text-2xl inline-flex items-center gap-2">
+                <Bell className="h-5 w-5 text-gold" />
+                {selectedLembrete.titulo}
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                {format(new Date(selectedLembrete.data + "T00:00"), "EEEE, dd 'de' MMMM yyyy", { locale: ptBR })}
+                {selectedLembrete.hora ? ` · ${selectedLembrete.hora.slice(0, 5)}` : ""}
+              </p>
+            </DialogHeader>
+            {selectedLembrete.observacao && (
+              <p className="text-sm">{selectedLembrete.observacao}</p>
+            )}
+            <DialogFooter className="flex-row justify-between gap-2">
+              <Button
+                variant="ghost"
+                className="text-destructive"
+                onClick={async () => {
+                  const { error } = await supabase.from("lembretes").delete().eq("id", selectedLembrete.id);
+                  if (error) { toast.error(error.message); return; }
+                  toast.success("Lembrete removido.");
+                  setSelectedLembrete(null); invalidateAll();
+                }}
+              >
+                Excluir
+              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setSelectedLembrete(null)}>Fechar</Button>
+                <Button className="gold-gradient text-background" onClick={() => setEditLembrete(selectedLembrete)}>Editar</Button>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {editLembrete && (
+        <Dialog open onOpenChange={(o) => { if (!o) { setEditLembrete(null); } }}>
+          <NovoLembrete
+            lembrete={editLembrete}
+            onClose={() => { setEditLembrete(null); setSelectedLembrete(null); invalidateAll(); }}
+          />
+        </Dialog>
+      )}
     </div>
   );
 }
+
 
 function MetricCard({ label, value, dot }: { label: string; value: number; dot: string }) {
   return (
