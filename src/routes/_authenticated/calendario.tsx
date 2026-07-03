@@ -825,20 +825,42 @@ function NovoRecorrente({ onClose }: { onClose: () => void }) {
   );
 }
 
-function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?: Partial<any> }) {
+function NovoAgendamento({ onClose, defaults, evento }: { onClose: () => void; defaults?: Partial<any>; evento?: any }) {
   const { auth } = useAuth();
-  const [f, setF] = useState({
-    tipo: defaults?.tipo ?? "ab",
-    prospect_id: defaults?.prospect_id ?? "",
-    consultor_id: defaults?.consultor_id ?? auth?.user.id ?? "",
-    data: "",
-    hora: "09:00",
-    dur: 60,
-    local: "",
-    observacao: "",
-    is_joint: false,
-    joint_consultor_id: "",
-  });
+  const isEdit = !!evento;
+  const initial = (() => {
+    if (evento) {
+      const ini = new Date(evento.inicio);
+      const fim = new Date(evento.fim);
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return {
+        tipo: evento.tipo ?? "ab",
+        prospect_id: evento.prospect_id ?? "",
+        consultor_id: evento.consultor_id ?? auth?.user.id ?? "",
+        data: `${ini.getFullYear()}-${pad(ini.getMonth() + 1)}-${pad(ini.getDate())}`,
+        hora: `${pad(ini.getHours())}:${pad(ini.getMinutes())}`,
+        dur: Math.max(15, Math.round((fim.getTime() - ini.getTime()) / 60000)),
+        local: evento.local ?? "",
+        observacao: evento.observacao ?? "",
+        is_joint: !!evento.joint_consultor_id,
+        joint_consultor_id: evento.joint_consultor_id ?? "",
+      };
+    }
+    return {
+      tipo: defaults?.tipo ?? "ab",
+      prospect_id: defaults?.prospect_id ?? "",
+      consultor_id: defaults?.consultor_id ?? auth?.user.id ?? "",
+      data: defaults?.data ?? "",
+      hora: defaults?.hora ?? "09:00",
+      dur: 60,
+      local: "",
+      observacao: "",
+      is_joint: false,
+      joint_consultor_id: "",
+    };
+  })();
+  const [f, setF] = useState(initial);
+
 
   const { data: prospects } = useQuery({
     queryKey: ["prospects-min-all"], enabled: !!auth,
@@ -858,12 +880,12 @@ function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?
     const inicio = iniDate.toISOString();
     const fim = fimDate.toISOString();
     const consultorId = f.consultor_id || auth.user.id;
-    if (await temConflito(consultorId, inicio, fim)) {
+    if (await temConflito(consultorId, inicio, fim, isEdit ? evento.id : undefined)) {
       toast.error("Conflito de agenda: já existe compromisso ou bloqueio neste horário.");
       return;
     }
     const nome = (prospects ?? []).find((p: any) => p.id === f.prospect_id)?.nome ?? "Compromisso";
-    const { error } = await supabase.from("agenda_eventos").insert({
+    const payload = {
       consultor_id: consultorId,
       prospect_id: f.prospect_id,
       tipo: f.tipo as any,
@@ -873,15 +895,19 @@ function NovoAgendamento({ onClose, defaults }: { onClose: () => void; defaults?
       observacao: f.observacao || null,
       joint_consultor_id: f.is_joint && f.joint_consultor_id ? f.joint_consultor_id : null,
       joint_status: f.is_joint && f.joint_consultor_id ? "pendente" as any : "nenhum" as any,
-    });
+    };
+    const { error } = isEdit
+      ? await supabase.from("agenda_eventos").update(payload).eq("id", evento.id)
+      : await supabase.from("agenda_eventos").insert(payload);
     if (error) { toast.error(error.message); return; }
-    toast.success("Agendamento criado.");
+    toast.success(isEdit ? "Agendamento atualizado." : "Agendamento criado.");
     onClose();
   }
 
   return (
     <DialogContent className="bg-surface border-border max-w-lg">
-      <DialogHeader><DialogTitle className="font-display text-2xl">Novo Agendamento</DialogTitle></DialogHeader>
+
+      <DialogHeader><DialogTitle className="font-display text-2xl">{isEdit ? "Editar Agendamento" : "Novo Agendamento"}</DialogTitle></DialogHeader>
       <div className="space-y-3">
         <div className="space-y-1.5"><Label>Tipo de compromisso</Label>
           <Select value={f.tipo} onValueChange={(v) => setF({ ...f, tipo: v })}>
@@ -1042,7 +1068,7 @@ function NovoBloqueio({ onClose }: { onClose: () => void }) {
 }
 
 // ---------- Sheet com detalhes + resultados ----------
-type ResultMode = null | "agendar_fechamento" | "agendar_revisita" | "proposta_fechada" | "delay";
+type ResultMode = null | "agendar_fechamento" | "agendar_revisita" | "proposta_fechada" | "delay" | "editar";
 
 function EventoSheet({ evento, onClose, onChanged }: { evento: any | null; onClose: () => void; onChanged: () => void }) {
   const [mode, setMode] = useState<ResultMode>(null);
@@ -1156,9 +1182,13 @@ function EventoSheet({ evento, onClose, onChanged }: { evento: any | null; onClo
             </>
           )}
 
-          <SheetFooter className="mt-6">
+          <SheetFooter className="mt-6 flex-row justify-between gap-2">
             <Button variant="ghost" onClick={excluir} className="text-destructive">Excluir</Button>
+            {!isBloqueio && (
+              <Button variant="outline" onClick={() => setMode("editar")}>Editar</Button>
+            )}
           </SheetFooter>
+
         </SheetContent>
       </Sheet>
 
@@ -1208,9 +1238,18 @@ function EventoSheet({ evento, onClose, onChanged }: { evento: any | null; onClo
           <PropostaFechadaForm evento={evento} onClose={() => { setMode(null); onChanged(); }} />
         </Dialog>
       )}
+      {mode === "editar" && (
+        <Dialog open onOpenChange={(o) => !o && setMode(null)}>
+          <NovoAgendamento
+            evento={evento}
+            onClose={() => { setMode(null); onChanged(); }}
+          />
+        </Dialog>
+      )}
     </>
   );
 }
+
 
 async function marcarResultado(evento: any, resultado: string, patch: Record<string, any> = {}) {
   const { error } = await supabase.from("agenda_eventos")
