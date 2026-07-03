@@ -345,7 +345,7 @@ const START_HOUR = 5;
 const END_HOUR = 21;
 const HOURS = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => i + START_HOUR);
 
-function WeekGrid({ from, eventos, lembretes, onSelect, onSlotClick, slotHeight, colWidth }: { from: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number; colWidth: number }) {
+function WeekGrid({ from, eventos, lembretes, onSelect, onSelectLembrete, onSlotClick, slotHeight, colWidth }: { from: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSelectLembrete: (l: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number; colWidth: number }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i));
   const useFixed = colWidth > 0;
   const gutter = useFixed ? 26 : 0;
