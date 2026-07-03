@@ -397,7 +397,7 @@ function WeekGrid({ from, eventos, lembretes, onSelect, onSelectLembrete, onSlot
 }
 
 
-function DayColumn({ day, eventos, onSelect, onSlotClick, slotHeight }: { day: Date; eventos: any[]; onSelect: (e: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number }) {
+function DayColumn({ day, eventos, lembretes = [], onSelect, onSelectLembrete, onSlotClick, slotHeight }: { day: Date; eventos: any[]; lembretes?: any[]; onSelect: (e: any) => void; onSelectLembrete?: (l: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number }) {
   const today = isSameDay(day, new Date());
   const now = new Date();
   const showNow = today && now.getHours() >= START_HOUR && now.getHours() <= END_HOUR;
@@ -426,9 +426,28 @@ function DayColumn({ day, eventos, onSelect, onSlotClick, slotHeight }: { day: D
         <div className="absolute inset-x-0 h-px bg-gold/80 z-20 pointer-events-none" style={{ top: nowTop }} />
       )}
       {eventos.map((e) => <EventBlock key={e.id} e={e} day={day} onSelect={onSelect} slotHeight={slotHeight} />)}
+      {lembretes.map((l) => <LembreteBell key={l.id} l={l} onSelect={onSelectLembrete} slotHeight={slotHeight} />)}
     </div>
   );
 }
+
+function LembreteBell({ l, onSelect, slotHeight }: { l: any; onSelect?: (l: any) => void; slotHeight: number }) {
+  const [hh, mm] = (l.hora ?? "09:00").slice(0, 5).split(":").map(Number);
+  const minutes = (hh || START_HOUR) * 60 + (mm || 0);
+  const top = ((minutes - START_HOUR * 60) / 60) * slotHeight;
+  return (
+    <button
+      type="button"
+      onClick={(ev) => { ev.stopPropagation(); onSelect?.(l); }}
+      className="absolute right-1 z-10 h-5 w-5 flex items-center justify-center rounded-full bg-gold/15 border border-gold/40 text-gold hover:bg-gold/25 cursor-pointer shadow-sm"
+      style={{ top: Math.max(0, top - 10) }}
+      title={`${l.hora ? l.hora.slice(0, 5) + " · " : ""}${l.titulo}`}
+    >
+      <Bell className="h-3 w-3" />
+    </button>
+  );
+}
+
 
 function abreviarLocal(raw?: string | null): string | null {
   if (!raw) return null;
