@@ -1238,9 +1238,18 @@ function EventoSheet({ evento, onClose, onChanged }: { evento: any | null; onClo
           <PropostaFechadaForm evento={evento} onClose={() => { setMode(null); onChanged(); }} />
         </Dialog>
       )}
+      {mode === "editar" && (
+        <Dialog open onOpenChange={(o) => !o && setMode(null)}>
+          <NovoAgendamento
+            evento={evento}
+            onClose={() => { setMode(null); onChanged(); }}
+          />
+        </Dialog>
+      )}
     </>
   );
 }
+
 
 async function marcarResultado(evento: any, resultado: string, patch: Record<string, any> = {}) {
   const { error } = await supabase.from("agenda_eventos")
