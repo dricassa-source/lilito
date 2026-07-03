@@ -92,7 +92,12 @@ function Calendario() {
   const { scopeIds, meuId } = useConsultorScope();
   const qc = useQueryClient();
   const [dialog, setDialog] = useState<DialogKind>(null);
+  const [agendaPrefill, setAgendaPrefill] = useState<{ data?: string; hora?: string } | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const openSlot = (day: Date, hora?: string) => {
+    setAgendaPrefill({ data: format(day, "yyyy-MM-dd"), hora });
+    setDialog("agendamento");
+  };
   const isMobile = useIsMobile();
   const [view, setView] = useState<View>(isMobile ? "dia" : "semana");
   const [anchor, setAnchor] = useState<Date>(new Date());
@@ -236,7 +241,7 @@ function Calendario() {
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <h1 className="font-display text-2xl text-foreground">Calendário</h1>
           <div className="flex flex-wrap gap-1.5">
-            <Button size="sm" onClick={() => setDialog("agendamento")} className="gold-gradient text-background h-11 sm:h-8 px-3">
+            <Button size="sm" onClick={() => { setAgendaPrefill(null); setDialog("agendamento"); }} className="gold-gradient text-background h-11 sm:h-8 px-3">
               <CalendarPlus className="h-3.5 w-3.5 mr-1" />Agendar
             </Button>
             <Button size="sm" variant="outline" onClick={() => setDialog("lembrete")} className="h-11 sm:h-8 px-3">
@@ -275,9 +280,9 @@ function Calendario() {
       </div>
 
       <div ref={containerRef} className="overflow-auto max-h-[calc(100vh-260px)]" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}>
-        {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} slotHeight={slotHeight} colWidth={colWidth} />}
-        {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} slotHeight={slotHeight} />}
-        {view === "mes" && <MonthGrid anchor={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} />}
+        {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSlotClick={openSlot} slotHeight={slotHeight} colWidth={colWidth} />}
+        {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSlotClick={openSlot} slotHeight={slotHeight} />}
+        {view === "mes" && <MonthGrid anchor={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSlotClick={openSlot} />}
       </div>
 
 
@@ -289,8 +294,8 @@ function Calendario() {
       </div>
 
       {dialog === "agendamento" && (
-        <Dialog open onOpenChange={(o) => !o && setDialog(null)}>
-          <NovoAgendamento onClose={() => { setDialog(null); invalidateAll(); }} />
+        <Dialog open onOpenChange={(o) => { if (!o) { setDialog(null); setAgendaPrefill(null); } }}>
+          <NovoAgendamento defaults={agendaPrefill ?? undefined} onClose={() => { setDialog(null); setAgendaPrefill(null); invalidateAll(); }} />
         </Dialog>
       )}
       {dialog === "lembrete" && (
@@ -336,7 +341,7 @@ const START_HOUR = 5;
 const END_HOUR = 21;
 const HOURS = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => i + START_HOUR);
 
-function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight, colWidth }: { from: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; slotHeight: number; colWidth: number }) {
+function WeekGrid({ from, eventos, lembretes, onSelect, onSlotClick, slotHeight, colWidth }: { from: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number; colWidth: number }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i));
   const useFixed = colWidth > 0;
   const gutter = useFixed ? 26 : 0;
@@ -378,7 +383,7 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight, colWidth }: 
           ))}
         </div>
         {days.map((d) => (
-          <DayColumn key={d.toISOString()} day={d} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), d))} onSelect={onSelect} slotHeight={slotHeight} />
+          <DayColumn key={d.toISOString()} day={d} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), d))} onSelect={onSelect} onSlotClick={onSlotClick} slotHeight={slotHeight} />
         ))}
       </div>
       </div>
@@ -387,14 +392,28 @@ function WeekGrid({ from, eventos, lembretes, onSelect, slotHeight, colWidth }: 
 }
 
 
-function DayColumn({ day, eventos, onSelect, slotHeight }: { day: Date; eventos: any[]; onSelect: (e: any) => void; slotHeight: number }) {
+function DayColumn({ day, eventos, onSelect, onSlotClick, slotHeight }: { day: Date; eventos: any[]; onSelect: (e: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number }) {
   const today = isSameDay(day, new Date());
   const now = new Date();
   const showNow = today && now.getHours() >= START_HOUR && now.getHours() <= END_HOUR;
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const nowTop = ((nowMin - START_HOUR * 60) / 60) * slotHeight;
+  const handleClick = (ev: React.MouseEvent<HTMLDivElement>) => {
+    if (!onSlotClick) return;
+    const rect = ev.currentTarget.getBoundingClientRect();
+    const y = ev.clientY - rect.top;
+    const totalMin = (y / slotHeight) * 60 + START_HOUR * 60;
+    const snapped = Math.max(START_HOUR * 60, Math.min(END_HOUR * 60, Math.round(totalMin / 15) * 15));
+    const hh = String(Math.floor(snapped / 60)).padStart(2, "0");
+    const mm = String(snapped % 60).padStart(2, "0");
+    onSlotClick(day, `${hh}:${mm}`);
+  };
   return (
-    <div className={cn("relative border-l border-border", today && "bg-gold/5")} style={{ height: HOURS.length * slotHeight }}>
+    <div
+      className={cn("relative border-l border-border", today && "bg-gold/5", onSlotClick && "cursor-pointer")}
+      style={{ height: HOURS.length * slotHeight }}
+      onClick={handleClick}
+    >
       {HOURS.map((h, i) => (
         <div key={h} className={cn("border-b border-border/20", i % 2 === 0 && "bg-foreground/[0.02]")} style={{ height: slotHeight }} />
       ))}
@@ -463,7 +482,7 @@ function EventBlock({ e, day, onSelect, slotHeight }: { e: any; day: Date; onSel
   return (
     <button
       type="button"
-      onClick={() => onSelect(e)}
+      onClick={(ev) => { ev.stopPropagation(); onSelect(e); }}
       className={cn(
         "absolute inset-x-0 rounded-md border border-border/30 shadow-sm px-1.5 py-1 overflow-hidden text-left transition hover:ring-1 hover:ring-gold/40 cursor-pointer font-sans",
         c.bg, barCor, ringCicatriz,
@@ -519,7 +538,7 @@ function DayLembretes({ lembretes }: { lembretes: any[] }) {
   );
 }
 
-function DayGrid({ day, eventos, lembretes, onSelect, slotHeight }: { day: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; slotHeight: number }) {
+function DayGrid({ day, eventos, lembretes, onSelect, onSlotClick, slotHeight }: { day: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSlotClick?: (day: Date, hora?: string) => void; slotHeight: number }) {
   const dayLembretes = lembretes.filter((l) => isSameDay(new Date(l.data + "T00:00"), day));
   return (
     <Card className="bg-surface border-border overflow-hidden">
@@ -543,14 +562,14 @@ function DayGrid({ day, eventos, lembretes, onSelect, slotHeight }: { day: Date;
             </div>
           ))}
         </div>
-        <DayColumn day={day} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), day))} onSelect={onSelect} slotHeight={slotHeight} />
+        <DayColumn day={day} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), day))} onSelect={onSelect} onSlotClick={onSlotClick} slotHeight={slotHeight} />
       </div>
 
     </Card>
   );
 }
 
-function MonthGrid({ anchor, eventos, lembretes, onSelect }: { anchor: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void }) {
+function MonthGrid({ anchor, eventos, lembretes, onSelect, onSlotClick }: { anchor: Date; eventos: any[]; lembretes: any[]; onSelect: (e: any) => void; onSlotClick?: (day: Date, hora?: string) => void }) {
   const monthStart = startOfMonth(anchor);
   const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const cells = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
@@ -568,7 +587,11 @@ function MonthGrid({ anchor, eventos, lembretes, onSelect }: { anchor: Date; eve
           const inMonth = isSameMonth(d, anchor);
           const today = isSameDay(d, new Date());
           return (
-            <div key={d.toISOString()} className={cn("min-h-[110px] p-1.5 border-l border-t border-border first:border-l-0", !inMonth && "opacity-40", today && "bg-surface-elevated")}>
+            <div
+              key={d.toISOString()}
+              className={cn("min-h-[110px] p-1.5 border-l border-t border-border first:border-l-0", !inMonth && "opacity-40", today && "bg-surface-elevated", onSlotClick && "cursor-pointer")}
+              onClick={() => onSlotClick?.(d)}
+            >
               <p className={cn("text-xs font-medium mb-1", today ? "text-gold" : "text-muted-foreground")}>{format(d, "dd")}</p>
               <div className="space-y-1">
                 {dayEvts.slice(0, 3).map((e) => {
@@ -596,7 +619,7 @@ function MonthGrid({ anchor, eventos, lembretes, onSelect }: { anchor: Date; eve
                     : "";
                   return (
                     <button
-                      key={e.id} type="button" onClick={() => onSelect(e)}
+                      key={e.id} type="button" onClick={(ev) => { ev.stopPropagation(); onSelect(e); }}
                       className={cn("w-full text-left text-[11px] font-sans px-1 py-0.5 rounded-md truncate hover:ring-1 hover:ring-gold/40", c.bg, barCor, ringCicatriz, c.text)}
                       title={`${nomeCompleto}${delayCicatriz ? " · já atrasou" : ""}${f2Cicatriz ? " · já foi F2" : ""}`}
                     >
