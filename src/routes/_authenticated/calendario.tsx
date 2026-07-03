@@ -283,9 +283,10 @@ function Calendario() {
       </div>
 
       <div ref={containerRef} className="overflow-auto max-h-[calc(100vh-260px)]" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}>
-        {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSlotClick={openSlot} slotHeight={slotHeight} colWidth={colWidth} />}
-        {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSlotClick={openSlot} slotHeight={slotHeight} />}
-        {view === "mes" && <MonthGrid anchor={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSlotClick={openSlot} />}
+        {view === "semana" && <WeekGrid from={weekRange.from} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSelectLembrete={setSelectedLembrete} onSlotClick={openSlot} slotHeight={slotHeight} colWidth={colWidth} />}
+        {view === "dia" && <DayGrid day={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSelectLembrete={setSelectedLembrete} onSlotClick={openSlot} slotHeight={slotHeight} />}
+        {view === "mes" && <MonthGrid anchor={anchor} eventos={eventosComRecorrentes} lembretes={lembretes ?? []} onSelect={setSelectedEvent} onSelectLembrete={setSelectedLembrete} onSlotClick={openSlot} />}
+
       </div>
 
 
