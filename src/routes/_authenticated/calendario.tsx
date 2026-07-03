@@ -294,7 +294,7 @@ function Calendario() {
       </div>
 
       {dialog === "agendamento" && (
-        <Dialog open onOpenChange={(o) => !o && { setDialog(null); setAgendaPrefill(null); }}>
+        <Dialog open onOpenChange={(o) => { if (!o) { setDialog(null); setAgendaPrefill(null); } }}>
           <NovoAgendamento defaults={agendaPrefill ?? undefined} onClose={() => { setDialog(null); setAgendaPrefill(null); invalidateAll(); }} />
         </Dialog>
       )}
