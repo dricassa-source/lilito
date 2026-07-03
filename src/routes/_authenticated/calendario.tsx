@@ -619,7 +619,7 @@ function MonthGrid({ anchor, eventos, lembretes, onSelect, onSlotClick }: { anch
                     : "";
                   return (
                     <button
-                      key={e.id} type="button" onClick={() => onSelect(e)}
+                      key={e.id} type="button" onClick={(ev) => { ev.stopPropagation(); onSelect(e); }}
                       className={cn("w-full text-left text-[11px] font-sans px-1 py-0.5 rounded-md truncate hover:ring-1 hover:ring-gold/40", c.bg, barCor, ringCicatriz, c.text)}
                       title={`${nomeCompleto}${delayCicatriz ? " · já atrasou" : ""}${f2Cicatriz ? " · já foi F2" : ""}`}
                     >
