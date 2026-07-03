@@ -241,7 +241,7 @@ function Calendario() {
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <h1 className="font-display text-2xl text-foreground">Calendário</h1>
           <div className="flex flex-wrap gap-1.5">
-            <Button size="sm" onClick={() => setDialog("agendamento")} className="gold-gradient text-background h-11 sm:h-8 px-3">
+            <Button size="sm" onClick={() => { setAgendaPrefill(null); setDialog("agendamento"); }} className="gold-gradient text-background h-11 sm:h-8 px-3">
               <CalendarPlus className="h-3.5 w-3.5 mr-1" />Agendar
             </Button>
             <Button size="sm" variant="outline" onClick={() => setDialog("lembrete")} className="h-11 sm:h-8 px-3">
