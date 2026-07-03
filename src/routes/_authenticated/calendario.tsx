@@ -383,7 +383,7 @@ function WeekGrid({ from, eventos, lembretes, onSelect, onSlotClick, slotHeight,
           ))}
         </div>
         {days.map((d) => (
-          <DayColumn key={d.toISOString()} day={d} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), d))} onSelect={onSelect} slotHeight={slotHeight} />
+          <DayColumn key={d.toISOString()} day={d} eventos={eventos.filter((e) => isSameDay(new Date(e.inicio), d))} onSelect={onSelect} onSlotClick={onSlotClick} slotHeight={slotHeight} />
         ))}
       </div>
       </div>
