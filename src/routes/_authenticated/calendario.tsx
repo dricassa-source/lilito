@@ -653,8 +653,18 @@ function MonthGrid({ anchor, eventos, lembretes, onSelect, onSelectLembrete, onS
                 })}
                 {dayEvts.length > 3 && <p className="text-[10px] text-muted-foreground">+{dayEvts.length - 3} mais</p>}
                 {dayLemb.slice(0, 2).map((l) => (
-                  <p key={l.id} className="text-[10px] text-gold/80 truncate" title={l.titulo}>• {l.titulo}</p>
+                  <button
+                    key={l.id}
+                    type="button"
+                    onClick={(ev) => { ev.stopPropagation(); onSelectLembrete(l); }}
+                    className="w-full text-left text-[10px] text-gold/80 truncate inline-flex items-center gap-1 hover:text-gold"
+                    title={l.titulo}
+                  >
+                    <Bell className="h-2.5 w-2.5 shrink-0" />
+                    <span className="truncate">{l.hora ? l.hora.slice(0, 5) + " " : ""}{l.titulo}</span>
+                  </button>
                 ))}
+
               </div>
             </div>
           );
