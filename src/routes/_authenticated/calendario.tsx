@@ -373,9 +373,9 @@ function WeekGrid({ from, eventos, lembretes, onSelect, onSelectLembrete, onSlot
                 <span className="hidden sm:inline">{format(d, "EEE", { locale: ptBR })}</span>
               </p>
               <p className={cn("font-sans text-[13px] sm:text-base font-semibold mt-0.5 leading-none tabular-nums", today ? "text-gold" : "text-foreground")}>{format(d, "dd")}</p>
-              <DayLembretes lembretes={lembretes.filter((l) => isSameDay(new Date(l.data + "T00:00"), d))} />
             </div>
           );
+
         })}
       </div>
       <div className={bodyClass} style={gridStyle}>
