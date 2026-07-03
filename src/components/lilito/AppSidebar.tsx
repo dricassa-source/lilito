@@ -179,6 +179,12 @@ export function AppSidebar({ isMaster }: { isMaster: boolean }) {
       <SidebarFooter className="border-t border-sidebar-border p-2">
         <SidebarMenu>
           <SidebarMenuItem>
+            <SidebarMenuButton onClick={toggleTheme} tooltip={theme === "dark" ? "Modo claro" : "Modo escuro"}>
+              {theme === "dark" ? <Sun className="h-4 w-4" strokeWidth={1.5} /> : <Moon className="h-4 w-4" strokeWidth={1.5} />}
+              <span className="text-sm">{theme === "dark" ? "Modo claro" : "Modo escuro"}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
             <SidebarMenuButton onClick={signOut} tooltip="Sair">
               <LogOut className="h-4 w-4" strokeWidth={1.5} />
               <span className="text-sm">Sair</span>
